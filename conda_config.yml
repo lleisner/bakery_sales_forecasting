@@ -1,0 +1,21 @@
+name: lleisner
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pandas
+  - numpy
+  - matplotlib
+  - selenium=3.141.0
+  - beautifulsoup4
+  - tensorflow
+  - scikit-learn
+  - tqdm
+  - statsmodels
+  - openpyxl
+  - joblib
+
+  - pip:
+    - ferien-api
+    - meteostat
