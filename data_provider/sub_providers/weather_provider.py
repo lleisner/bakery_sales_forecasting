@@ -1,10 +1,9 @@
 import pandas as pd
 import os
-from utils.multi_processor import DataProvider
-
+from data_provider.sub_providers.base_provider import DataProvider
 
 class WeatherDataProvider(DataProvider):
-    def __init__(self, source_directory='/Users/lorenzleisner/Desktop/CLOUD/GFBD/lleisner/weather'):
+    def __init__(self, source_directory='data/weather'):
         super().__init__(source_directory)
         
     def read_file(self, file_path):

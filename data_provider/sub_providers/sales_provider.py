@@ -1,8 +1,7 @@
 import pandas as pd
 from datetime import datetime
 import os
-from utils.multi_processor import DataProvider
-from utils.custom_dataframe import CustomDataFrame
+from data_provider.sub_providers.base_provider import DataProvider
 
 
 class SalesDataProvider(DataProvider):

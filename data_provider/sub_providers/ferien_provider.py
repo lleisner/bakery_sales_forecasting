@@ -1,6 +1,6 @@
 import pandas as pd
 import ferien
-from utils.multi_processor import BaseProvider
+from data_provider.sub_providers.base_provider import BaseProvider
 from utils.hourly_converter import convert_to_hourly
 
 class FerienDataProvider(BaseProvider):

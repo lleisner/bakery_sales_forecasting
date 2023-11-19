@@ -2,11 +2,11 @@ import pandas as pd
 import os
 import numpy as np
 from datetime import datetime
-from utils.multi_processor import DataProvider
+from data_provider.sub_providers.base_provider import DataProvider
     
  
 class FahrtenDataProvider(DataProvider):
-    def __init__(self, source_directory='data/nsb_fahrzeiten/'):
+    def __init__(self, source_directory='data/nsb_fahrzeiten'):
         super().__init__(source_directory)
 
     def read_file(self, filepath):
