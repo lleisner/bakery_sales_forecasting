@@ -17,10 +17,10 @@ class SalesDataProvider(DataProvider):
         for sheet_name in xls.sheet_names:
             
             if sheet_name == xls.sheet_names[0]: # Parse and save column names from first sheet
-                df = pd.read_excel(xls, sheet_name, header=0, index_col=1)
+                df = pd.read_excel(xls, sheet_name, header=0, index_col=1, engine='openpyxl')
                 columns = df.columns.insert(0, '')
             else: # Assign column names to rest of the sheets
-                df = pd.read_excel(xls, sheet_name, header=None, names=columns, index_col=1)
+                df = pd.read_excel(xls, sheet_name, header=None, names=columns, index_col=1, engine='openpyxl')
 
             date = datetime.strptime(df.iloc[0,0], '%d.%m.%Y').date()   # Get date for each sheet
             df = df.drop(df.columns[[0, 1, 2]], axis=1).T       # Drop unnecessary columns and transpose Dataframe 

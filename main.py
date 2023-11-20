@@ -1,6 +1,7 @@
 
 import tensorflow as tf
 from tensorflow import keras
+from tensorboard.plugins.hparams import api as hp
 
 from utils.loss import custom_time_series_loss
 from models.lstm_model.training import plot_training_history
@@ -24,11 +25,15 @@ if __name__=="__main__":
     strides = length_of_day
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
-    num_epochs = 100
+    num_epochs = 10
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1
     num_targets =  len([col for col in df.columns if str(col).isnumeric()])
+
+    log_dir = "logs/fit/"
+
+    
 
 
    
@@ -36,7 +41,7 @@ if __name__=="__main__":
     data_processor = DataProcessor(df)
 
     #encoded_data = data_processor.fit_and_encode()
-    encoded_data = data_processor.encode().dropna()
+    encoded_data = data_processor.encode()
     
     num_features = encoded_data.shape[1] - num_targets
     
@@ -69,7 +74,9 @@ if __name__=="__main__":
         patience=30,         # Number of epochs with no improvement to wait
         restore_best_weights=True  # Restore the best weights when stopped
     )
-    hist = model.fit(train, epochs=num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping], use_multiprocessing=True)
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+    hist = model.fit(train, epochs=num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback], use_multiprocessing=True)
 
     plot_training_history(hist)
     

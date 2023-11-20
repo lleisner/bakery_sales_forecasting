@@ -4,8 +4,33 @@ import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 from collections import OrderedDict
-from utils.sin_cos_encoder import create_sine_cosine_encoding
 from models.autoencoder.training import build_autoencoder, train_model
+
+class SineCosineEncoder:
+    @staticmethod
+    def create_encoding(data: pd.Series, name: str, parameter_range: int) -> pd.DataFrame:
+        """
+        Create sine and cosine encodings for a column of cyclic data within the range of -0.5 to 0.5.
+
+        Args:
+            data (pd.Series): The DataFrame column containing the cyclic data.
+            name (str): Name for the encoding columns.
+            parameter_range (int): The range of the cyclic data (e.g. 12 for months).
+
+        Returns:
+            pd.DataFrame: A DataFrame containing two columns: 'sine_encoding' and 'cosine_encoding' scaled to the range [-0.5, 0,5].
+        """
+        # Convert the column to radians
+        radians = (data / parameter_range) * 2 * np.pi
+
+        # Calculate sine and cosine encodings
+        sine_encoding = 0.5 * (np.sin(radians) + 1) - 0.5
+        cosine_encoding = 0.5 * (np.cos(radians) + 1) - 0.5
+
+        # Create a DataFrame with the encodings
+        encoding_df = pd.DataFrame({f'{name}_sine_encoding': sine_encoding, f'{name}_cosine_encoding': cosine_encoding})
+
+        return encoding_df
 
 
 class DataEncoder:
@@ -45,10 +70,10 @@ class TemporalEncoder(DataEncoder):
     def _encode_data(self, data: pd.DatetimeIndex, encoder):
         dataframes = []
         dataframes.append(pd.get_dummies(data.year, prefix='year', dtype=float))
-        dataframes.append(create_sine_cosine_encoding(data.month, 'month', 12))
-        dataframes.append(create_sine_cosine_encoding(data.day, 'day', 31))
-        dataframes.append(create_sine_cosine_encoding(data.dayofweek, 'weekday', 7))
-        dataframes.append(create_sine_cosine_encoding(data.hour, 'hour', 24))
+        dataframes.append(SineCosineEncoder.create_encoding(data.month, 'month', 12))
+        dataframes.append(SineCosineEncoder.create_encoding(data.day, 'day', 31))
+        dataframes.append(SineCosineEncoder.create_encoding(data.dayofweek, 'weekday', 7))
+        dataframes.append(SineCosineEncoder.create_encoding(data.hour, 'hour', 24))
         df = pd.concat(dataframes, axis=1).set_index(data)
         return df
     
@@ -58,7 +83,7 @@ class WeatherEncoder(DataEncoder):
         super().__init__(encoder_filename)
     
     def _encode_data(self, data: pd.DataFrame, encoder) -> pd.DataFrame:
-        sin_cos_coding = create_sine_cosine_encoding(data['wind_direction'], 'wind_direction', 360).set_index(data.index)
+        sin_cos_coding = SineCosineEncoder.create_encoding(data['wind_direction'], 'wind_direction', 360).set_index(data.index)
         encoding = pd.DataFrame(encoder.transform(data), index=data.index, columns=data.columns)
         encoding = pd.concat([sin_cos_coding, encoding], axis=1).drop(['wind_direction'], axis=1)
         return encoding
@@ -148,5 +173,5 @@ class DataProcessor:
             
         new_order = ['datetime','weather','ferien','fahrten','sales','labels']
         encoded_data = OrderedDict((key, encoded_data[key]) for key in new_order)
-        return pd.concat(encoded_data.values(), axis=1)
+        return pd.concat(encoded_data.values(), axis=1).dropna()
 

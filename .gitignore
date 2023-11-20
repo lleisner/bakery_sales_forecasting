@@ -3,3 +3,9 @@
 
 # Ignore __pycache__ directories
 __pycache__/
+
+# Ignore logs from TensorBoard
+logs/
+
+#Ignore saved models
+saved_models/
