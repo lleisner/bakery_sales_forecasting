@@ -4,53 +4,61 @@ This repository contains the codebase for my Bachelorarbeit (Bachelor's thesis).
 
 ## Overview
 
-The project is dedicated to [provide a brief overview of the project purpose, goals, or objectives]. It focuses on [mention key functionalities, main algorithms used, or major components].
+The project is dedicated to solving a timeseries prediction problem, namely the prediction of future sales for specific items at a bakery. It focuses on providing a working model that can make accurate predictions for the production planning of the bakery.
 
 ### Key Features
 
-- **Feature 1:** [Description of a prominent feature or functionality]
-- **Feature 2:** [Description of another significant aspect of the project]
-- **Feature 3:** [Highlight another essential functionality or module]
+- **Feature 1:** Provide a working model
+- **Feature 2:** Find a (close to) optimal model architecture for the problem (iTransformer??)
+- **Feature 3:** (Maybe) Create a deployable solution that can actively be used in the bakery
 
 ## Project Structure
 
 The repository is organized as follows:
 
-- `src/`: Contains the main source code
+
 - `data/`: Stores relevant data or datasets
-- `docs/`: Includes documentation or additional resources
-- `tests/`: Holds test cases or testing-related scripts
+- `data_provider/`: Transforms the raw data into usable datasets
+- `models/`: Stores the different model architectures
+- `utils/`: Some utility functions
+
+## Dataset
+
+The dataset ranges from 01.01.2017 to 31.08.2023 in hourly intervals. Considering relevant times for sales in the bakery and closing periods, this results in roughly 20.000 timesteps. Each timestep cosists of the following features: 
+
+- weather: (temperature, precipitation, wind_speed, wind_direction) (4)
+- tourism: (time of arrivals, departues of each ferry)              (6)
+- holidays: (holidays of all Bundesländer)                          (16)
+- sales: (sales for a selected range / each item)                   (50 / 200+)
+
 
 ## Getting Started
 
 To run the project locally or replicate the environment, follow these steps:
 
 1. **Clone the repository:**
-    ```bash
+    ```
     git clone <repository_url>
-    cd bachelorarbeit-project
+    cd clean_bachelor
     ```
 
 2. **Setup Environment:**
-   - [Provide necessary steps or commands to set up the development environment, dependencies, or any prerequisites]
+    ```
+    conda create -f conda_config.yml
+    conda activate lleisner
+    ```
 
 3. **Run the Project:**
-   - [Include instructions to run the project, execute key scripts, or start the application]
+    ```
+    python main.py
+    ```
 
-## Contribution Guidelines
 
-Contributions to the project are welcome! If you'd like to contribute:
-
-- Fork the repository
-- Create a new branch (`git checkout -b feature/add-new-feature`)
-- Commit your changes (`git commit -am 'Add new feature'`)
-- Push to the branch (`git push origin feature/add-new-feature`)
-- Create a new Pull Request
 
 ## License
 
-[Include information about the project's license, if applicable]
+...
 
 ## Acknowledgements
 
-[Optional section to acknowledge contributors, libraries, or resources used in the project]
+...

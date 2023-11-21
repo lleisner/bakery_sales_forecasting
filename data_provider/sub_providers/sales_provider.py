@@ -5,7 +5,7 @@ from data_provider.sub_providers.base_provider import DataProvider
 
 
 class SalesDataProvider(DataProvider):
-    def __init__(self, source_directory = 'data/sales', item_intervals = [(10, 300)]):
+    def __init__(self, source_directory = 'data/sales', item_intervals = [(10, 50), (80, 130)]):
         super().__init__(source_directory)
         self.item_intervals = item_intervals
         

@@ -1,7 +1,6 @@
 import pandas as pd
 import ferien
 from data_provider.sub_providers.base_provider import BaseProvider
-#from utils.hourly_converter import convert_to_hourly
 
 class FerienDataProvider(BaseProvider):
     
@@ -39,7 +38,6 @@ class FerienDataProvider(BaseProvider):
         
         all_states.index = pd.to_datetime(all_states.index, format="%d.%m.%Y", errors='coerce')
         all_states_hourly = all_states.resample('H').ffill()
-        #all_states = convert_to_hourly(all_states, fill_method='ffill')
         return all_states_hourly
 
     

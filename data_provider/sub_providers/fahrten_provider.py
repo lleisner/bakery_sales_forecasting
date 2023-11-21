@@ -22,7 +22,7 @@ class FahrtenDataProvider(DataProvider):
         This function reads a CSV file from the specified filepath, selects the first
         six columns (the rest of the data is irrelevant), renames them, and drops rows where all values are missing. 
         """
-        df = pd.read_csv(filepath, encoding='latin1', sep=';')
+        df = pd.read_csv(filepath, encoding='latin1', sep=';', engine='python')
         df = df.iloc[:, :6]
         df.columns = ['Datum', 'Start', 'Abfahrt', 'Schiff', 'Ziel', 'Ankunft']
         df.dropna(how='all', inplace=True)
