@@ -53,6 +53,18 @@ To run the project locally or replicate the environment, follow these steps:
     python main.py
     ```
 
+4. **Have a look at the Data:**
+    ```
+    # full dataset:
+    python -m data_provider.data_merger
+
+    # partial datasets:
+    python -m data_provider.sub_providers.fahrten_provider
+    python -m data_provider.sub_providers.ferien_provider
+    python -m data_provider.sub_providers.weather_provider
+    python -m data_provider.sub_providers.sales_provider
+    ```
+
 
 
 ## License

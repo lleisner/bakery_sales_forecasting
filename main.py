@@ -1,4 +1,5 @@
 
+import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorboard.plugins.hparams import api as hp
@@ -65,6 +66,7 @@ if __name__=="__main__":
 
     # Create a model 
     model = create_lstm_model(seq_length, num_features=num_features, num_targets=num_targets)
+    #model = tf.keras.models.load_model('saved_models/lstm_model.h5', compile=False)
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=custom_time_series_loss(future_steps, length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
 
     early_stopping = keras.callbacks.EarlyStopping(
@@ -76,10 +78,28 @@ if __name__=="__main__":
 
     # Fit the model
     hist = model.fit(train, epochs=num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback], use_multiprocessing=True)
-
+    model.save('saved_models/lstm_model.h5')
     plot_training_history(hist)
     
     
     
+    last_day = encoded_data.iloc[:, :num_features].tail(seq_length)
+    last_day = np.expand_dims(last_day, axis=0)
+    prediction = model.predict(last_day)
+    index = df.index[-seq_length:] #+ pd.Timedelta(days=future_days)
+    #print(index)
+    df = pd.DataFrame(np.squeeze(prediction), index=index)
+    df = decode_labels(df)
+
+
+
+    df = df.tail(future_steps)
+    print(df)
+    print(df.shape)
+
+    # Group by date and calculate the sum for each date
+    summed_df = df.groupby(df.index.date).sum()
+
+    print(summed_df)
     
     
