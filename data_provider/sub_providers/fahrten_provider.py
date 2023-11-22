@@ -7,9 +7,15 @@ from data_provider.sub_providers.base_provider import DataProvider
  
 class FahrtenDataProvider(DataProvider):
     def __init__(self, source_directory='data/nsb_fahrzeiten'):
+        """
+        Initialize FahrtenDataProvider instance.
+
+        Args:
+        - source_directory (str): Directory path where Fahrten data is located.
+        """
         super().__init__(source_directory)
 
-    def read_file(self, filepath):
+    def _read_file(self, filepath):
         """
         Process a CSV file and return a DataFrame with selected columns.
 
@@ -28,7 +34,16 @@ class FahrtenDataProvider(DataProvider):
         df.dropna(how='all', inplace=True)
         return df
     
-    def process_data(self, df):
+    def _process_data(self, df):
+        """
+        Process the given DataFrame.
+
+        Args:
+        - df (pd.DataFrame): Input DataFrame to be processed.
+
+        Returns:
+        - pd.DataFrame: Processed DataFrame.
+        """
         df = self._process_schedule_data(df)
         df = self._post_process_schedule_data(df)
         return df
@@ -72,7 +87,6 @@ class FahrtenDataProvider(DataProvider):
             pd.DataFrame: One-Hot encoded Schiff information with Datetime Index
             
         """
-        
         df.drop(columns=['Start', 'Abfahrt', 'Ziel', 'Ankunft'], inplace=True)
         
         df['Datetime'] = (df['Datum'] + pd.to_timedelta(df['Zeit'].astype(str))).dt.floor('H')

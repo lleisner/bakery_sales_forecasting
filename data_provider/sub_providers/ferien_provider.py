@@ -5,9 +5,9 @@ from data_provider.sub_providers.base_provider import BaseProvider
 class FerienDataProvider(BaseProvider):
     
     def get_data(self):
-        return self.process()
+        return self._process_data()
     
-    def process(self, start: str='2017-01-01', end: str='2023-09-01') -> pd.DataFrame:
+    def _process_data(self, start: str='2017-01-01', end: str='2023-09-01') -> pd.DataFrame:
         """
         Retrieves and compiles vacation data for different states within a specified date range using the ferien-api
 

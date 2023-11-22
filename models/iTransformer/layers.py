@@ -14,6 +14,7 @@ class ConvLayer(layers.Layer):
         self.activation = layers.ELU()
         self.maxPool = layers.MaxPool1D(pool_size=3, strides=2, padding='same')
 
+    @tf.function
     def call(self, x):
         x = self.downConv(tf.transpose(x, perm=[0, 2, 1]))
         x = self.norm(x)
@@ -42,6 +43,7 @@ class EncoderLayer(layers.Layer):
         self.dropout = layers.Dropout(rate=dropout)
         self.activation = layers.ReLU() if activation == "relu" else layers.ELU()
 
+    @tf.function
     def call(self, x, attn_mask=None, tau=None, delta=None):
         new_x, attn = self.attention(x, x, x, attn_mask=attn_mask, tau=tau, delta=delta)
         x = x + self.dropout(new_x)
@@ -58,6 +60,7 @@ class Encoder(layers.Layer):
         self.conv_layers = conv_layers if conv_layers is not None else None
         self.norm = norm_layer
 
+    @tf.function
     def call(self, x, attn_mask=None, tau=None, delta=None):
         attns = []
         if self.conv_layers is not None:
@@ -100,6 +103,7 @@ class DecoderLayer(layers.Layer):
         self.dropout = layers.Dropout(rate=dropout)
         self.activation = layers.ReLU() if activation == "relu" else layers.ELU()
 
+    @tf.function
     def call(self, x, cross, x_mask=None, cross_mask=None, tau=None, delta=None):
         x = x + self.dropout(self.self_attention(x, x, x, attn_mask=x_mask, tau=tau, delta=None)[0])
         x = self.norm1(x)
@@ -118,6 +122,7 @@ class Decoder(layers.Layer):
         self.norm = norm_layer
         self.projection = projection
 
+    @tf.function
     def call(self, x, cross, x_mask=None, cross_mask=None, tau=None, delta=None):
         for layer in self.layers:
             x = layer(x, cross, x_mask=x_mask, cross_mask=cross_mask, tau=tau, delta=delta)

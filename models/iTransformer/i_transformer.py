@@ -38,6 +38,9 @@ class Model(keras.Model):
         )
         self.projector = keras.layers.Dense(configs.pred_len, use_bias=True)
 
+
+    def __init__(self, seq_len, pred_len, d_model, embed, )
+
     def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
         # Normalization from Non-stationary Transformer
         means = tf.reduce_mean(x_enc, axis=1, keepdims=True)
@@ -66,6 +69,7 @@ class Model(keras.Model):
         dec_out = dec_out + (means[:, 0, tf.newaxis].repeat(self.pred_len, axis=1))
         return dec_out
 
+    
     def call(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
         dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
         return dec_out[:, -self.pred_len:, :]  # [B, L, D]
