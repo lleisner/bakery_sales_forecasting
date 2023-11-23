@@ -6,6 +6,10 @@ import time
 class ModelOps(BaseOps):
     def __init__(self, args):
         super(ModelOps, self).__init__(args)
+        self.args = args
+
+
+
 
     def _build_model(self):
         model = self.model_dict[self.args.model].Model(self.args)
@@ -53,11 +57,11 @@ class ModelOps(BaseOps):
             batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
 
             # detach and move to cpu computation
-            pred = tf.identity(outputs).numpy()  # Convert to NumPy array
-            true = tf.identity(batch_y).numpy()  # Convert to NumPy array
+          #  pred = tf.identity(outputs).numpy()  # Convert to NumPy array
+           # true = tf.identity(batch_y).numpy()  # Convert to NumPy array
 
-            pred = tf.convert_to_tensor(pred)  # Convert NumPy array back to TensorFlow tensor
-            true = tf.convert_to_tensor(true)  # Convert NumPy array back to TensorFlow tensor
+          #  pred = tf.convert_to_tensor(pred)  # Convert NumPy array back to TensorFlow tensor
+         #   true = tf.convert_to_tensor(true)  # Convert NumPy array back to TensorFlow tensor
 
             loss = loss_function(pred, true)
             total_loss.append(loss)
@@ -67,28 +71,60 @@ class ModelOps(BaseOps):
         return total_loss
 
 
-    def train_step(self, input, target, loss_function, optimizer, training=True):
+
+    @tf.function
+    def custom_train_step(self, i, batch_x, batch_y, batch_x_mark, batch_y_mark):
         iter_count += 1
-        model.optim.zero_grad()            
-        
-        # decoder input
+
+        batch_x = tf.cast(batch_x, dtype=tf.float32)
+        batch_y = tf.cast(batch_y, dtype=tf.float32)
+        batch_x_mark = tf.cast(batch_x_mark, dtype=tf.float32)
+        batch_y_mark = tf.cast(batch_y_mark, dtype=tf.float32)
+
         dec_inp = tf.zeros_like(batch_y[:, -self.args.pred_len:, :])
         dec_inp = tf.concat([batch_y[:, :self.args.label_len, :], dec_inp], axis=1)
         
+        with tf.GradientTape() as tape:
+            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
+            # restrict loss calculation to pred_len
+            f_dim = 0
+            outputs = outputs[:, -self.args.pred_len:, f_dim:]
+            batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
+
+            loss = loss_function(outputs, batch_y)
+
+        if (i + 1) % 100 == 0:
+            print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.numpy()))
+            speed = (time.time() - time_now) / iter_count
+            left_time = speed * ((self.args.train_epochs - epoch) * train_steps - i)
+            print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
+            iter_count = 0
+            time_now = time.time()
+
+        gradients = tape.gradient(loss, self.model.trainable_variables)
+        if self.args.use_amp:
+            gradients = scaler.get_scaled_gradients(gradients)
+        gradients = [tf.clip_by_value(grad, -self.args.clip, self.args.clip) for grad in gradients]
+        model_optim.apply_gradients(zip(gradients, self.model.trainable_variables))
+       
+        return loss
+        
     
-    def train(self, data, num_epochs):
+    def train(self, data, num_epochs, callbacks):
         train, vali, test = self.data_pipeline.generate_data()
 
         time_now = time.time()
         train_steps = len(train)
 
-        early_stopping = keras.callbacks.EarlyStopping(
+        early_stopping = tf.keras.callbacks.EarlyStopping(
             monitor='loss',  # Monitor loss
             patience=100,         # Number of epochs with no improvement to wait
             restore_best_weights=True  # Restore the best weights when stopped
         )
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+        callbacks = tf.keras.callbacks.CallbackList([early_stopping, tensorboard_callback])
 
         optimizer = self._select_optimizer()
         loss_function = self._select_loss_function()
@@ -103,15 +139,16 @@ class ModelOps(BaseOps):
             tf.keras.mixed_precision.set_global_policy(policy)
             scaler = tf.keras.mixed_precision.experimental.LossScaleOptimizer(optimizer)
 
-
         for epoch in range(self.args.train_epochs):
             iter_count = 0
+            losses = []
             train_loss = []
-
+            test_losses = []
 
             epoch_time = time.time()
             for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(train_loader):
-                
+                loss = self.custom_train_step(i, batch_x, batch_y, batch_x_mark, batch_y_mark)
+                train_loss.append(loss)
 
             print(f"Epoch: {epoch + 1} cost time: {time.time() - epoch_time}")
             train_loss = np.average(train_loss)
@@ -120,10 +157,18 @@ class ModelOps(BaseOps):
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
-            early_stopping(vali_loss, self.model, path)
-            if early_stopping.early_stop:
-                print("Early stopping")
-                break
+
+            # Perform early stopping check and other callbacks after each epoch
+            for callback in callbacks:
+                callback.on_epoch_end(epoch, logs={'val_loss': current_val_loss})
+                if callback.model.stop_training:
+                    print("Training stopped by callback: ", type(callback).__name__)
+                    break
+            callbacks.on_epoch_end(epoch, logs={'val_loss': vali_loss})
+            
+            # If early stopping, break out of training
+            if callbacks[0].model.stop_training:
+                break 
 
             adjust_learning_rate(model_optim, epoch + 1, self.args)
 
@@ -135,60 +180,3 @@ class ModelOps(BaseOps):
         return self.model
 
 
-    def train_step(self):
-        iter_count += 1
-        model_optim.zero_grad()
-        batch_x = batch_x.float().to(self.device)
-
-        batch_y = batch_y.float().to(self.device)
-        if 'PEMS' in self.args.data or 'Solar' in self.args.data:
-            batch_x_mark = None
-            batch_y_mark = None
-        else:
-            batch_x_mark = batch_x_mark.float().to(self.device)
-            batch_y_mark = batch_y_mark.float().to(self.device)
-
-        # decoder input
-        dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-        dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
-
-        # encoder - decoder
-        if self.args.use_amp:
-            with torch.cuda.amp.autocast():
-                if self.args.output_attention:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                else:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
-                f_dim = -1 if self.args.features == 'MS' else 0
-                outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                loss = criterion(outputs, batch_y)
-                train_loss.append(loss.item())
-        else:
-            if self.args.output_attention:
-                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-            else:
-                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
-            f_dim = -1 if self.args.features == 'MS' else 0
-            outputs = outputs[:, -self.args.pred_len:, f_dim:]
-            batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-            loss = criterion(outputs, batch_y)
-            train_loss.append(loss.item())
-
-        if (i + 1) % 100 == 0:
-            print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
-            speed = (time.time() - time_now) / iter_count
-            left_time = speed * ((self.args.train_epochs - epoch) * train_steps - i)
-            print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
-            iter_count = 0
-            time_now = time.time()
-
-        if self.args.use_amp:
-            scaler.scale(loss).backward()
-            scaler.step(model_optim)
-            scaler.update()
-        else:
-            loss.backward()
-            model_optim.step()
