@@ -58,7 +58,7 @@ class DataProvider(BaseProvider):
         dataframes = []
         for filename in os.listdir(self.source_directory):
             file_path = os.path.join(self.source_directory, filename)
-            dataframes.append(self.read_file(file_path))
+            dataframes.append(self._read_file(file_path))
         return pd.concat(dataframes).fillna(0)
     
     def get_data(self):
