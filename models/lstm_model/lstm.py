@@ -38,7 +38,7 @@ class CustomLSTM(keras.Model):
         self.dropout = Dropout(0.2)
         self.out = Dense(num_targets)
 
-    #@tf_function
+    @tf.function
     def call(self, x):
         x = self.lstm1(x)
         x = self.dropout(x)
