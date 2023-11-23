@@ -7,7 +7,7 @@ from tensorboard.plugins.hparams import api as hp
 
 from utils.loss import custom_time_series_loss
 from utils.plot_hist import plot_training_history
-from models.lstm_model.lstm import create_lstm_model, CustomLSTM
+from models.lstm_model.lstm import CustomLSTM
 
 from data_provider.data_merger import DataMerger
 from data_provider.data_encoder import DataProcessor
@@ -65,9 +65,7 @@ if __name__=="__main__":
     train, val, test = data_pipeline.generate_data(dataset)
 
 
-    # Create a model 
-    #model = create_lstm_model(seq_length, num_features=num_features, num_targets=num_targets)    #model = tf.keras.models.load_model('saved_models/lstm_model.h5', compile=False)
-    
+    # Create a model     
     model = CustomLSTM(seq_length, num_features, num_targets)
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=custom_time_series_loss(future_steps, length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
 
