@@ -58,7 +58,7 @@ class CustomLoss(tf.keras.losses.Loss):
 
         weight = 1/self.interval
 
-        summed_mse = tf.reduce_mean(daily_weight * tf.square(y_true_sum - y_pred_sum))
+        summed_mse = tf.reduce_mean(weight * tf.square(y_true_sum - y_pred_sum))
 
         total_loss =  mse + summed_mse
 
