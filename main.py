@@ -67,7 +67,8 @@ if __name__=="__main__":
 
     # Create a model     
     model = CustomLSTM(seq_length, num_features, num_targets)
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=custom_time_series_loss(future_steps, length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
+    #model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=custom_time_series_loss(future_steps, length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=tf.keras.losses.MeanSquaredError(), length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
 
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='loss',  # Monitor loss

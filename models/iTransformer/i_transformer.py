@@ -69,8 +69,8 @@ class Model(keras.Model):
 
     @tf.function
     def train_step(self, data):
-        # previous sales, sales_to_predict, covariates, covariates_to_predict
-        batch_x, batch_y, batch_x_mark, batch_y_mark = data
+        # previous sales, sales_to_predict, covariates
+        batch_x, batch_y, batch_x_mark = data
         
         batch_x = tf.cast(batch_x, dtype=tf.float32)
         batch_y = tf.cast(batch_y, dtype=tf.float32)

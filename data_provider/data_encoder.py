@@ -170,7 +170,7 @@ class DataProcessor:
             encoder = self.encoders[key]
             encoded_data[key] = encoder.fit_and_encode(data) if fit_encoder else encoder.encode(data)
             
-        new_order = ['datetime','weather','ferien','fahrten','sales','labels']
+        new_order = ['sales','datetime','weather','ferien','fahrten','labels']
         encoded_data = OrderedDict((key, encoded_data[key]) for key in new_order)
         return pd.concat(encoded_data.values(), axis=1).dropna()
 

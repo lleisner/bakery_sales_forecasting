@@ -23,4 +23,21 @@ class CustomLSTM(keras.Model):
         x = self.lstm3(x)
         x = self.out(x)
         return x
-        
+
+    @tf.function
+    def train_step(self, data):
+        batch_x, batch_y, batch_x_mark = data
+        inputs = tf.concat([batch_x, batch_x_mark], axis=1)
+        with tf.GradientTape() as tape:
+            outputs = self(inputs)
+
+            # restrict loss calculation to pred_len
+            f_dim = 0
+            outputs = outputs[:, -self.args.pred_len:, f_dim:]
+            batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
+
+            loss = self.compute_loss(outputs, batch_y)
+            
+        gradients = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
+        return loss
