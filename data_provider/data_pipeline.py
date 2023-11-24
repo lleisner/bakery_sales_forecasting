@@ -41,7 +41,7 @@ class BatchGenerator(BaseGenerator):
         batch_x = data_slice[:, :self.num_targets]
         batch_x_mark = data_slice[:, self.num_targets:-self.num_targets]
         batch_y = data_slice[:, -self.num_targets:]
-        batch_x, batch_y, batch_x_mark
+        return batch_x, batch_y, batch_x_mark
 
     def preprocess(self, dataset: tf.data.Dataset):
         #dataset = dataset.map(self._get_feature_label_pairs, num_parallel_calls=tf.data.AUTOTUNE)

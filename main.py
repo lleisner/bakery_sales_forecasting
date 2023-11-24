@@ -66,10 +66,10 @@ if __name__=="__main__":
 
 
     # Create a model     
-    model = CustomLSTM(seq_length, num_features, num_targets)
+    model = CustomLSTM(seq_length, future_steps, num_features, num_targets)
     #model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=custom_time_series_loss(future_steps, length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=tf.keras.losses.MeanSquaredError(), length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
-
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=tf.keras.losses.MeanSquaredError(), metrics=[tf.keras.metrics.MeanSquaredError()],weighted_metrics=[])
+    model.summary()
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='loss',  # Monitor loss
         patience=100,         # Number of epochs with no improvement to wait
@@ -79,7 +79,7 @@ if __name__=="__main__":
 
     # Fit the model
     hist = model.fit(train, epochs=num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback], use_multiprocessing=True)
-    model.save('saved_models/lstm_model.h5')
+    #model.save('saved_models/lstm_model.h5')
     plot_training_history(hist)
     
     
