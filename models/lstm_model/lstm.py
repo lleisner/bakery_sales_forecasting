@@ -57,23 +57,7 @@ class CustomLSTM(keras.Model):
                     metric.update_state(targets, outputs)
             
             return {m.name: m.result() for m in self.metrics}
-    """   
-    @tf.function
-    def test_step(self, data):
-        # Unpack the data
-        x, y = data
-        # Compute predictions
-        y_pred = self(x)
-        # Updates the metrics tracking the loss
-        self.compute_loss(y=y, y_pred=y_pred)
-        # Update the metrics.
-        for metric in self.metrics:
-            if metric.name != "loss":
-                metric.update_state(y, y_pred)
-        # Return a dict mapping metric names to current value.
-        # Note that it will include the loss (tracked in self.metrics).
-        return {m.name: m.result() for m in self.metrics}
-    """
+
     
 
         

@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 class DataEmbeddingInverted(tf.Module):
-    def __init__(self, c_in, d_model, embed_type='fixed', freq='h', dropout=0.1):
+    def __init__(self, c_in, d_model, dropout=0.1):
         super(DataEmbeddingInverted, self).__init__()
         self.value_embedding = layers.Dense(d_model)
         self.dropout = layers.Dropout(rate=dropout)

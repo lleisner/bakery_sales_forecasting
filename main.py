@@ -9,6 +9,9 @@ from utils.loss import custom_time_series_loss, CustomLoss
 from utils.plot_hist import plot_training_history
 from models.lstm_model.lstm import CustomLSTM
 
+from models.iTransformer.i_transformer import Model
+from models.iTransformer.configs import Configurator
+
 from data_provider.data_merger import DataMerger
 from data_provider.data_encoder import DataProcessor
 from data_provider.data_pipeline import DataPipeline
@@ -65,14 +68,21 @@ if __name__=="__main__":
     train, val, test = data_pipeline.generate_data(dataset)
 
     loss = CustomLoss(length_of_day)
+
+
+
     # Create a model     
-    model = CustomLSTM(seq_length, future_steps, num_features, num_targets)
+    #model = CustomLSTM(seq_length, future_steps, num_features, num_targets)
+
+    configs = Configurator()
+    model = Model(configs)
+
     #model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=custom_time_series_loss(future_steps, length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=loss, metrics=[tf.keras.metrics.MeanSquaredError()], weighted_metrics=[])
     model.summary()
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='loss',  # Monitor loss
-        patience=10,         # Number of epochs with no improvement to wait
+        patience=50,         # Number of epochs with no improvement to wait
         restore_best_weights=True  # Restore the best weights when stopped
     )
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
