@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorboard.plugins.hparams import api as hp
 
-from utils.loss import custom_time_series_loss
+from utils.loss import custom_time_series_loss, CustomLoss
 from utils.plot_hist import plot_training_history
 from models.lstm_model.lstm import CustomLSTM
 
@@ -37,7 +37,7 @@ if __name__=="__main__":
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
 
-    num_epochs = 10
+    num_epochs = 200
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1
@@ -64,15 +64,15 @@ if __name__=="__main__":
     dataset = tf.data.Dataset.from_tensor_slices(encoded_data.values)
     train, val, test = data_pipeline.generate_data(dataset)
 
-
+    loss = CustomLoss(length_of_day)
     # Create a model     
     model = CustomLSTM(seq_length, future_steps, num_features, num_targets)
     #model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=custom_time_series_loss(future_steps, length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=tf.keras.losses.MeanSquaredError(), metrics=[tf.keras.metrics.MeanSquaredError()],weighted_metrics=[])
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=loss(), metrics=[tf.keras.metrics.MeanSquaredError()], weighted_metrics=[])
     model.summary()
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='loss',  # Monitor loss
-        patience=100,         # Number of epochs with no improvement to wait
+        patience=10,         # Number of epochs with no improvement to wait
         restore_best_weights=True  # Restore the best weights when stopped
     )
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
