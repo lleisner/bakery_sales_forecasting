@@ -35,6 +35,16 @@ class EncoderLayer(layers.Layer):
         print(x, y)
         return self.norm2(x + y), attn
 
+
+    def call_test(self, inputs, attn_mask=None, tau=None, delta=None):
+        x, attn = self.attention(inputs, inputs, inputs, attn_mask=attn_mask, tau=tau, delta=delta)
+        x = self.dropout(x)
+        res = x + inputs
+
+        x = self.dropout(self.activation(self.conv1(tf.transpose(res, perm=[0, 2, 1]))))
+        x = self.dropout(self.conv2(tf.transpose(x, perm=[0, 2, 1])))
+        return x + res
+
 class Encoder(layers.Layer):
     def __init__(self, attn_layers, conv_layers=None, norm_layer=None):
         super(Encoder, self).__init__()
