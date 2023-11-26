@@ -28,11 +28,21 @@ class EncoderLayer(layers.Layer):
         x = x + self.dropout(new_x)
 
         y = x = self.norm1(x)
-        print(x, y)
         y = self.dropout(self.activation(self.conv1(tf.transpose(y, perm=[0, 2, 1]))))
-        print(x, y)
         y = self.dropout(self.conv2(tf.transpose(y, perm=[0, 2, 1])))
-        print(x, y)
+        return self.norm2(x + y), attn
+
+    @tf.function
+    def call(self, x, attn_mask=None, tau=None, delta=None):
+        new_x, attn = self.attention(x, x, x, attn_mask=attn_mask, tau=tau, delta=delta)
+        x = x + self.dropout(new_x)
+
+        y = self.norm1(x)
+        y = tf.transpose(y, perm=[0, 2, 1])  # Transpose for TensorFlow's Conv1D input format
+        y = self.dropout(self.activation(self.conv1(y)))
+        y = self.dropout(self.conv2(y))
+        y = tf.transpose(y, perm=[0, 2, 1])  # Transpose back to original shape
+
         return self.norm2(x + y), attn
 
 

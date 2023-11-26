@@ -21,7 +21,6 @@ class AttentionLayer(layers.Layer):
         B, L, _ = queries.shape
         _, S, _ = keys.shape
         H = self.n_heads
-        print(B, L, S, H)
         
         querie_reshape = layers.Reshape((L, H, -1))
         keys_reshape = layers.Reshape((S, H, -1))
