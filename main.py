@@ -59,7 +59,7 @@ if __name__=="__main__":
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
 
-    num_epochs = 1
+    num_epochs = 200
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1
@@ -112,7 +112,7 @@ if __name__=="__main__":
 
     # Fit the model
     hist = model.fit(train, epochs=num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback], use_multiprocessing=True)
-    model.save('saved_models/itransformer', save_format='tf')
+    #model.save('saved_models/itransformer.keras')
     plot_training_history(hist)
     
     day_to_predict = encoded_data.iloc[:, :74].tail(seq_length)

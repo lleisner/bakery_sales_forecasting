@@ -43,7 +43,7 @@ class Model(keras.Model):
     def call(self, x):
         # Normalization from Non-stationary Transformer
         x_enc, x_mark_enc = x
-        print("Input shape received by itransformer:", (x_enc.shape, x_mark_enc.shape))
+
         means = tf.reduce_mean(x_enc, axis=1, keepdims=True)
         x_enc = x_enc - means
         stdev = tf.sqrt(tf.math.reduce_variance(x_enc, axis=1, keepdims=True) + 1e-5)
@@ -57,7 +57,7 @@ class Model(keras.Model):
         # Embedding
         # B L N -> B N E                
         enc_out = self.enc_embedding(x_enc, x_mark_enc)  # covariates (e.g timestamp) can be also embedded as tokens
-        print('Shape encoder_out:', enc_out.shape)
+
         # B N E -> B N E               
         # the dimensions of embedded time series have been inverted, and then processed by native attn, layernorm and ffn modules
         enc_out, attns = self.encoder(enc_out, attn_mask=None)
@@ -66,7 +66,6 @@ class Model(keras.Model):
         dec_out = self.projector(enc_out)
         dec_out = tf.transpose(dec_out, perm=[0, 2, 1])[:, :, :N]  # filter the covariates 
         # De-Normalization from Non-stationary Transformer
-        print("output shape before norm:", dec_out.shape)
         
         if self.configs.use_norm:
             # De-Normalization in TensorFlow
@@ -80,7 +79,6 @@ class Model(keras.Model):
 
             dec_out = dec_out * stdev_t + means_t  # De-normalization computation
 
-        print("output shape after norm:", dec_out.shape)
         return dec_out
         #return dec_out[:, -self.configs.pred_len:, :]  # [B, L, D]
 
@@ -102,8 +100,7 @@ class Model(keras.Model):
             # restrict loss calculation to pred_len
             outputs = outputs[:, -self.configs.pred_len:, :]
             batch_y = batch_y[:, -self.configs.pred_len:, :]
-            print("shape of batch_y:", batch_y.shape)
-            print("shape of outputs:", outputs.shape)
+
             loss = self.compute_loss(y = batch_y, y_pred=outputs)
 
         gradients = tape.gradient(loss, self.trainable_variables)
