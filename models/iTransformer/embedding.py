@@ -14,6 +14,6 @@ class DataEmbeddingInverted(tf.Module):
             x = self.value_embedding(x)
         else:
             # the potential to take covariates (e.g. timestamps) as tokens
-            x = self.value_embedding(tf.concat([x, tf.transpose(x_mark, perm=[0, 2, 1])], axis=2))
+            x = self.value_embedding(tf.concat([x, tf.transpose(x_mark, perm=[0, 2, 1])], axis=1))
         # x: [Batch Time d_model]
         return self.dropout(x)

@@ -27,8 +27,8 @@ class Model(keras.Model):
                     AttentionLayer(
                         FullAttention(False, configs.factor, attention_dropout=configs.dropout,
                                       output_attention=configs.output_attention), configs.d_model, configs.n_heads),
-                    configs.d_model,
-                    configs.d_ff,
+                    d_model=configs.d_model,
+                    d_ff=configs.d_ff,
                     dropout=configs.dropout,
                     activation=configs.activation
                 ) for l in range(configs.e_layers)
@@ -36,14 +36,16 @@ class Model(keras.Model):
             norm_layer=keras.layers.LayerNormalization()
         )
         self.projector = keras.layers.Dense(configs.pred_len, use_bias=True)
+        
 
 
     @tf.function
-    def call(self, x_enc, x_mark_enc):
+    def call(self, x):
         # Normalization from Non-stationary Transformer
+        x_enc, x_mark_enc = x
         means = tf.reduce_mean(x_enc, axis=1, keepdims=True)
         x_enc = x_enc - means
-        stdev = tf.sqrt(tf.math.reduce_variance(x_enc, axis=1, keepdims=True, unbiased=False) + 1e-5)
+        stdev = tf.sqrt(tf.math.reduce_variance(x_enc, axis=1, keepdims=True) + 1e-5)
         x_enc /= stdev
 
         _, _, N = x_enc.shape  # B L N
@@ -88,9 +90,12 @@ class Model(keras.Model):
             loss = self.compute_loss(outputs, batch_y)
 
         gradients = tape.gradient(loss, self.trainable_variables)
-        if self.configs.use_amp:
-            gradients = scaler.get_scaled_gradients(gradients)
+        
+        #if self.configs.use_amp:
+         #   gradients = scaler.get_scaled_gradients(gradients)
+        
         #gradients = [tf.clip_by_value(grad, -self.configs.clip, self.configs.clip) for grad in gradients]
+       
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
         for metric in self.metrics:
             if metric.name == "loss":
@@ -124,6 +129,6 @@ class Model(keras.Model):
     @tf.function
     def _process_attention_output(self, batch_x, batch_x_mark):
         if self.configs.output_attention:
-            return  self(batch_x, batch_x_mark)[0]
+            return  self((batch_x, batch_x_mark))[0]
         else:
-            return self(batch_x, batch_x_mark)
+            return self((batch_x, batch_x_mark))

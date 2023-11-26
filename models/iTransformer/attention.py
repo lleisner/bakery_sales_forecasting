@@ -4,7 +4,7 @@ import numpy as np
 
 class AttentionLayer(layers.Layer):
     def __init__(self, attention, d_model, n_heads, d_keys=None, d_values=None):
-        super(AttentionLayer, self).__init()
+        super(AttentionLayer, self).__init__()
 
         d_keys = d_keys or (d_model // n_heads)
         d_values = d_values or (d_model // n_heads)
@@ -15,15 +15,24 @@ class AttentionLayer(layers.Layer):
         self.value_projection = layers.Dense(d_values * n_heads)
         self.out_projection = layers.Dense(d_model)
         self.n_heads = n_heads
+        
 
     def call(self, queries, keys, values, attn_mask, tau=None, delta=None):
         B, L, _ = queries.shape
         _, S, _ = keys.shape
         H = self.n_heads
+        
+        querie_reshape = layers.Reshape((L, H, -1))
+        keys_reshape = layers.Reshape((S, H, -1))
+        values_reshape = layers.Reshape((S, H, -1))
+        
+        queries = querie_reshape(self.query_projection(queries))
+        keys = keys_reshape(self.key_projection(keys))
+        values = values_reshape(self.value_projection(values))
 
-        queries = tf.reshape(self.query_projection(queries), (B, L, H, -1))
-        keys = tf.reshape(self.key_projection(keys), (B, S, H, -1))
-        values = tf.reshape(self.value_projection(values), (B, S, H, -1))
+      #  queries = tf.reshape(self.query_projection(queries), (B, L, H, -1))
+      #  keys = tf.reshape(self.key_projection(keys), (B, S, H, -1))
+       # values = tf.reshape(self.value_projection(values), (B, S, H, -1))
 
         out, attn = self.inner_attention(
             queries,
@@ -33,7 +42,9 @@ class AttentionLayer(layers.Layer):
             tau=tau,
             delta=delta
         )
-        out = tf.reshape(out, (B, L, -1))
+        #out = tf.reshape(out, (B, L, -1))
+        out_reshape = layers.Reshape((L, -1))
+        out = out_reshape(out)
 
         return self.out_projection(out), attn
     

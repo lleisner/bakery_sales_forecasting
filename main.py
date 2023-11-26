@@ -79,7 +79,8 @@ if __name__=="__main__":
 
     #model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=custom_time_series_loss(future_steps, length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=loss, metrics=[tf.keras.metrics.MeanSquaredError()], weighted_metrics=[])
-    model.summary()
+    #model.summary()
+    
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='loss',  # Monitor loss
         patience=50,         # Number of epochs with no improvement to wait
