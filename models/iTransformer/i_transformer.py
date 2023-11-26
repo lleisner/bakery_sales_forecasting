@@ -24,9 +24,9 @@ class Model(keras.Model):
         self.encoder = Encoder(
             [
                 EncoderLayer(
-                    AttentionLayer(
-                        FullAttention(False, configs.factor, attention_dropout=configs.dropout,
-                                      output_attention=configs.output_attention), configs.d_model, configs.n_heads),
+                    attention=AttentionLayer(
+                                    FullAttention(False, configs.factor, attention_dropout=configs.dropout,
+                                    output_attention=configs.output_attention), configs.d_model, configs.n_heads),
                     d_model=configs.d_model,
                     d_ff=configs.d_ff,
                     dropout=configs.dropout,
