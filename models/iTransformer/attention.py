@@ -45,7 +45,7 @@ class AttentionLayer(layers.Layer):
         #out = tf.reshape(out, (B, L, -1))
         out_reshape = layers.Reshape((L, -1))
         out = out_reshape(out)
-
+        #print("shape our pre-out_projection:", out.shape)
         return self.out_projection(out), attn
     
 class FullAttention(layers.Layer):

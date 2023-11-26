@@ -33,8 +33,8 @@ if __name__=="__main__":
     
 
     # Set some parameters
-    past_days = 31
-    future_days = 1
+    past_days = 16
+    future_days = 2
     length_of_day = 16
     strides = length_of_day
     future_steps = future_days * length_of_day

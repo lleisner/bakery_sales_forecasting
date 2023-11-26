@@ -56,7 +56,7 @@ class Model(keras.Model):
         # Embedding
         # B L N -> B N E                
         enc_out = self.enc_embedding(x_enc, x_mark_enc)  # covariates (e.g timestamp) can be also embedded as tokens
-
+        print('Shape encoder_out:', enc_out.shape)
         # B N E -> B N E               
         # the dimensions of embedded time series have been inverted, and then processed by native attn, layernorm and ffn modules
         enc_out, attns = self.encoder(enc_out, attn_mask=None)
@@ -65,9 +65,24 @@ class Model(keras.Model):
         dec_out = self.projector(enc_out)
         dec_out = tf.transpose(dec_out, perm=[0, 2, 1])[:, :, :N]  # filter the covariates 
         # De-Normalization from Non-stationary Transformer
-        dec_out = dec_out * (stdev[:, 0, tf.newaxis].repeat(self.configs.pred_len, axis=1))
-        dec_out = dec_out + (means[:, 0, tf.newaxis].repeat(self.configs.pred_len, axis=1))
-        return dec_out[:, -self.configs.pred_len:, :]  # [B, L, D]
+        print("output shape before norm:", dec_out.shape)
+        
+        if self.configs.use_norm:
+            # De-Normalization in TensorFlow
+            stdev_t = stdev[:, 0, :]  # Selecting standard deviations for each sample in the batch
+            stdev_t = tf.expand_dims(stdev_t, axis=1)  # Equivalent to unsqueeze(1) in PyTorch
+            stdev_t = tf.tile(stdev_t, [1, self.pred_len, 1])  # Equivalent to repeat() in PyTorch
+            
+            means_t = means[:, 0, :]  # Selecting means for each sample in the batch
+            means_t = tf.expand_dims(means_t, axis=1)  # Equivalent to unsqueeze(1) in PyTorch
+            means_t = tf.tile(means_t, [1, self.pred_len, 1])  # Equivalent to repeat() in PyTorch
+
+            dec_out = dec_out * stdev_t + means_t  # De-normalization computation
+
+        print("output shape after norm:", dec_out.shape)
+        return dec_out
+        #return dec_out[:, -self.configs.pred_len:, :]  # [B, L, D]
+
 
 
     @tf.function
@@ -82,12 +97,13 @@ class Model(keras.Model):
         with tf.GradientTape() as tape:
 
             outputs = self._process_attention_output(batch_x, batch_x_mark)
-
+            
             # restrict loss calculation to pred_len
             outputs = outputs[:, -self.configs.pred_len:, :]
             batch_y = batch_y[:, -self.configs.pred_len:, :]
-
-            loss = self.compute_loss(outputs, batch_y)
+            print("shape of batch_y:", batch_y.shape)
+            print("shape of outputs:", outputs.shape)
+            loss = self.compute_loss(y = batch_y, y_pred=outputs)
 
         gradients = tape.gradient(loss, self.trainable_variables)
         
@@ -128,6 +144,8 @@ class Model(keras.Model):
 
     @tf.function
     def _process_attention_output(self, batch_x, batch_x_mark):
+        return self((batch_x, batch_x_mark))
+    
         if self.configs.output_attention:
             return  self((batch_x, batch_x_mark))[0]
         else:

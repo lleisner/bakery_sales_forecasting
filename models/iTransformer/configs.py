@@ -11,3 +11,4 @@ class Configurator:
         self.activation = 'gelu'
         self.e_layers = 2
         self.use_amp = True
+        self.use_norm = True
