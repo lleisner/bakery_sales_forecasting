@@ -20,7 +20,7 @@ class EncoderLayer(layers.Layer):
         self.norm2 = layers.LayerNormalization(epsilon=1e-6)
         self.dropout = layers.Dropout(rate=dropout)
         self.activation = layers.ReLU() if activation == "relu" else layers.ELU()
-
+    """
     @tf.function
     def call(self, x, attn_mask=None, tau=None, delta=None):
         #print("what the hell is going on here")
@@ -34,7 +34,7 @@ class EncoderLayer(layers.Layer):
         y = self.dropout(self.conv2(tf.transpose(y, perm=[0, 2, 1])))
         return self.norm2(x), attn
         #return self.norm2(x + y), attn
-
+    """
     @tf.function
     def call(self, x, attn_mask=None, tau=None, delta=None):
         # x (B, N, E) batch, number of variates, d_model

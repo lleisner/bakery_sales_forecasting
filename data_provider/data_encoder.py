@@ -70,6 +70,11 @@ class LabelEncoder(BaseEncoder):
         encoding = encoder.transform(data)
         encoding = pd.DataFrame(encoding, index=data.index, columns=data.columns)
         return encoding
+    
+    def decode_data(self, data: pd.DataFrame):
+        coder = self.load_encoder()
+        coder.inverse_transform(data)
+        return coder.inverse_transform(data)
 
 
 class AutoEncoder(BaseEncoder):
@@ -174,3 +179,8 @@ class DataProcessor:
         encoded_data = OrderedDict((key, encoded_data[key]) for key in new_order)
         return pd.concat(encoded_data.values(), axis=1).dropna()
 
+    def decode_data(self, data: pd.DataFrame):
+        decoder = self.encoders['labels']
+        return pd.DataFrame(decoder.decode_data(data), columns=self.data['labels'].columns).astype(int)
+    
+        

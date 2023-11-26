@@ -24,24 +24,25 @@ if __name__=="__main__":
     data_directory = 'data/test'
     file_name = 'dataset.csv'
     file_path = os.path.join(data_directory, file_name)
-
-    if os.path.exists(file_path):
-        # Load existing data
-        df = pd.read_csv(file_path, index_col=0, parse_dates=True)
-        print(f"Loaded existing dataset from {file_path}")
-    else:
-        # Get data if the file doesn't exist
-        provider = DataMerger()
-        df = provider.merge()
-    
-        # Create directory if it doesn't exist
-        if not os.path.exists(data_directory):
-            os.makedirs(data_directory)
+    if False:
+        if os.path.exists(file_path):
+            # Load existing data
+            df = pd.read_csv(file_path, index_col=0, parse_dates=True)
+            print(f"Loaded existing dataset from {file_path}")
+        else:
+            # Get data if the file doesn't exist
+            provider = DataMerger()
+            df = provider.merge()
         
-        # Save the dataset to file
-        df.to_csv(file_path, index=False)
-        print(f"Saved dataset to {file_path}")
-
+            # Create directory if it doesn't exist
+            if not os.path.exists(data_directory):
+                os.makedirs(data_directory)
+            
+            # Save the dataset to file
+            df.to_csv(file_path, index=False)
+            print(f"Saved dataset to {file_path}")
+    provider = DataMerger()
+    df = provider.merge()
 
     # Encode data
     data_processor = DataProcessor(df)
@@ -58,7 +59,7 @@ if __name__=="__main__":
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
 
-    num_epochs = 100
+    num_epochs = 1
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1
@@ -94,10 +95,13 @@ if __name__=="__main__":
 
     configs = Configurator()
     model = Model(configs)
+   # model = tf.keras.models.load_model('saved_models/itransformer')
 
     #model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=custom_time_series_loss(future_steps, length_of_day), metrics=[tf.keras.metrics.MeanSquaredError()])
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=loss, metrics=[tf.keras.metrics.MeanSquaredError()], weighted_metrics=[])
     #model.summary()
+    
+    
     
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='loss',  # Monitor loss
@@ -108,7 +112,21 @@ if __name__=="__main__":
 
     # Fit the model
     hist = model.fit(train, epochs=num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback], use_multiprocessing=True)
-    #model.save('saved_models/lstm_model.h5')
+    model.save('saved_models/itransformer', save_format='tf')
     plot_training_history(hist)
     
+    day_to_predict = encoded_data.iloc[:, :74].tail(seq_length)
+    print(day_to_predict.shape)
+    day_x, day_x_mark = day_to_predict.iloc[:, :52].values, day_to_predict.iloc[:, 52:].values
+    
+    day_x, day_x_mark = np.expand_dims(day_x, axis=0), np.expand_dims(day_x_mark, axis=0)
+    
+    day_x, day_x_mark = tf.convert_to_tensor(day_x), tf.convert_to_tensor(day_x_mark)
+    
+    
+    prediction = model.predict((day_x, day_x_mark))
+    df = pd.DataFrame(np.squeeze(prediction))
+    print(df)
+    decoded_pred = data_processor.decode_data(df)
+    print(decoded_pred)
     

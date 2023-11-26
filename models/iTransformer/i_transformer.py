@@ -43,6 +43,7 @@ class Model(keras.Model):
     def call(self, x):
         # Normalization from Non-stationary Transformer
         x_enc, x_mark_enc = x
+        print("Input shape received by itransformer:", (x_enc.shape, x_mark_enc.shape))
         means = tf.reduce_mean(x_enc, axis=1, keepdims=True)
         x_enc = x_enc - means
         stdev = tf.sqrt(tf.math.reduce_variance(x_enc, axis=1, keepdims=True) + 1e-5)
