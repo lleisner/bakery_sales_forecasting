@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
+import os
 from tensorboard.plugins.hparams import api as hp
 
 from utils.loss import custom_time_series_loss, CustomLoss
@@ -19,10 +20,27 @@ from data_provider.data_pipeline import DataPipeline
 
 if __name__=="__main__":
 
-    # Get data
-    provider = DataMerger()
-    df = provider.merge()
-    print(f'dataset: {df}')
+
+    data_directory = 'data/test'
+    file_name = 'dataset.csv'
+    file_path = os.path.join(data_directory, file_name)
+
+    if os.path.exists(file_path):
+        # Load existing data
+        df = pd.read_csv(file_path, index_col=0, parse_dates=True)
+        print(f"Loaded existing dataset from {file_path}")
+    else:
+        # Get data if the file doesn't exist
+        provider = DataMerger()
+        df = provider.merge()
+    
+        # Create directory if it doesn't exist
+        if not os.path.exists(data_directory):
+            os.makedirs(data_directory)
+        
+        # Save the dataset to file
+        df.to_csv(file_path, index=False)
+        print(f"Saved dataset to {file_path}")
 
 
     # Encode data
@@ -40,7 +58,7 @@ if __name__=="__main__":
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
 
-    num_epochs = 200
+    num_epochs = 100
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1

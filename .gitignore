@@ -7,5 +7,8 @@ __pycache__/
 # Ignore logs from TensorBoard
 logs/
 
-#Ignore saved models
+# Ignore saved models
 saved_models/
+
+# Ignore dataset file
+test/
