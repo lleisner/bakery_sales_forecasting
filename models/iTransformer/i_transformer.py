@@ -35,8 +35,7 @@ class Model(keras.Model):
             ],
             norm_layer=keras.layers.LayerNormalization()
         )
-        self.projector = keras.layers.Dense(configs.pred_len, use_bias=True)
-        
+        self.projector = keras.layers.Dense(configs.pred_len, use_bias=True)      
 
 
     @tf.function

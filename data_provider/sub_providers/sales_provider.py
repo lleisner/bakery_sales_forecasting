@@ -27,7 +27,7 @@ class SalesDataProvider(DataProvider):
         Returns:
         - pd.DataFrame: Concatenated and processed DataFrame containing sales data.
         """
-        xls = pd.ExcelFile(file_path)
+        xls = pd.ExcelFile(file_path, engine='openpyxl')
         dataframes = []
         columns = []
 

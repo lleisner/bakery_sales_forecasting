@@ -59,7 +59,7 @@ if __name__=="__main__":
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
 
-    num_epochs = 200
+    num_epochs = 2
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1
@@ -70,6 +70,7 @@ if __name__=="__main__":
     validation_steps = max((encoded_data.shape[0] // strides) * validation_size // batch_size, 1) 
 
     log_dir = "logs/fit/"
+    checkpoint_path = 'saved_models/i_transformer_weights/checkpoint.ckpt'
 
     
     # Create train validation test splits
@@ -101,19 +102,29 @@ if __name__=="__main__":
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=loss, metrics=[tf.keras.metrics.MeanSquaredError()], weighted_metrics=[])
     #model.summary()
     
-    
+    checkpoint = keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_path,
+        monitor='val_loss',
+        save_best_only=True,
+        save_weights_only=True,
+        verbose=1
+    )
     
     early_stopping = keras.callbacks.EarlyStopping(
-        monitor='loss',  # Monitor loss
+        monitor='val_loss',  # Monitor loss
         patience=50,         # Number of epochs with no improvement to wait
         restore_best_weights=True  # Restore the best weights when stopped
     )
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+    
+    model.load_weights(checkpoint_path)
 
     # Fit the model
-    hist = model.fit(train, epochs=num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback], use_multiprocessing=True)
+    hist = model.fit(train, epochs=num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback, checkpoint], use_multiprocessing=True)
     #model.save('saved_models/itransformer.keras')
     plot_training_history(hist)
+    
+    model.evaluate(test)
     
     day_to_predict = encoded_data.iloc[:, :74].tail(seq_length)
     print(day_to_predict.shape)
