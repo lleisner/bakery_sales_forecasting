@@ -26,8 +26,12 @@ if __name__=="__main__":
 
     # Encode data
     data_processor = DataProcessor(df)
-    #encoded_data = data_processor.fit_and_encode()
-    encoded_data = data_processor.encode()
+
+    try:
+        encoded_data = data_processor.encode()
+    except: 
+        encoded_data  = data_processor.fit_and_encode()
+        
     print(f'encoded dataset: {encoded_data}')
     
     # Set some parameters
@@ -38,7 +42,7 @@ if __name__=="__main__":
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
 
-    num_epochs = 2
+    num_epochs = 20
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1
