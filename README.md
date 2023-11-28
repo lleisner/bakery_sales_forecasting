@@ -32,6 +32,19 @@ The dataset ranges from 01.01.2017 to 31.08.2023 in hourly intervals. Considerin
 - holidays: (holidays of all Bundesländer)                          (16)
 - sales: (sales for a selected range / each item)                   (50 / 200+)
 
+## Models
+
+The foundational model driving this project is the iTransformer architecture, initially introduced in the paper accessible at this link: https://arxiv.org/pdf/2310.06625.pdf. This architecture, rooted in the encoder segment of a transformer, introduces a pivotal concept:
+
+Rather than adhering to the conventional method of modeling global dependencies across temporal tokens in time series data (where a token represents multiple variables at a specific timestamp), the iTransformer architecture restructures this approach. It embeds the time series data into variate tokens, where a token signifies multiple timestamps of a single variable.
+
+This innovative restructuring, as per the paper's insights, yields performance enhancements by:
+
+- Maximizing the utilization of increased lookback windows more effectively, surpassing the limitations of the base transformer's attention mechanism, especially when handling growing inputs.
+- Generating more comprehensive attention maps that encapsulate multivariate correlations, thereby enhancing generalization capabilities across diverse variables.
+- Optimizing the use of the feed-forward network to acquire nonlinear representations for each variate token.
+
+The reported results showcase a notable performance boost of over 30% compared to the base transformer architecture. Furthermore, the iTransformer architecture outperforms other competitive (transformer-based) architectures by a significant margin.
 
 ## Getting Started
 
