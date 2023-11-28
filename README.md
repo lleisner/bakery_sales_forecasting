@@ -25,7 +25,7 @@ The repository is organized as follows:
 
 ## Dataset
 
-The dataset ranges from 01.01.2017 to 31.08.2023 in hourly intervals. Considering relevant times for sales in the bakery and closing periods, this results in roughly 20.000 timesteps. Each timestep cosists of the following features: 
+The dataset ranges from 01.01.2017 to 31.08.2023 in hourly intervals. Considering relevant times for sales in the bakery and closing periods, this results in roughly 30.000 timesteps. Each timestep cosists of the following features: 
 
 - weather: (temperature, precipitation, wind_speed, wind_direction) (4)
 - tourism: (time of arrivals, departues of each ferry)              (6)

@@ -18,31 +18,11 @@ from data_provider.data_encoder import DataProcessor
 from data_provider.data_pipeline import DataPipeline
 
 
+
 if __name__=="__main__":
 
-
-    data_directory = 'data/test'
-    file_name = 'dataset.csv'
-    file_path = os.path.join(data_directory, file_name)
-    if False:
-        if os.path.exists(file_path):
-            # Load existing data
-            df = pd.read_csv(file_path, index_col=0, parse_dates=True)
-            print(f"Loaded existing dataset from {file_path}")
-        else:
-            # Get data if the file doesn't exist
-            provider = DataMerger()
-            df = provider.merge()
-        
-            # Create directory if it doesn't exist
-            if not os.path.exists(data_directory):
-                os.makedirs(data_directory)
-            
-            # Save the dataset to file
-            df.to_csv(file_path, index=False)
-            print(f"Saved dataset to {file_path}")
     provider = DataMerger()
-    df = provider.merge()
+    df = provider.get_data()
 
     # Encode data
     data_processor = DataProcessor(df)
@@ -50,7 +30,6 @@ if __name__=="__main__":
     encoded_data = data_processor.encode()
     print(f'encoded dataset: {encoded_data}')
     
-
     # Set some parameters
     past_days = 16
     future_days = 2
@@ -124,6 +103,7 @@ if __name__=="__main__":
     #model.save('saved_models/itransformer.keras')
     plot_training_history(hist)
     
+    print("model evaluation:")
     model.evaluate(test)
     
     day_to_predict = encoded_data.iloc[:, :74].tail(seq_length)

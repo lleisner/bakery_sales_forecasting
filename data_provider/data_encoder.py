@@ -60,10 +60,9 @@ class WeatherEncoder(BaseEncoder):
         encoding = pd.DataFrame(encoder.transform(data), index=data.index, columns=data.columns)
         encoding = pd.concat([sin_cos_coding, encoding], axis=1).drop(['wind_direction'], axis=1)
         return encoding
-    
 
-class LabelEncoder(BaseEncoder):
-    def __init__(self, encoder_filename: str='saved_models/label_encoding.save'):
+class SalesEncoder(BaseEncoder):
+    def __init__(self, encoder_filename: str='saved_models/sales_encoding.save'):
         super().__init__(encoder_filename)
 
     def _encode_data(self, data: pd.DataFrame, encoder: StandardScaler) -> pd.DataFrame:
@@ -71,6 +70,11 @@ class LabelEncoder(BaseEncoder):
         encoding = pd.DataFrame(encoding, index=data.index, columns=data.columns)
         return encoding
     
+
+class LabelEncoder(SalesEncoder):
+    def __init__(self, encoder_filename: str='saved_models/label_encoding.save'):
+        super().__init__(encoder_filename)
+
     def decode_data(self, data: pd.DataFrame):
         coder = self.load_encoder()
         coder.inverse_transform(data)
@@ -146,16 +150,17 @@ class DataProcessor:
             'fahrten': data[['SP1_an', 'SP2_an', 'SP4_an', 'SP1_ab', 'SP2_ab', 'SP4_ab']],
             'labels': data[[col for col in data.columns if str(col).isnumeric()]]
         }
-
+        self._create_sales_features()
+        
         self.encoders = {
             'datetime': TemporalEncoder(),
             'weather': WeatherEncoder(),
             'ferien': FerienEncoder(),
             'fahrten': FahrtenEncoder(),
             'labels': LabelEncoder(),
-            'sales': LabelEncoder()
+            'sales': SalesEncoder()
         }
-        self._create_sales_features()
+        
         
     def _create_sales_features(self) -> None:
         future_days = 1
@@ -174,6 +179,7 @@ class DataProcessor:
         for key, data in self.data.items():
             encoder = self.encoders[key]
             encoded_data[key] = encoder.fit_and_encode(data) if fit_encoder else encoder.encode(data)
+            print(key, "encoder done")
             
         new_order = ['sales','datetime','weather','ferien','fahrten','labels']
         encoded_data = OrderedDict((key, encoded_data[key]) for key in new_order)
