@@ -40,9 +40,8 @@ class FerienDataProvider(BaseProvider):
         all_states_hourly = all_states.resample('H').ffill()
         return all_states_hourly
 
-    
-    
 if __name__ == "__main__":
     processor = FerienDataProvider()
     df = processor.get_data()
     print(df)
+    

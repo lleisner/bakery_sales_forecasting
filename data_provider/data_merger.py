@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 
+from data_provider.time_configs import TimeConfigs
 from data_provider.sub_providers import (
     SalesDataProvider,
     FahrtenDataProvider,
@@ -9,28 +10,37 @@ from data_provider.sub_providers import (
 )
 
 class DataMerger:
-    def __init__(self, data_directory='data/test', file_name='dataset_with_index.csv'):
-        self.providers = [
-            SalesDataProvider(),
-            FahrtenDataProvider(),
-            WeatherDataProvider(),
-            FerienDataProvider()
-            ]
+    def __init__(self, configs, data_directory='data/test', file_name='dataset_with_index.csv'):
+        self.providers = {
+            'sales': SalesDataProvider(),
+            'fahrten': FahrtenDataProvider(),
+            'weather': WeatherDataProvider(),
+            'ferien': FerienDataProvider(),
+        }
         self.data_directory = data_directory
         self.file_name = file_name
-        
+        self.configs = configs
         
     def merge(self):
         data = []
-        for provider in self.providers:
+        for key, provider in self.providers.items():
             data.append(provider.get_data())
         data = pd.concat(data, axis=1, join='outer').asfreq(freq='H').fillna(0)
         data = self.filter_time_and_date(data)
         return data
     
-    def filter_time_and_date(self, df, start_date: str='2019-01-01', end_date: str='2023-08-31', start_time: str = '06:00:00', end_time: str = '21:00:00') -> pd.DataFrame:
-        df = df[(df.index >= pd.Timestamp(start_date + ' ' + start_time)) & (df.index <= pd.Timestamp(end_date + ' ' + end_time))]
-        df = df.between_time(start_time, end_time)
+    def save_to_files(self):
+        directory = 'data/processed_data'
+        for key, provider in self.providers.items():
+            df = provider.get_data()
+            df = self.filter_time_and_date(df)    
+            file_path = os.path.join(directory, f'{key}_data.csv')
+            df.to_csv(file_path)
+        
+    
+    def filter_time_and_date(self, df) -> pd.DataFrame:
+        df = df[(df.index >= pd.Timestamp(self.configs.start_date + ' ' + self.configs.start_time)) & (df.index <= pd.Timestamp(self.configs.end_date + ' ' + self.configs.end_time))]
+        df = df.between_time(self.configs.start_time, self.configs.end_time)
         return df
     
     def get_data(self):
@@ -54,6 +64,8 @@ class DataMerger:
         return df
             
 if __name__ == "__main__":
-    merger = DataMerger()
-    data = merger.merge()
-    print(data)
+    configs = TimeConfigs()
+    merger = DataMerger(configs=configs)
+    #data = merger.merge()
+    merger.save_to_files()
+    #print(data)

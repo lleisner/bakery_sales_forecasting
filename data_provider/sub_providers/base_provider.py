@@ -71,3 +71,11 @@ class DataProvider(BaseProvider):
         df = self._read_dir()
         df = self._process_data(df)
         return df
+    
+    def save_to_file(self, filename):
+        directory = 'data/processed_data'
+        file_path = os.path.join(directory, filename)
+        data = self.get_data()
+        data.to_csv(file_path)
+    
+

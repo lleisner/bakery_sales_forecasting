@@ -12,3 +12,6 @@ saved_models/
 
 # Ignore dataset file
 test/
+
+# Ignore unfinished code
+data_fetcher/

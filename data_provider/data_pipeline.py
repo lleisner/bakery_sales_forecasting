@@ -44,6 +44,7 @@ class BatchGenerator(BaseGenerator):
         return batch_x, batch_y, batch_x_mark
 
     def preprocess(self, dataset: tf.data.Dataset):
+        #dataset = dataset.shuffle(buffer_size=1000, seed=42)
         #dataset = dataset.map(self._get_feature_label_pairs, num_parallel_calls=tf.data.AUTOTUNE)
         dataset = dataset.map(self._get_variate_covariate_tuple, num_parallel_calls=tf.data.AUTOTUNE)
         dataset = dataset.batch(self.batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)

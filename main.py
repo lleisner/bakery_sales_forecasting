@@ -16,12 +16,14 @@ from models.iTransformer.configs import Configurator
 from data_provider.data_merger import DataMerger
 from data_provider.data_encoder import DataProcessor
 from data_provider.data_pipeline import DataPipeline
+from data_provider.time_configs import TimeConfigs
 
 
 
 if __name__=="__main__":
 
-    provider = DataMerger()
+    time_configs = TimeConfigs()
+    provider = DataMerger(configs=time_configs)
     df = provider.get_data()
 
     # Encode data
@@ -42,7 +44,7 @@ if __name__=="__main__":
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
 
-    num_epochs = 20
+    num_epochs = 5
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1
@@ -51,6 +53,8 @@ if __name__=="__main__":
     num_features = encoded_data.shape[1] - num_targets
     steps_per_epoch = (encoded_data.shape[0] // strides) * (1-(test_size + validation_size)) // batch_size -1
     validation_steps = max((encoded_data.shape[0] // strides) * validation_size // batch_size, 1) 
+    test_steps = max((encoded_data.shape[0] // strides) * test_size // batch_size, 1) 
+
 
     log_dir = "logs/fit/"
     checkpoint_path = 'saved_models/i_transformer_weights/checkpoint.ckpt'
@@ -108,7 +112,7 @@ if __name__=="__main__":
     plot_training_history(hist)
     
     print("model evaluation:")
-    model.evaluate(test)
+    model.evaluate(test, steps=test_steps)
     
     day_to_predict = encoded_data.iloc[:, :74].tail(seq_length)
     print(day_to_predict.shape)
@@ -121,7 +125,7 @@ if __name__=="__main__":
     
     prediction = model.predict((day_x, day_x_mark))
     df = pd.DataFrame(np.squeeze(prediction))
-    print(df)
+
     decoded_pred = data_processor.decode_data(df)
     print(decoded_pred)
     
