@@ -12,7 +12,7 @@ class EncoderLayer(layers.Layer):
             use_bias=False,
         )
         self.conv2 = layers.Conv1D(
-            filters=74, # had to change this, in the original code, filters=d_model, but i dont understand why and it messes up the dim of the output
+            filters=d_model, # had to change this, in the original code, filters=d_model, but i dont understand why and it messes up the dim of the output
             kernel_size=1,
             use_bias=False,
         )
@@ -20,37 +20,36 @@ class EncoderLayer(layers.Layer):
         self.norm2 = layers.LayerNormalization(epsilon=1e-6)
         self.dropout = layers.Dropout(rate=dropout)
         self.activation = layers.ReLU() if activation == "relu" else layers.ELU()
-    """
+
+    """ 
     @tf.function
     def call(self, x, attn_mask=None, tau=None, delta=None):
-        #print("what the hell is going on here")
+        # x (B, N, E) batch, number of variates, d_model
         new_x, attn = self.attention(x, x, x, attn_mask=attn_mask, tau=tau, delta=delta)
-        #print("Shape post projection:", new_x.shape)
-
+        print("Shape post projection:", new_x.shape)
         x = x + self.dropout(new_x)
 
-        y = x = self.norm1(x)
-        y = self.dropout(self.activation(self.conv1(tf.transpose(y, perm=[0, 2, 1]))))
-        y = self.dropout(self.conv2(tf.transpose(y, perm=[0, 2, 1])))
-        return self.norm2(x), attn
-        #return self.norm2(x + y), attn
+        y = self.norm1(x)
+        #y = tf.transpose(y, perm=[0, 2, 1])  # Transpose for TensorFlow's Conv1D input format batch_size, seq_len, num_features
+        print("conv1 input shape:", y.shape)
+        y = self.dropout(self.activation(self.conv1(y)))
+        print("conv2 input shape:", y.shape)
+        y = self.dropout(self.conv2(y))
+        print("conv2 output shape:", y.shape)
+        #y = tf.transpose(y, perm=[0, 2, 1])  # Transpose back to original shape
+        print("y shape:", y.shape)
+        return self.norm2(x + y), attn
     """
     @tf.function
     def call(self, x, attn_mask=None, tau=None, delta=None):
         # x (B, N, E) batch, number of variates, d_model
         new_x, attn = self.attention(x, x, x, attn_mask=attn_mask, tau=tau, delta=delta)
-        #print("Shape post projection:", new_x.shape)
         x = x + self.dropout(new_x)
 
         y = self.norm1(x)
-        y = tf.transpose(y, perm=[0, 2, 1])  # Transpose for TensorFlow's Conv1D input format batch_size, seq_len, num_features
-        #print("conv1 input shape:", y.shape)
         y = self.dropout(self.activation(self.conv1(y)))
-        #print("conv2 input shape:", y.shape)
         y = self.dropout(self.conv2(y))
-        #print("conv2 output shape:", y.shape)
-        y = tf.transpose(y, perm=[0, 2, 1])  # Transpose back to original shape
-        #print("y shape:", y.shape)
+
         return self.norm2(x + y), attn
 
 

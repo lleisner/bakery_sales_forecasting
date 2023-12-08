@@ -44,7 +44,7 @@ if __name__=="__main__":
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
 
-    num_epochs = 5
+    num_epochs = 100
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1
@@ -104,7 +104,7 @@ if __name__=="__main__":
     )
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
     
-    model.load_weights(checkpoint_path)
+    #model.load_weights(checkpoint_path)
 
     # Fit the model
     hist = model.fit(train, epochs=num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback, checkpoint], use_multiprocessing=True)

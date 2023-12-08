@@ -10,7 +10,7 @@ from data_provider.sub_providers import (
 )
 
 class DataMerger:
-    def __init__(self, configs, data_directory='data/test', file_name='dataset_with_index.csv'):
+    def __init__(self, configs, data_directory='data/test', file_name='dataset.csv'):
         self.providers = {
             'sales': SalesDataProvider(),
             'fahrten': FahrtenDataProvider(),
@@ -45,7 +45,7 @@ class DataMerger:
     
     def get_data(self):
         file_path = os.path.join(self.data_directory, self.file_name)
-
+        print(file_path)
         if not os.path.exists(file_path):
             # Create data if the file doesn't exist yet
             df = self.merge()
