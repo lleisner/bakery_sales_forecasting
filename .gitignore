@@ -14,4 +14,4 @@ saved_models/
 test/
 
 # Ignore unfinished code
-data_fetcher/
+#data_fetcher/
