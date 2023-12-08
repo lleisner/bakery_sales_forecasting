@@ -37,14 +37,14 @@ if __name__=="__main__":
     print(f'encoded dataset: {encoded_data}')
     
     # Set some parameters
-    past_days = 16
-    future_days = 2
+    past_days = 32
+    future_days = 4
     length_of_day = 16
     strides = length_of_day
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
 
-    num_epochs = 100
+    num_epochs = 1000
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1
@@ -99,7 +99,7 @@ if __name__=="__main__":
     
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='val_loss',  # Monitor loss
-        patience=50,         # Number of epochs with no improvement to wait
+        patience=100,         # Number of epochs with no improvement to wait
         restore_best_weights=True  # Restore the best weights when stopped
     )
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)

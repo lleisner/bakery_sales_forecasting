@@ -1,7 +1,7 @@
 class Configurator:
     def __init__(self):
-        self.seq_len = 256
-        self.pred_len = 32
+        self.seq_len = 512
+        self.pred_len = 64
         self.output_attention = True
         self.dropout = 0.1
         self.d_model = 512
