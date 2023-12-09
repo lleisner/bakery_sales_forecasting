@@ -17,6 +17,7 @@ from data_provider.data_merger import DataMerger
 from data_provider.data_encoder import DataProcessor
 from data_provider.data_pipeline import DataPipeline
 from data_provider.time_configs import TimeConfigs
+from tensorflow.keras.callbacks import Callback, EarlyStopping, TensorBoard, ModelCheckpoint
 
 
 
@@ -26,16 +27,6 @@ if __name__=="__main__":
     provider = DataMerger(configs=time_configs)
     df = provider.get_data()
 
-    # Encode data
-    data_processor = DataProcessor(df)
-
-    try:
-        encoded_data = data_processor.encode()
-    except: 
-        encoded_data  = data_processor.fit_and_encode()
-        
-    print(f'encoded dataset: {encoded_data}')
-    
     # Set some parameters
     past_days = 32
     future_days = 4
@@ -44,7 +35,20 @@ if __name__=="__main__":
     future_steps = future_days * length_of_day
     seq_length = past_days * length_of_day
 
+    # Encode data
+    data_processor = DataProcessor(df, future_days)
+
+    try:
+        encoded_data = data_processor.encode()
+    except: 
+        encoded_data  = data_processor.fit_and_encode()
+        
+    print(f'encoded dataset: {encoded_data}')
+    
+
+
     num_epochs = 1000
+
     batch_size = 32
     validation_size = 0.2
     test_size = 0.1
@@ -81,6 +85,12 @@ if __name__=="__main__":
     # Create a model     
     #model = CustomLSTM(seq_length, future_steps, num_features, num_targets)
 
+    config = tf.compat.v1.ConfigProto()
+    config.gpu_options.per_process_gpu_memory_fraction = 0.8
+    # Apply the configurations
+    session = tf.compat.v1.Session(config=config)
+    tf.compat.v1.keras.backend.set_session(session)
+
     configs = Configurator()
     model = Model(configs)
    # model = tf.keras.models.load_model('saved_models/itransformer')
@@ -89,7 +99,7 @@ if __name__=="__main__":
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=loss, metrics=[tf.keras.metrics.MeanSquaredError()], weighted_metrics=[])
     #model.summary()
     
-    checkpoint = keras.callbacks.ModelCheckpoint(
+    checkpoint = ModelCheckpoint(
         filepath=checkpoint_path,
         monitor='val_loss',
         save_best_only=True,
@@ -97,14 +107,16 @@ if __name__=="__main__":
         verbose=1
     )
     
-    early_stopping = keras.callbacks.EarlyStopping(
+    early_stopping = EarlyStopping(
         monitor='val_loss',  # Monitor loss
-        patience=100,         # Number of epochs with no improvement to wait
+        patience=300,         # Number of epochs with no improvement to wait
         restore_best_weights=True  # Restore the best weights when stopped
     )
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+    tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
+
     
     #model.load_weights(checkpoint_path)
+
 
     # Fit the model
     hist = model.fit(train, epochs=num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback, checkpoint], use_multiprocessing=True)

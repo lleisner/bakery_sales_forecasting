@@ -142,7 +142,8 @@ class SineCosineEncoder:
 
 
 class DataProcessor:
-    def __init__(self, data: pd.DataFrame):
+    def __init__(self, data: pd.DataFrame, future_days: int):
+        self.future_days = future_days
         self.data = {
             'datetime': data.index,
             'weather': data[['temperature', 'precipitation', 'wind_speed', 'wind_direction']],
@@ -151,6 +152,8 @@ class DataProcessor:
             'labels': data[[col for col in data.columns if str(col).isnumeric()]]
         }
         self._create_sales_features()
+
+        print(self.data)
         
         self.encoders = {
             'datetime': TemporalEncoder(),
@@ -163,9 +166,8 @@ class DataProcessor:
         
         
     def _create_sales_features(self) -> None:
-        future_days = 1
-        sales_feature = self.data['labels'].copy().add_prefix(f'(t-{future_days})')
-        sales_feature.index = sales_feature.index + pd.Timedelta(days=future_days)
+        sales_feature = self.data['labels'].copy().add_prefix(f'(t-{self.future_days})')
+        sales_feature.index = sales_feature.index + pd.Timedelta(days=self.future_days)
         self.data['sales'] = sales_feature
 
     def fit_and_encode(self) -> pd.DataFrame:

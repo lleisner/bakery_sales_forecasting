@@ -5,7 +5,8 @@ from datetime import datetime
 
 class SalesFetcher:
     def __init__(self):
-        self.file_path = '/Users/lorenzleisner/Desktop/CLOUD/GFBD/lleisner/vcom.VComExp'
+        #self.file_path = '/Users/lorenzleisner/Desktop/CLOUD/GFBD/lleisner/vcom.VComExp'
+        self.file_path = '/mnt/c/cloud/gfbd/lleisner/vcom.VComExp'
         self.time_mapping_path = 'data_fetcher/sub_fetchers/time_mapping.txt'
         
         

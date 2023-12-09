@@ -37,7 +37,7 @@ class FerienFetcher:
         
         combined_df = pd.concat(combined_dfs, axis=1)
         combined_df.index = pd.to_datetime(combined_df.index)
-        return combined_df
+        return combined_df.astype(int)
     
     def get_data(self):
         laender = self.get_laender()
