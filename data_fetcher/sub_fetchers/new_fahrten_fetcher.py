@@ -8,11 +8,17 @@ from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
 import time
 from datetime import datetime, timedelta
 from functools import partial
+import socket
 
     
+
 class NewFahrtenFetcher:
     def __init__(self):
         self.driver = self.setup_driver()
@@ -22,10 +28,9 @@ class NewFahrtenFetcher:
         try:
             options = webdriver.ChromeOptions()
             options.add_argument('--headless')
-           # driver_path = '/home/lleisner/chromedriver/stable/chromedriver-linux64/chromedriver'
-            driver_path = '/Users/lorenzleisner/Downloads/chromedriver-mac-x64/chromedriver'
-            
-            driver = webdriver.Chrome(driver_path, options=options)
+            driver_path = Service('/home/lleisner/chromedriver-linux64/chromedriver')
+          #  driver_path = '/Users/lorenzleisner/Downloads/chromedriver-mac-x64/chromedriver'
+            driver = webdriver.Chrome(options=options, service=driver_path)
             return driver
         except Exception as e:
             print(f"An error occurred while setting up the driver: {e}")
@@ -42,10 +47,11 @@ class NewFahrtenFetcher:
         self.driver.execute_script("arguments[0].value = '';", input)
         input.send_keys(date)
         
-        time.sleep(1)
+        time.sleep(3)
         input = find_input(self.driver)
         
         return date, self.driver.page_source
+
 
     def get_hin_ruck_fahrten(self, html_content):
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -119,7 +125,7 @@ class NewFahrtenFetcher:
         return df
     
 
-    def get_data(self, num_days=3, drop_WEX=True):
+    def get_data(self, num_days=5, drop_WEX=True):
         all_days = []
         start = datetime.combine(datetime.now() + timedelta(days=1), datetime.min.time())
         
@@ -128,7 +134,6 @@ class NewFahrtenFetcher:
             
             hin, ruck = self.get_hin_ruck_fahrten(html_content=html_content)
             hin, ruck = self.process_fahrten_list(hin), self.process_fahrten_list(ruck)
-            
             an, ab = self.count_fahrten_per_hour(date, hin, 'an'), self.count_fahrten_per_hour(date, ruck, 'ab')
             
             fahrten_per_day = pd.concat([an, ab], axis=1)
@@ -146,9 +151,7 @@ class NewFahrtenFetcher:
         current_hour = datetime.now().replace(minute=0, second=0, microsecond=0)
         end_time = current_hour + timedelta(days=num_days)
 
-        time_range = pd.date_range(start=current_hour, end=end_time, freq='H')
-        #all_days = all_days.reindex(time_range, fill_value=0)
-        
+        time_range = pd.date_range(start=current_hour, end=end_time, freq='H')        
         
         if drop_WEX:
             all_days.drop(columns=['WEX_an', 'WEX_ab'], inplace=True)
@@ -156,6 +159,8 @@ class NewFahrtenFetcher:
         return all_days
         
 if __name__ == "__main__":
+    machine_type = socket.gethostname()
+    print(machine_type)
     fetcher = NewFahrtenFetcher()
     df = fetcher.get_data()
     print(df)

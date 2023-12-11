@@ -3,11 +3,13 @@ from typing import Optional
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup
 import pandas as pd
 from collections import defaultdict
 from datetime import datetime, timedelta
 import time
+import os
 
 
 
@@ -26,10 +28,9 @@ class FahrtenFetcher():
         try:
             options = webdriver.ChromeOptions()
             options.add_argument('--headless')
-           # driver_path = '/home/lleisner/chromedriver/stable/chromedriver-linux64/chromedriver'
-            driver_path = '/Users/lorenzleisner/Downloads/chromedriver-mac-x64/chromedriver'
-            
-            driver = webdriver.Chrome(driver_path, options=options)
+            driver_path = Service('/home/lleisner/chromedriver-linux64/chromedriver')
+          #  driver_path = '/Users/lorenzleisner/Downloads/chromedriver-mac-x64/chromedriver'
+            driver = webdriver.Chrome(options=options, service=driver_path)
             return driver
         except Exception as e:
             print(f"An error occurred while setting up the driver: {e}")
