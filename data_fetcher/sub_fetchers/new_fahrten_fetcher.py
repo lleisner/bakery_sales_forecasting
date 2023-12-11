@@ -16,25 +16,14 @@ import time
 from datetime import datetime, timedelta
 from functools import partial
 import socket
+from data_fetcher.sub_fetchers.base_fetcher import BaseFetcher
 
     
 
-class NewFahrtenFetcher:
+class NewFahrtenFetcher(BaseFetcher):
     def __init__(self):
-        self.driver = self.setup_driver()
+        super().__init__()
         self.driver.get('https://www.spiekeroog.de/buchung/')
-
-    def setup_driver(self):
-        try:
-            options = webdriver.ChromeOptions()
-            options.add_argument('--headless')
-            driver_path = Service('/home/lleisner/chromedriver-linux64/chromedriver')
-          #  driver_path = '/Users/lorenzleisner/Downloads/chromedriver-mac-x64/chromedriver'
-            driver = webdriver.Chrome(options=options, service=driver_path)
-            return driver
-        except Exception as e:
-            print(f"An error occurred while setting up the driver: {e}")
-            return None
         
     def _set_date(self, date):
         def find_input(driver):
@@ -136,6 +125,8 @@ class NewFahrtenFetcher:
             hin, ruck = self.process_fahrten_list(hin), self.process_fahrten_list(ruck)
             an, ab = self.count_fahrten_per_hour(date, hin, 'an'), self.count_fahrten_per_hour(date, ruck, 'ab')
             
+            print(hin, ruck)
+
             fahrten_per_day = pd.concat([an, ab], axis=1)
             fahrten_per_day.index = pd.to_datetime(fahrten_per_day.index, format="%d.%m.%Y", errors='coerce')
             
@@ -159,8 +150,7 @@ class NewFahrtenFetcher:
         return all_days
         
 if __name__ == "__main__":
-    machine_type = socket.gethostname()
-    print(machine_type)
+
     fetcher = NewFahrtenFetcher()
     df = fetcher.get_data()
     print(df)
