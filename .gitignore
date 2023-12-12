@@ -4,14 +4,17 @@
 # Ignore __pycache__ directories
 __pycache__/
 
-# Ignore logs from TensorBoard
-logs/
-
 # Ignore saved models
 saved_models/
 
 # Ignore dataset file
 test/
 
-# Ignore unfinished code
-#data_fetcher/
+# Ignore new data
+new_data/
+
+# Ignore logs
+logs/
+
+# Ignore run_script
+run_script.sh

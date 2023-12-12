@@ -2,10 +2,12 @@ import requests
 from datetime import datetime
 import pytz
 import pandas as pd
+from data_fetcher.sub_fetchers.base_fetcher import BaseFetcher
 
 
-class WeatherFetcher:
-    def __init__(self):
+class WeatherFetcher(BaseFetcher):
+    def __init__(self, data_directory='data/new_data/'):
+        super().__init__(data_directory)
         lat = 53.77
         lon = 7.69
         key = "d8485d5f5221ad77dae7328a7c8781bd"
@@ -53,10 +55,8 @@ class WeatherFetcher:
         
         
 
-
-
-
 if __name__ == "__main__":
     fetcher = WeatherFetcher()
     df = fetcher.get_data()
     print(df)
+    

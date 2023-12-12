@@ -1,36 +1,21 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 import socket
+import os
+from abc import ABC, abstractmethod
+import pandas as pd
 
-class BaseFetcher:
-    def __init__(self):
-        self.driver = self.setup_driver()
-    
-    def setup_driver(self):
-        """
-        Set up a headless Chrome WebDriver instance.
-        
-        Returns:
-            driver (WebDriver): A configured WebDriver instance, or None if an error occurs.
-        """
-        try:
-            options = webdriver.ChromeOptions()
-            options.add_argument('--headless')
+class BaseFetcher(ABC):
+    def __init__(self, data_directory='data/new_data/'):
+        self.data_directory = data_directory
 
-            service = Service(self.get_driver_path())
-            
-            driver = webdriver.Chrome(options=options, service=service)
+    def update_csv(self, filename):
+        file_path = os.path.join(self.data_directory, filename)
+        new_data = self.get_data()
+        old_data = pd.read_csv(file_path, index_col=0, parse_dates=True)
+        updated_data = new_data.combine_first(old_data)
+        updated_data.to_csv(file_path)
 
-            return driver
-        except Exception as e:
-            print(f"An error occurred while setting up the driver: {e}")
-            return None
-        
-    def get_driver_path(self):
-        hostname = socket.gethostname()
-        driver_path = None
-        if hostname == "DESKTOP-4FMH331":
-            driver_path = '/Users/lorenzleisner/Downloads/chromedriver-mac-x64/chromedriver'
-        elif hostname == "Lorenzs-MBP.fritz.box":
-            driver_path = '/home/lleisner/chromedriver/stable/chromedriver-linux64/chromedriver'
-        return None
+    @abstractmethod
+    def get_data(self):
+        pass
