@@ -13,7 +13,7 @@ from models.lstm_model.lstm import CustomLSTM
 from models.iTransformer.i_transformer import Model
 from models.iTransformer.configs import Configurator
 
-from data_provider.data_merger import DataMerger
+from data_provider.data_provider import DataProvider
 from data_provider.data_encoder import DataProcessor
 from data_provider.data_pipeline import DataPipeline
 from data_provider.time_configs import TimeConfigs
@@ -24,7 +24,7 @@ from tensorflow.keras.callbacks import Callback, EarlyStopping, TensorBoard, Mod
 if __name__=="__main__":
 
     time_configs = TimeConfigs()
-    provider = DataMerger(configs=time_configs)
+    provider = DataProvider(configs=time_configs)
     df = provider.get_data()
 
     # Set some parameters

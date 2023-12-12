@@ -5,12 +5,9 @@ from urllib.parse import urlencode, urljoin
 from data_fetcher.sub_fetchers.base_fetcher import BaseFetcher
 
 class FerienFetcher(BaseFetcher):
-    def __init__(self, data_directory='data/new_data/', api_key='test2021'):
-        super().__init__(data_directory)
+    def __init__(self, api_key='test2021'):
         self.base_url = f'https://api.schulferien.org/deutschland'
         self.api_token = f'?api_token={api_key}'
-       # self.url = f'https://api.schulferien.org/deutschland/bayern/school-holidays/2015?api_token={api_key}'
-        #self.api_key = api_key
         
     def get_json(self, url_extension=''):
         return requests.get(f'{self.base_url}{url_extension}{self.api_token}').json()
@@ -54,6 +51,6 @@ class FerienFetcher(BaseFetcher):
         
 if __name__ == "__main__":
     fetcher = FerienFetcher()
-    df = fetcher.save_to_csv()
+    df = fetcher.get_data()
 
     print(df)

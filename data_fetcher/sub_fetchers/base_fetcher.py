@@ -6,11 +6,8 @@ from abc import ABC, abstractmethod
 import pandas as pd
 
 class BaseFetcher(ABC):
-    def __init__(self, data_directory='data/new_data/'):
-        self.data_directory = data_directory
-
-    def update_csv(self, filename):
-        file_path = os.path.join(self.data_directory, filename)
+    def update_csv(self, data_directory, filename):
+        file_path = os.path.join(data_directory, filename)
         new_data = self.get_data()
         old_data = pd.read_csv(file_path, index_col=0, parse_dates=True)
         updated_data = new_data.combine_first(old_data)

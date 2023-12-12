@@ -26,7 +26,7 @@ class WeatherDataProvider(DataProvider):
 
         # Rename columns for clarity
         df.rename(columns={
-            "validdate": "Datetime",
+            "validdate": "datetime",
             "t_2m:C": "temperature",
             "precip_1h:mm": "precipitation",
             "effective_cloud_cover:octas": "cloud_cover",
@@ -34,20 +34,21 @@ class WeatherDataProvider(DataProvider):
             "wind_dir_10m:d": "wind_direction"
         }, inplace=True)
 
+
         # Convert the "date" column to datetime and set the timezone to Berlin
-        df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_convert('Europe/Berlin')
+        df['datetime'] = pd.to_datetime(df['datetime']).dt.tz_convert('Europe/Berlin')
 
         # Remove the timezone information to work with Berlin time without timezone
-        df['Datetime'] = df['Datetime'].dt.tz_localize(None)
+        df['datetime'] = df['datetime'].dt.tz_localize(None)
 
         # Set the "date" column as the index
-        df = df.set_index("Datetime")
+        df = df.set_index("datetime")
 
         # Remove duplicate index entries, keeping the first occurrence
         df = df[~df.index.duplicated(keep='first')]
         
         # Drop Cloud Cover
-        df.drop(columns=['cloud_cover'], axis=1, inplace=True)
+        #df.drop(columns=['cloud_cover'], axis=1, inplace=True)
 
         return df
         

@@ -14,7 +14,13 @@ class BaseProvider(ABC):
         """
         pass
 
-    
+    def save_to_csv(self, data_directory, filename):
+        file_path = os.path.join(data_directory, filename)
+        data = self.get_data()
+        data.to_csv(file_path)
+        return data
+
+
 class DataProvider(BaseProvider):
     def __init__(self, source_directory):
         """
@@ -72,10 +78,6 @@ class DataProvider(BaseProvider):
         df = self._process_data(df)
         return df
     
-    def save_to_file(self, filename):
-        directory = 'data/processed_data'
-        file_path = os.path.join(directory, filename)
-        data = self.get_data()
-        data.to_csv(file_path)
+
     
 

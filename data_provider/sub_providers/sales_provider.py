@@ -42,6 +42,7 @@ class SalesDataProvider(DataProvider):
             date = datetime.strptime(df.iloc[0,0], '%d.%m.%Y').date()   # Get date for each sheet
             df = df.drop(df.columns[[0, 1, 2]], axis=1).T       # Drop unnecessary columns and transpose Dataframe 
             df.index = [datetime.combine(date, index) for index in df.index]    # Set DatetimeIndex
+            df.index.name = 'datetime'
             dataframes.append(df)    
 
         return pd.concat(dataframes).fillna(0)

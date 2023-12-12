@@ -89,9 +89,9 @@ class FahrtenDataProvider(DataProvider):
         """
         df.drop(columns=['Start', 'Abfahrt', 'Ziel', 'Ankunft'], inplace=True)
         
-        df['Datetime'] = (df['Datum'] + pd.to_timedelta(df['Zeit'].astype(str))).dt.floor('H')
+        df['datetime'] = (df['Datum'] + pd.to_timedelta(df['Zeit'].astype(str))).dt.floor('H')
 
-        grouped_series = df.groupby('Datetime')['Schiff'].agg(list)
+        grouped_series = df.groupby('datetime')['Schiff'].agg(list)
         
         one_hot_encoding = pd.get_dummies(grouped_series.apply(pd.Series).stack()).groupby(level=0).max().astype(int)
         

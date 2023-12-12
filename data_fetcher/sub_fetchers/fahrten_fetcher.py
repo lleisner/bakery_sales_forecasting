@@ -21,8 +21,7 @@ from data_fetcher.sub_fetchers.base_fetcher import BaseFetcher
     
 
 class FahrtenFetcher(BaseFetcher):
-    def __init__(self, data_directory='data/new_data/'):
-        super().__init__(data_directory)
+    def __init__(self):
         self.driver = self.setup_driver()
         self.driver.get('https://www.spiekeroog.de/buchung/')
         
