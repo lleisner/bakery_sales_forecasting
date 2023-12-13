@@ -11,7 +11,7 @@ class BaseFetcher(ABC):
         new_data = self.get_data()
         old_data = pd.read_csv(file_path, index_col=0, parse_dates=True)
         updated_data = new_data.combine_first(old_data)
-        updated_data.to_csv(file_path)
+        updated_data.to_csv(f'{file_path}.csv')
 
     @abstractmethod
     def get_data(self):

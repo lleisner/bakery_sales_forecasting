@@ -1,7 +1,6 @@
 import requests
 from datetime import datetime
 import pandas as pd
-from urllib.parse import urlencode, urljoin
 from data_fetcher.sub_fetchers.base_fetcher import BaseFetcher
 
 class FerienFetcher(BaseFetcher):

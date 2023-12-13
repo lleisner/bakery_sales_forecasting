@@ -17,7 +17,7 @@ class BaseProvider(ABC):
     def save_to_csv(self, data_directory, filename):
         file_path = os.path.join(data_directory, filename)
         data = self.get_data()
-        data.to_csv(file_path)
+        data.to_csv(f'{file_path}.csv')
         return data
 
 

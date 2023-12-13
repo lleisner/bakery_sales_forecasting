@@ -1,13 +1,14 @@
 import pandas as pd
-#import ferien
+import ferien
 from data_provider.sub_providers.base_provider import BaseProvider
+import time
 
 class FerienDataProvider(BaseProvider):
     
     def get_data(self):
         return self._process_data()
     
-    def _process_data(self, start: str='2017-01-01', end: str='2023-09-01') -> pd.DataFrame:
+    def _process_data(self, start: str='2018-12-01', end: str='2025-09-01') -> pd.DataFrame:
         """
         Retrieves and compiles vacation data for different states within a specified date range using the ferien-api
 
@@ -24,7 +25,19 @@ class FerienDataProvider(BaseProvider):
         all_states = pd.DataFrame(index=all_days)
 
         for state in state_codes:
-            vacations = ferien.state_vacations(state)
+            retries = 3  # Number of retries
+            base_delay = 10  # Initial delay in seconds
+            max_delay = 60  # Maximum delay in seconds
+
+            for _ in range(retries):
+                try:
+                    vacations = ferien.state_vacations(state)
+                    break  # If successful, break out of the loop
+                except:
+                    print(f"Rate limit exceeded for retrieving {state} data. Retrying after delay...")
+                    time.sleep(base_delay)
+                    base_delay = min(base_delay * 1.5, max_delay)  # Incremental backoff
+            
             vacation_periods = []
 
             for vacation in vacations:
@@ -35,9 +48,9 @@ class FerienDataProvider(BaseProvider):
             is_vacation = all_states.index.to_series().apply(lambda x: any(start_date <= x.date() <= end_date for start_date, end_date in vacation_periods))
 
             all_states[state] = is_vacation.astype(int)
-        
         all_states.index = pd.to_datetime(all_states.index, format="%d.%m.%Y", errors='coerce')
         all_states_hourly = all_states.resample('H').ffill()
+        all_states_hourly.index.name = 'datetime'
         return all_states_hourly
 
 if __name__ == "__main__":
