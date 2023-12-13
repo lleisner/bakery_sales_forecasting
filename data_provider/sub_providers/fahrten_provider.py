@@ -2,10 +2,10 @@ import pandas as pd
 import os
 import numpy as np
 from datetime import datetime
-from data_provider.sub_providers.base_provider import DataProvider
+from data_provider.sub_providers.base_provider import BaseProvider
     
  
-class FahrtenDataProvider(DataProvider):
+class FahrtenDataProvider(BaseProvider):
     def __init__(self, source_directory='data/nsb_fahrzeiten'):
         """
         Initialize FahrtenDataProvider instance.

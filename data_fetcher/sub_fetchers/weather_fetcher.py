@@ -10,8 +10,8 @@ class WeatherFetcher(BaseFetcher):
         lat = 53.77
         lon = 7.69
         key = "d8485d5f5221ad77dae7328a7c8781bd"
-        self.url_1h2d = url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&units=metric&appid={key}"
-        self.url_3h5d = f"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&units=metric&appid={key}"
+        self.url_1h2d = url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&units=standard&appid={key}"
+        self.url_3h5d = f"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&units=standard&appid={key}"
         
     def cloud_cover_to_okta(self, cover):
         return min(round(cover / 12.5), 8)
@@ -22,7 +22,7 @@ class WeatherFetcher(BaseFetcher):
             'datetime': datetime.utcfromtimestamp(hour['dt']),
             'temperature': hour['temp'],
             'precipitation': hour['rain']['1h'] if 'rain' in hour and '1h' in hour['rain'] else 0,
-            'cloud_cover': self.cloud_cover_to_okta(hour['clouds']),
+            'cloud_cover': hour['clouds'],
             'wind_speed': hour['wind_speed'],
             'wind_direction': hour['wind_deg']
         } for hour in data['hourly']]
@@ -35,7 +35,7 @@ class WeatherFetcher(BaseFetcher):
             'datetime': datetime.utcfromtimestamp(item['dt']),
             'temperature': item['main']['temp'],
             'precipitation': item['rain']['3h']/3 if 'rain' in item and '3h' in item['rain'] else 0,
-            'cloud_cover': self.cloud_cover_to_okta(item['clouds']['all']),
+            'cloud_cover': item['clouds']['all'],
             'wind_speed': item['wind']['speed'],
             'wind_direction': item['wind']['deg']
         } for item in data['list']]

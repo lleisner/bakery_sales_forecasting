@@ -12,42 +12,29 @@ from data_provider.sub_providers import (
 class DataProvider:
     def __init__(self, configs, data_directory='data/database', file_name='dataset.csv'):
         self.providers = {
-            'sales': SalesDataProvider(),
             'fahrten': FahrtenDataProvider(),
             'weather': WeatherDataProvider(),
             'ferien': FerienDataProvider(),
+            'sales': SalesDataProvider(),
         }
         self.data_directory = data_directory
         self.file_name = file_name
         self.configs = configs
         
-    def merge(self):
-        data = []
-        for key, provider in self.providers.items():
-            data.append(provider.get_data())
-        data = pd.concat(data, axis=1, join='outer').asfreq(freq='H').fillna(0)
-        data = self.filter_time_and_date(data)
-        return data
-    
-    def save_to_files(self):
-        directory = 'data/processed_data'
-        for key, provider in self.providers.items():
-            df = provider.get_data()
-            df = self.filter_time_and_date(df)    
-            file_path = os.path.join(directory, f'{key}_data.csv')
-            df.to_csv(file_path)
-        
-    def create_new_database(self):
-        data = []
-        for key, provider in self.providers.items():
-            try:
-                data.append(provider.save_to_csv(data_directory=self.data_directory, filename=key))
-                print(f"Created new {key} database")
-            except Exception as e:
-                print(f"Failed to create new {key} database: {str(e)}")
 
-        data = self.filter_time_and_date(pd.concat(data, axis=1, join='outer').asfreq(freq='H').fillna(0))
-        data.to_csv(os.path.join(self.data_directory, 'main_database'))
+    def create_new_database(self, provider_list=None):
+        provider_list = list(self.providers.keys()) if provider_list is None else provider_list
+        for key, provider in self.providers.items():
+            if key in provider_list:
+                try:
+                    # Save data to their respective files and append to main data
+                    provider.save_to_csv(data_directory=self.data_directory, filename=key)
+                    print(f"Created new {key} database")
+                except Exception as e:
+                    print(f"Failed to create new {key} database: {str(e)}")
+
+    
+
         
     
     def filter_time_and_date(self, df) -> pd.DataFrame:
@@ -74,6 +61,24 @@ class DataProvider:
         print(f"Loaded dataset from {file_path}")
             
         return df
+
+    def merge(self):
+        data = []
+        for key, provider in self.providers.items():
+            data.append(provider.get_data())
+        data = pd.concat(data, axis=1, join='outer').asfreq(freq='H').fillna(0)
+        data = self.filter_time_and_date(data)
+        return data
+    
+    def save_to_files(self):
+        directory = 'data/processed_data'
+        for key, provider in self.providers.items():
+            df = provider.get_data()
+            df = self.filter_time_and_date(df)    
+            file_path = os.path.join(directory, f'{key}_data.csv')
+            df.to_csv(file_path)
+
+
             
 if __name__ == "__main__":
     configs = TimeConfigs()

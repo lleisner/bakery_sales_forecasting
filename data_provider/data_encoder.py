@@ -146,7 +146,7 @@ class DataProcessor:
         self.future_days = future_days
         self.data = {
             'datetime': data.index,
-            'weather': data[['temperature', 'precipitation', 'wind_speed', 'wind_direction']],
+            'weather': data[['temperature', 'precipitation', 'cloud_cover', 'wind_speed', 'wind_direction']],
             'ferien': data[['BW', 'BY', 'BE', 'BB', 'HB', 'HH', 'HE', 'MV', 'NI', 'NW', 'RP', 'SL', 'SN', 'ST', 'SH', 'TH']],
             'fahrten': data[['SP1_an', 'SP2_an', 'SP4_an', 'SP1_ab', 'SP2_ab', 'SP4_ab']],
             'labels': data[[col for col in data.columns if str(col).isnumeric()]]

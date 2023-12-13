@@ -1,73 +1,37 @@
+import requests
+from datetime import datetime
+import pytz
 import pandas as pd
+from data_provider.sub_providers.base_provider import BaseProvider
 import os
-from data_provider.sub_providers.base_provider import DataProvider
 
-class WeatherDataProvider(DataProvider):
-    def __init__(self, source_directory='data/weather'):
-        """
-        Initialize WeatherDataProvider instance.
-
-        Args:
-        - source_directory (str): Directory path where weather data is located.
-        """
+class WeatherDataProvider(BaseProvider):
+    def __init__(self, source_directory="data/new_weather"):
         super().__init__(source_directory)
-        
-    def _read_file(self, file_path):
-        """
-        Read weather data from a CSV file and perform data preprocessing.
 
-        Args:
-        - file_path (str): Path to the CSV file containing weather data.
-
-        Returns:
-        - pd.DataFrame: Processed DataFrame containing weather information.
-        """
-        df = pd.read_csv(file_path, sep=';')
-
-        # Rename columns for clarity
-        df.rename(columns={
-            "validdate": "datetime",
-            "t_2m:C": "temperature",
-            "precip_1h:mm": "precipitation",
-            "effective_cloud_cover:octas": "cloud_cover",
-            "wind_speed_10m:ms": "wind_speed",
-            "wind_dir_10m:d": "wind_direction"
-        }, inplace=True)
-
-
-        # Convert the "date" column to datetime and set the timezone to Berlin
-        df['datetime'] = pd.to_datetime(df['datetime']).dt.tz_convert('Europe/Berlin')
-
-        # Remove the timezone information to work with Berlin time without timezone
-        df['datetime'] = df['datetime'].dt.tz_localize(None)
-
-        # Set the "date" column as the index
-        df = df.set_index("datetime")
-
-        # Remove duplicate index entries, keeping the first occurrence
-        df = df[~df.index.duplicated(keep='first')]
-        
-        # Drop Cloud Cover
-        #df.drop(columns=['cloud_cover'], axis=1, inplace=True)
-
-        return df
-        
     def _process_data(self, df):
-        """
-        Process the given DataFrame. In this case, no more processing is needed.
+        df = df[['temp', 'rain_1h', 'clouds_all', 'wind_speed', 'wind_deg']]
 
-        Args:
-        - df (pd.DataFrame): Input DataFrame to be processed.
+        df.index = pd.to_datetime(df.index.str.replace(' UTC', ''), format='%Y-%m-%d %H:%M:%S %z')
 
-        Returns:
-        - pd.DataFrame: Processed DataFrame.
-        """
-        return df
+        df.index = df.index.tz_convert('Europe/Berlin').tz_localize(None)
+        df.index.name = 'datetime'
+        df = df.rename(columns={
+            'temp': 'temperature',
+            'rain_1h': 'precipitation',
+            'clouds_all': 'cloud_cover',
+            'wind_speed': 'wind_speed',
+            'wind_deg': 'wind_direction'
+        })
+        return df.fillna(0)
 
+    def _read_file(self, file_path):
+        return pd.read_csv(file_path, index_col='dt_iso')
 
-if __name__=="__main__":
-    processor = WeatherDataProvider()
-    df = processor.get_data()
+        
+
+if __name__ == "__main__":
+    provider = NewWeatherDataProvider()
+    df = provider.get_data()
     print(df)
-
 

@@ -7,6 +7,9 @@ class FerienDataProvider(BaseProvider):
     
     def get_data(self):
         return self._process_data()
+
+    def _read_file(self):
+        pass
     
     def _process_data(self, start: str='2018-12-01', end: str='2025-09-01') -> pd.DataFrame:
         """
@@ -46,8 +49,8 @@ class FerienDataProvider(BaseProvider):
                 vacation_periods.append((start_date, end_date))
 
             is_vacation = all_states.index.to_series().apply(lambda x: any(start_date <= x.date() <= end_date for start_date, end_date in vacation_periods))
-
             all_states[state] = is_vacation.astype(int)
+
         all_states.index = pd.to_datetime(all_states.index, format="%d.%m.%Y", errors='coerce')
         all_states_hourly = all_states.resample('H').ffill()
         all_states_hourly.index.name = 'datetime'

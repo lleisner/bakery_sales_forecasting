@@ -1,7 +1,6 @@
 # Bachelorarbeit Project
 
-This repository contains the codebase for my Bachelorarbeit (Bachelor's thesis). It represents a clean and updated version of the project, ensuring the absence of deprecated or redundant code.
-
+This repository contains the codebase for my Bachelorarbeit (Bachelor's thesis).
 ## Overview
 
 The project is dedicated to solving a timeseries prediction problem, namely the prediction of future sales for specific items at a bakery. It focuses on providing a working model that can make accurate predictions for the production planning of the bakery.

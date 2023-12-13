@@ -1,10 +1,10 @@
 import pandas as pd
 from datetime import datetime
 import os
-from data_provider.sub_providers.base_provider import DataProvider
+from data_provider.sub_providers.base_provider import BaseProvider
 
 
-class SalesDataProvider(DataProvider):
+class SalesDataProvider(BaseProvider):
     def __init__(self, source_directory = 'data/sales', item_intervals = [(10, 50), (80, 130)]):
         """
         Initialize SalesDataProvider instance.

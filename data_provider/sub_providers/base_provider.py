@@ -3,26 +3,9 @@ import os
 from abc import ABC, abstractmethod
     
 
+
 class BaseProvider(ABC):
-    @abstractmethod
-    def get_data(self):
-        """
-        Abstract method to retrieve and process data.
-
-        Returns:
-        - Any: Processed data.
-        """
-        pass
-
-    def save_to_csv(self, data_directory, filename):
-        file_path = os.path.join(data_directory, filename)
-        data = self.get_data()
-        data.to_csv(f'{file_path}.csv')
-        return data
-
-
-class DataProvider(BaseProvider):
-    def __init__(self, source_directory):
+    def __init__(self, source_directory=None):
         """
         Initialize DataProvider instance.
 
@@ -32,7 +15,7 @@ class DataProvider(BaseProvider):
         self.source_directory = source_directory
         
     @abstractmethod
-    def _read_file(self):
+    def _read_file(self, file_path):
         """
         Abstract method to read data from a file.
 
@@ -78,6 +61,11 @@ class DataProvider(BaseProvider):
         df = self._process_data(df)
         return df
     
+    def save_to_csv(self, data_directory, filename):
+        file_path = os.path.join(data_directory, filename)
+        data = self.get_data()
+        data.to_csv(f'{file_path}.csv')
+        return data
 
     
 
