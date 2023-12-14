@@ -8,7 +8,7 @@ class SalesFetcher(BaseFetcher):
     def __init__(self):
         #self.file_path = '/Users/lorenzleisner/Desktop/CLOUD/GFBD/lleisner/vcom.VComExp'
         self.file_path = '/mnt/c/cloud/gfbd/lleisner/vcom.VComExp'
-        self.time_mapping_path = 'data/time_mapping.txt'
+        self.time_mapping_path = 'data/raw/time_mapping.txt'
         
         
     def extract_data(self):
@@ -106,10 +106,14 @@ class SalesFetcher(BaseFetcher):
         time_info = self.get_time_mapping(date)
         data_with_time_info = self.merge_time_info_to_data(data=data, time_info=time_info)
         data = self.aggregate_on_hour(data=data_with_time_info)
-        
-        os.remove(self.file_path)
         return data
         
+    def remove_vcom_file(self):
+        try:
+            os.remove(self.file_path)
+        except Exception as e:
+            print(f"Could not remove file: {e}")
+
 if __name__ == "__main__":
     fetcher = SalesFetcher()
     df = fetcher.get_data()

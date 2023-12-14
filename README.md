@@ -18,7 +18,7 @@ The repository is organized as follows:
 
 - `data/`: Stores relevant data or datasets
 - `data_provider/`: Transforms the raw data into usable datasets
-- `model_ops/`: Methods for training, testing and validation (work in progress)
+- `model_ops/`: Methods for training, testing and validation (depreceated)
 - `models/`: Stores the different model architectures
 - `utils/`: Some utility functions
 

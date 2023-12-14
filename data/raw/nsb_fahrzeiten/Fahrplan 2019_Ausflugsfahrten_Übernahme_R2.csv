@@ -1,0 +1,160 @@
+Verkehrstage;Starthafen;Abfahrt;Schiff;Zielhafen;Ankunft;Verkehrsart;Bezeichnung;Rundfahrt;Kapazität;Sicht+buchbar;Handkasse;Automat;Spezial;Urlaubsservice;Kurbeitragskontrolle;Banderole ;Ein-Aussteiger
+09.04.2019;NS;12:45:00;SP2;SP+;14:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+11.04.2019;NS;13:45:00;SP2;SP+;15:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+19.04.2019;NS;10:15:00;SP4;SHD;13:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+19.04.2019;NS;10:15:00;SP4;SP+;11:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+21.04.2019;NS;11:30:00;SP2;SP+;13:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+22.04.2019;NS;12:15:00;SP2;SP+;13:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+24.04.2019;NS;13:15:00;SP2;SP+;14:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+26.04.2019;NS;14:15:00;SP2;SP+;15:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+01.05.2019;NS;11:45:00;SP4;SP+;13:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+05.05.2019;NS;09:45:00;SP4;SHD;12:15:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+05.05.2019;NS;09:45:00;SP4;SP+;11:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+08.05.2019;NS;15:00:00;SP4;SHD;17:30:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+11.05.2019;NS;12:45:00;SP4;SHD;15:15:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+11.05.2019;NS;12:45:00;SP4;SP+;14:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+19.05.2019;NS;10:30:00;SP4;SHD;13:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+19.05.2019;NS;10:30:00;SP4;SP+;12:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+23.05.2019;NS;13:00:00;SP2;SP+;14:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+25.05.2019;NS;13:00:00;SP4;SHD;15:45:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+25.05.2019;NS;13:00:00;SP4;SP+;14:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+30.05.2019;NS;09:45:00;SP4;SHD;12:30:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+30.05.2019;NS;09:45:00;SP4;SP+;11:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+01.06.2019;NS;09:00:00;SP1;SHD;11:45:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+01.06.2019;NS;09:00:00;SP1;SP+;10:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+04.06.2019;NS;09:45:00;SP1;SP+;11:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+06.06.2019;NS;11:45:00;SP2;SP+;13:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+09.06.2019;NS;14:15:00;SP2;SP+;15:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+10.06.2019;NS;14:00:00;SP4;SHD;16:30:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+10.06.2019;NS;14:00:00;SP4;SP+;15:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+15.06.2019;NS;11:15:00;SP4;SHD;13:45:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+16.06.2019;NS;09:30:00;SP1;SHD;12:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+16.06.2019;NS;09:30:00;SP1;SP+;11:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+19.06.2019;NS;11:45:00;SP2;WAT;15:45:00;4;Rund um Spiekeroog;1;1;0;1;1;;1;0;Banderole 1;0
+20.06.2019;NS;11:45:00;SP2;SP+;13:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+22.06.2019;NS;13:00:00;SP2;SP+;14:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+25.06.2019;NS;14:00:00;SP1;SHD;16:30:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+25.06.2019;NS;14:00:00;SP1;SP+;15:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+30.06.2019;NS;10:30:00;SP1;SHD;13:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+02.07.2019;NS;09:30:00;SP1;SP+;11:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+03.07.2019;NS;10:00:00;SP2;WAT;14:00:00;4;Rund um Spiekeroog;1;1;0;1;1;;1;0;Banderole 1;0
+05.07.2019;NS;11:45:00;SP2;SP+;13:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+07.07.2019;NS;13:15:00;SP2;SP+;14:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+09.07.2019;NS;15:00:00;SP2;SP+;16:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+16.07.2019;NS;09:30:00;SP1;SHD;12:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+16.07.2019;NS;09:30:00;SP1;SP+;11:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+18.07.2019;NS;11:00:00;SP2;WAT;15:00:00;4;Rund um Spiekeroog;1;1;0;1;1;;1;0;Banderole 1;0
+19.07.2019;NS;11:45:00;SP2;SP+;13:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+21.07.2019;NS;12:45:00;SP2;SP+;14:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+23.07.2019;NS;13:45:00;SP2;WAT;17:45:00;4;Rund um Spiekeroog;1;1;0;1;1;;1;0;Banderole 1;0
+24.07.2019;NS;14:15:00;SP2;SP+;15:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+26.07.2019;NS;14:15:00;SP1;SP+;15:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+30.07.2019;NS;11:00:00;SP4;SHD;13:30:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+31.07.2019;NS;09:30:00;SP2;WAT;13:30:00;4;Rund um Spiekeroog;1;1;0;1;1;;1;0;Banderole 1;0
+01.08.2019;NS;09:30:00;SP1;SHD;12:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+01.08.2019;NS;09:30:00;SP1;SP+;11:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+04.08.2019;NS;12:15:00;SP2;SP+;13:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+06.08.2019;NS;13:45:00;SP2;WAT;17:45:00;4;Rund um Spiekeroog;1;1;0;1;1;;1;0;Banderole 1;0
+07.08.2019;NS;14:30:00;SP2;SP+;16:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+13.08.2019;NS;11:30:00;SP4;SHD;14:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+14.08.2019;NS;09:45:00;SP2;WAT;13:45:00;4;Rund um Spiekeroog;1;1;0;1;1;;1;0;Banderole 1;0
+16.08.2019;NS;10:45:00;SP2;SP+;12:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+18.08.2019;NS;11:45:00;SP2;SP+;13:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+20.08.2019;NS;12:45:00;SP2;WAT;16:45:00;4;Rund um Spiekeroog;1;1;0;1;1;;1;0;Banderole 1;0
+21.08.2019;NS;13:15:00;SP2;SP+;14:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+23.08.2019;NS;13:30:00;SP2;SP+;15:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+25.08.2019;NS;14:30:00;SP1;SHD;17:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+25.08.2019;NS;14:30:00;SP1;SP+;16:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+28.08.2019;NS;10:45:00;SP2;SP+;12:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+30.08.2019;NS;09:10:00;SP1;SP+;10:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+01.09.2019;NS;11:15:00;SP2;SP+;12:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+04.09.2019;NS;13:15:00;SP2;SP+;14:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+05.09.2019;NS;13:15:00;SP1;SHD;15:45:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+05.09.2019;NS;13:15:00;SP1;SP+;14:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+07.09.2019;NS;14:10:00;SP1;SP+;15:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+10.09.2019;NS;10:45:00;SP2;SP+;12:15:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+12.09.2019;NS;12:00:00;SP4;SHD;14:30:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+14.09.2019;NS;10:30:00;SP4;SHD;13:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+14.09.2019;NS;10:30:00;SP4;SP+;12:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+17.09.2019;NS;14:45:00;SP4;SHD;17:15:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+22.09.2019;NS;13:30:00;SP4;SHD;16:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+22.09.2019;NS;13:30:00;SP4;SP+;15:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+26.09.2019;NS;10:00:00;SP4;SHD;12:30:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+28.09.2019;NS;09:30:00;SP1;SHD;12:15:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+28.09.2019;NS;09:30:00;SP1;SP+;11:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+01.10.2019;NS;12:00:00;SP1;SHD;14:30:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+01.10.2019;NS;12:00:00;SP1;SP+;13:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+03.10.2019;NS;13:00:00;SP2;SP+;14:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+06.10.2019;NS;13:30:00;SP4;SHD;16:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+06.10.2019;NS;13:30:00;SP4;SP+;15:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+10.10.2019;NS;10:30:00;SP4;SHD;13:00:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+13.10.2019;NS;10:00:00;SP2;SP+;11:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+15.10.2019;NS;11:00:00;SP2;SP+;12:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+17.10.2019;NS;11:15:00;SP1;SHD;13:45:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+17.10.2019;NS;11:15:00;SP1;SP+;12:45:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+20.10.2019;NS;13:30:00;SP2;SP+;15:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+22.10.2019;NS;13:30:00;SP1;SHD;16:15:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+22.10.2019;NS;13:30:00;SP1;SP+;15:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+29.10.2019;NS;10:00:00;SP1;SHD;12:30:00;4;Seehundsbänke;1;1;0;1;1;;1;0;Banderole 1;0
+29.10.2019;NS;10:00:00;SP1;SP+;11:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+31.10.2019;NS;11:00:00;SP2;SP+;12:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+09.04.2019;SP+;17:45:00;SP1;NS;18:20:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+11.04.2019;SP+;18:25:00;SP1;NS;19:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+19.04.2019;SP+;15:15:00;SP4;NS;15:55:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+21.04.2019;SP+;16:25:00;SP1;NS;17:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+22.04.2019;SP+;17:15:00;SP1;NS;17:55:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+24.04.2019;SP+;18:00:00;SP1;NS;18:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+26.04.2019;SP+;19:00:00;SP1;NS;19:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+01.05.2019;SP+;18:45:00;SP4;NS;19:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+05.05.2019;SP+;14:25:00;SP4;NS;15:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+11.05.2019;SP+;17:25:00;SP2;NS;18:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+19.05.2019;SP+;15:25:00;SP2;NS;16:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+23.05.2019;SP+;18:00:00;SP1;NS;18:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+25.05.2019;SP+;17:45:00;SP4;NS;18:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+30.05.2019;SP+;18:15:00;SP4;NS;18:55:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+01.06.2019;SP+;13:45:00;SP1;NS;14:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+04.06.2019;SP+;15:45:00;SP1;NS;16:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+06.06.2019;SP+;17:00:00;SP1;NS;17:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+09.06.2019;SP+;19:00:00;SP1;NS;19:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+10.06.2019;SP+;18:45:00;SP4;NS;19:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+16.06.2019;SP+;14:20:00;SP1;NS;15:00:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+20.06.2019;SP+;16:25:00;SP1;NS;17:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+22.06.2019;SP+;18:00:00;SP1;NS;18:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+25.06.2019;SP+;19:00:00;SP2;NS;19:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+02.07.2019;SP+;14:25:00;SP1;NS;15:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+05.07.2019;SP+;16:45:00;SP1;NS;17:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+07.07.2019;SP+;18:00:00;SP1;NS;18:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+09.07.2019;SP+;19:45:00;SP1;NS;20:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+16.07.2019;SP+;14:45:00;SP1;NS;15:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+19.07.2019;SP+;16:45:00;SP1;NS;17:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+21.07.2019;SP+;17:25:00;SP1;NS;18:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+24.07.2019;SP+;19:30:00;SP1;NS;20:10:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+26.07.2019;SP+;19:00:00;SP1;NS;19:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+01.08.2019;SP+;14:15:00;SP1;NS;14:55:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+04.08.2019;SP+;17:00:00;SP1;NS;17:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+07.08.2019;SP+;19:25:00;SP1;NS;20:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+16.08.2019;SP+;15:25:00;SP1;NS;16:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+18.08.2019;SP+;16:25:00;SP1;NS;17:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+21.08.2019;SP+;18:15:00;SP1;NS;18:55:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+23.08.2019;SP+;18:25:00;SP2;NS;19:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+25.08.2019;SP+;19:30:00;SP1;NS;20:10:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+28.08.2019;SP+;18:45:00;SP2;NS;19:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+30.08.2019;SP+;14:15:00;SP1;NS;14:55:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+01.09.2019;SP+;16:00:00;SP1;NS;16:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+04.09.2019;SP+;18:00:00;SP1;NS;18:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+05.09.2019;SP+;18:15:00;SP2;NS;18:55:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+07.09.2019;SP+;19:00:00;SP1;NS;19:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+10.09.2019;SP+;18:25:00;SP2;NS;19:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+14.09.2019;SP+;15:25:00;SP1;NS;16:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+22.09.2019;SP+;18:25:00;SP1;NS;19:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+28.09.2019;SP+;14:25:00;SP1;NS;15:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+01.10.2019;SP+;16:45:00;SP1;NS;17:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+03.10.2019;SP+;17:45:00;SP1;NS;18:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+06.10.2019;SP+;18:25:00;SP1;NS;19:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+13.10.2019;SP+;14:50:00;SP1;NS;15:30:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+15.10.2019;SP+;16:00:00;SP1;NS;16:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+17.10.2019;SP+;16:00:00;SP2;NS;16:40:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+20.10.2019;SP+;18:15:00;SP2;NS;18:55:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+22.10.2019;SP+;18:25:00;SP2;NS;19:05:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+29.10.2019;SP+;14:45:00;SP1;NS;15:25:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0
+31.10.2019;SP+;16:10:00;SP1;NS;16:50:00;4;Seehundsbänke + Insel;0;1;0;1;1;;1;0;Banderole 1;0

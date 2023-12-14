@@ -6,7 +6,7 @@ from data_provider.sub_providers.base_provider import BaseProvider
     
  
 class FahrtenDataProvider(BaseProvider):
-    def __init__(self, source_directory='data/nsb_fahrzeiten'):
+    def __init__(self, source_directory='data/raw/nsb_fahrzeiten'):
         """
         Initialize FahrtenDataProvider instance.
 
@@ -87,6 +87,8 @@ class FahrtenDataProvider(BaseProvider):
             pd.DataFrame: One-Hot encoded Schiff information with Datetime Index
             
         """
+        return_hourly_freq = True
+
         df.drop(columns=['Start', 'Abfahrt', 'Ziel', 'Ankunft'], inplace=True)
         
         df['datetime'] = (df['Datum'] + pd.to_timedelta(df['Zeit'].astype(str))).dt.floor('H')
@@ -94,6 +96,9 @@ class FahrtenDataProvider(BaseProvider):
         grouped_series = df.groupby('datetime')['Schiff'].agg(list)
         
         one_hot_encoding = pd.get_dummies(grouped_series.apply(pd.Series).stack()).groupby(level=0).max().astype(int)
+
+        if return_hourly_freq:
+            one_hot_encoding = one_hot_encoding.resample('H').asfreq().fillna(0)
         
         return one_hot_encoding
     

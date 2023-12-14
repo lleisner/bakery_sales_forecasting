@@ -2,6 +2,9 @@ import tensorflow as tf
 import pandas as pd
 from typing import Tuple
 from abc import ABC, abstractmethod
+from data_provider.data_encoder import DataProcessor
+from data_provider.data_provider import DataProvider
+from utils.configs import ProviderConfigs, PipelineConfigs, Settings
 
 class BaseGenerator(ABC):
     @abstractmethod
@@ -75,10 +78,10 @@ class DatasetSplitter(BaseGenerator):
     
 
 class DataPipeline:
-    def __init__(self, window_size: int, sliding_step: int, num_targets: int, num_features: int, num_epochs: int, batch_size: int, validation_size: float=0.1, test_size: float=0.1, buffer_size: int=1000, seed: int=42):
-        self.window_generator = WindowGenerator(window_size, sliding_step)
-        self.data_splitter = DatasetSplitter(validation_size, test_size, buffer_size, seed)
-        self.batch_generator = BatchGenerator(num_targets, num_features, num_epochs, batch_size)
+    def __init__(self, configs):
+        self.window_generator = WindowGenerator(configs.window_size, configs.sliding_step)
+        self.data_splitter = DatasetSplitter(configs.validation_size, configs.test_size, configs.buffer_size, configs.seed)
+        self.batch_generator = BatchGenerator(configs.num_targets, configs.num_features, configs.num_epochs, configs.batch_size)
     
     def generate_data(self, data):
         data = self.window_generator(data)
@@ -86,3 +89,25 @@ class DataPipeline:
         train, val, test =  self.batch_generator(train), self.batch_generator(val), self.batch_generator(test)
         return train, val, test     
 
+
+
+if __name__ == "__main__":
+    provider_configs = ProviderConfigs()
+    settings = Settings()
+
+    provider = DataProvider(provider_configs)
+    df = provider.load_database()
+    processor = DataProcessor(data=df, future_days = 4)
+    try:
+        encoding = processor.encode()
+    except:
+        encoding = processor.fit_and_encode()
+    print(encoding)
+
+    num_features, num_targets = processor.get_shape()
+    pipeline_configs = PipelineConfigs(settings, num_features, num_targets)
+
+    dataset = tf.data.Dataset.from_tensor_slices(encoding.values)
+    pipeline = DataPipeline(pipeline_configs)
+    train, val, test = pipeline.generate_data(dataset)
+    print(train, val, test)

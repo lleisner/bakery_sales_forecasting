@@ -1,13 +1,14 @@
 
-import numpy as np
+"""import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
 import os
-from tensorboard.plugins.hparams import api as hp
+from tensorboard.plugins.hparams import api as hp"""
 
 from utils.loss import custom_time_series_loss, CustomLoss
 from utils.plot_hist import plot_training_history
+from utils.configs import Settings, ProviderConfigs, PipelineConfigs
 from models.lstm_model.lstm import CustomLSTM
 
 from models.iTransformer.i_transformer import Model
@@ -23,20 +24,24 @@ from tensorflow.keras.callbacks import Callback, EarlyStopping, TensorBoard, Mod
 
 if __name__=="__main__":
 
-    time_configs = TimeConfigs()
-    provider = DataProvider(configs=time_configs)
-    df = provider.get_data()
+    settings = Settings()
+    provider_configs = ProviderConfigs()
+    provider = DataProvider(configs=provider_configs)
+    #df = provider.get_data()
+    df = pd.read_csv("data/depreceated/test/dataset.csv", index_col=0, parse_dates=True)
+    print(df)
 
-    # Set some parameters
+
+    """    # Set some parameters
     past_days = 32
     future_days = 4
     length_of_day = 16
     strides = length_of_day
     future_steps = future_days * length_of_day
-    seq_length = past_days * length_of_day
+    seq_length = past_days * length_of_day"""
 
     # Encode data
-    data_processor = DataProcessor(df, future_days)
+    data_processor = DataProcessor(df, settings.future_days)
 
     try:
         encoded_data = data_processor.encode()
@@ -47,7 +52,7 @@ if __name__=="__main__":
     
 
 
-    num_epochs = 1000
+    """    num_epochs = 1000
 
     batch_size = 32
     validation_size = 0.2
@@ -55,41 +60,39 @@ if __name__=="__main__":
 
     num_targets =  len([col for col in df.columns if str(col).isnumeric()])
     num_features = encoded_data.shape[1] - num_targets
+
     steps_per_epoch = (encoded_data.shape[0] // strides) * (1-(test_size + validation_size)) // batch_size -1
     validation_steps = max((encoded_data.shape[0] // strides) * validation_size // batch_size, 1) 
     test_steps = max((encoded_data.shape[0] // strides) * test_size // batch_size, 1) 
 
+    """
+    num_features, num_targets = data_processor.get_shape()
+    pipeline_configs = PipelineConfigs(settings, num_features, num_targets)
 
     log_dir = "logs/fit/"
     checkpoint_path = 'saved_models/i_transformer_weights/checkpoint.ckpt'
 
     
     # Create train validation test splits
-    data_pipeline = DataPipeline(
-                                window_size=seq_length, 
-                                sliding_step=length_of_day, 
-                                num_targets=num_targets, 
-                                num_features=num_features, 
-                                num_epochs=num_epochs, 
-                                batch_size=batch_size,
-                                validation_size=validation_size,
-                                test_size=test_size
-                                )
+    data_pipeline = DataPipeline(configs=pipeline_configs)
+
+    # NOTE: should probably do this in DataProcessor
     dataset = tf.data.Dataset.from_tensor_slices(encoded_data.values)
+
     train, val, test = data_pipeline.generate_data(dataset)
 
     loss = CustomLoss(length_of_day)
 
 
 
-    # Create a model     
+    """    # Create a model     
     #model = CustomLSTM(seq_length, future_steps, num_features, num_targets)
 
     config = tf.compat.v1.ConfigProto()
     config.gpu_options.per_process_gpu_memory_fraction = 0.8
     # Apply the configurations
     session = tf.compat.v1.Session(config=config)
-    tf.compat.v1.keras.backend.set_session(session)
+    tf.compat.v1.keras.backend.set_session(session)"""
 
     configs = Configurator()
     model = Model(configs)

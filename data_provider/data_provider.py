@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-from data_provider.time_configs import TimeConfigs
+from utils.configs import ProviderConfigs
 from data_provider.sub_providers import (
     SalesDataProvider,
     FahrtenDataProvider,
@@ -10,7 +10,7 @@ from data_provider.sub_providers import (
 )
 
 class DataProvider:
-    def __init__(self, configs, data_directory='data/database', file_name='dataset.csv'):
+    def __init__(self, configs, data_directory='data/database'):
         self.providers = {
             'fahrten': FahrtenDataProvider(),
             'weather': WeatherDataProvider(),
@@ -18,7 +18,6 @@ class DataProvider:
             'sales': SalesDataProvider(),
         }
         self.data_directory = data_directory
-        self.file_name = file_name
         self.configs = configs
         
 
@@ -33,8 +32,24 @@ class DataProvider:
                 except Exception as e:
                     print(f"Failed to create new {key} database: {str(e)}")
 
-    
+    def load_database(self):
+        data = []
+        for key in self.providers.keys():
+            file_path = os.path.join(self.data_directory, key)
+            database = pd.read_csv(f'{file_path}.csv', index_col=0, parse_dates=True)
+            try:
+                new_data = pd.read_csv(f'data/new_data/{key}.csv', index_col=0, parse_dates=True)
+                result = new_data.combine_first(database)
+            except:
+                result = database
+            data.append(result)
 
+                
+        result = data[0]
+        for df in data[1:]:
+            result = result.join(df, how='outer')
+        result = self.filter_time_and_date(result)
+        return result.fillna(0)
         
     
     def filter_time_and_date(self, df) -> pd.DataFrame:
@@ -43,7 +58,7 @@ class DataProvider:
         return df
     
     def get_data(self):
-        file_path = os.path.join(self.data_directory, self.file_name)
+        file_path = "data/test/dataset.csv"
         print(file_path)
         if not os.path.exists(file_path):
             # Create data if the file doesn't exist yet
@@ -81,6 +96,8 @@ class DataProvider:
 
             
 if __name__ == "__main__":
-    configs = TimeConfigs()
+    configs = ProviderConfigs()
     provider = DataProvider(configs=configs)
-    provider.create_new_database()
+    #provider.create_new_database(provider_list=['fahrten'])
+    df = provider.load_database()
+    print(df)

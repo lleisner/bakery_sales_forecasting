@@ -5,6 +5,8 @@ import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 from collections import OrderedDict
 from models.autoencoder.training import build_autoencoder, train_model
+from data_provider.data_provider import DataProvider
+from utils.configs import ProviderConfigs
 
 class BaseEncoder:
     def __init__(self, encoder_filename: str):
@@ -153,8 +155,6 @@ class DataProcessor:
         }
         self._create_sales_features()
 
-        print(self.data)
-        
         self.encoders = {
             'datetime': TemporalEncoder(),
             'weather': WeatherEncoder(),
@@ -169,6 +169,20 @@ class DataProcessor:
         sales_feature = self.data['labels'].copy().add_prefix(f'(t-{self.future_days})')
         sales_feature.index = sales_feature.index + pd.Timedelta(days=self.future_days)
         self.data['sales'] = sales_feature
+
+    def get_uncoded_data(self):
+        datetime_df = pd.DataFrame({'datetime': self.data['datetime']})
+
+        # Extracting DataFrames for concatenation
+        data_frames = [datetime_df] + [self.data[key] for key in ['weather', 'ferien', 'fahrten', 'labels', 'sales']]
+
+        # Merging the DataFrames using reduce
+        from functools import reduce
+        result_df = reduce(lambda left, right: pd.merge(left, right, on='datetime'), data_frames)
+        result_df.set_index('datetime', inplace=True)
+        result_df.to_csv("data/uncoded_data.csv")
+        return result_df
+
 
     def fit_and_encode(self) -> pd.DataFrame:
         return self._encode_data(fit_encoder=True)
@@ -189,6 +203,23 @@ class DataProcessor:
 
     def decode_data(self, data: pd.DataFrame):
         decoder = self.encoders['labels']
-        return pd.DataFrame(decoder.decode_data(data), columns=self.data['labels'].columns).astype(int)
+        return pd.DataFrame(decoder.decode_data(data), columns=self.data['labels'].columns, index=data.index).astype(int)
     
+    def get_shape(self):
+        num_features = sum(len(value.columns) for key, value in self.data.items() if key not in ['datetime', 'labels'])
+        num_targets = len(self.data['labels'].columns)
+        return num_features, num_targets
         
+
+if __name__ == "__main__":
+    configs = ProviderConfigs()
+    provider = DataProvider(configs)
+    df = provider.load_database()
+    processor = DataProcessor(data=df, future_days = 4)
+    uncoded = processor.get_uncoded_data()
+    print(uncoded[['10', '(t-4)10']])
+    try:
+        encoding = processor.encode()
+    except:
+        encoding = processor.fit_and_encode()
+    print(encoding)

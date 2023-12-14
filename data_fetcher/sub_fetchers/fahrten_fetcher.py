@@ -138,7 +138,7 @@ class FahrtenFetcher(BaseFetcher):
 
     def get_data(self):
         num_days = 5
-        return_hourly_freq = False
+        return_hourly_freq = True
         drop_WEX = True
         all_days = []
         start = datetime.combine(datetime.now() + timedelta(days=1), datetime.min.time())
@@ -158,6 +158,7 @@ class FahrtenFetcher(BaseFetcher):
         self.driver.quit()
         
         all_days = pd.concat(all_days).sort_index()
+        all_days.index.name = 'datetime'
         
         if return_hourly_freq:
             all_days = all_days.resample('H', origin=start)
