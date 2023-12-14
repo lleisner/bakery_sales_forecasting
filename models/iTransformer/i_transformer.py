@@ -100,7 +100,7 @@ class Model(keras.Model):
             outputs = outputs[:, -self.configs.pred_len:, :]
             batch_y = batch_y[:, -self.configs.pred_len:, :]
 
-            loss = self.compute_loss(y = batch_y, y_pred=outputs)
+            loss = self.compute_loss(y=batch_y, y_pred=outputs)
 
         gradients = tape.gradient(loss, self.trainable_variables)
         

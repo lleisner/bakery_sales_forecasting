@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     steps_per_epoch, validation_steps, test_steps = settings.calculate_steps(dataset.shape[0])
 
-    dataset = tf.data.Dataset.from_tensor_slices(encoding.values)
+    dataset = tf.data.Dataset.from_tensor_slices(dataset.values)
     pipeline = DataPipeline(pipeline_configs)
     train, val, test = pipeline.generate_data(dataset)
 
