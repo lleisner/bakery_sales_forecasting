@@ -17,7 +17,9 @@ class Settings:
         self.future_steps = self.future_days * self.length_of_day
         self.seq_length = self.past_days * self.length_of_day
 
-        self.num_epochs = 500
+        self.num_epochs = 1000
+        self.early_stopping_patience = 250
+        self.learning_rate = 1e-5
         self.batch_size = 32
         self.validation_size = 0.2
         self.test_size = 0.1

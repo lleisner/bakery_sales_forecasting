@@ -53,7 +53,7 @@ if __name__ == "__main__":
     configs = Configurator()
     model = Model(configs)
 
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss=loss, metrics=[tf.keras.metrics.MeanSquaredError()], weighted_metrics=[])
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=settings.learning_rate), loss=loss, metrics=[tf.keras.metrics.MeanSquaredError()], weighted_metrics=[])
 
     log_dir = "logs/fit/"
     checkpoint_path = 'saved_models/i_transformer_weights/checkpoint.ckpt'
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     
     early_stopping = EarlyStopping(
         monitor='val_loss',  # Monitor loss
-        patience=300,         # Number of epochs with no improvement to wait
+        patience=settings.early_stopping_patience,         # Number of epochs with no improvement to wait
         restore_best_weights=True  # Restore the best weights when stopped
     )
     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
@@ -77,9 +77,9 @@ if __name__ == "__main__":
 
     hist = model.fit(train, epochs=settings.num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback, checkpoint], use_multiprocessing=True)
 
-    #plot_training_history(hist)
+   # plot_training_history(hist)
 
-    #model.evaluate(test, steps=test_steps)
+    model.evaluate(test, steps=test_steps)
 
 
     index = to_predict.index[-settings.future_steps:]
