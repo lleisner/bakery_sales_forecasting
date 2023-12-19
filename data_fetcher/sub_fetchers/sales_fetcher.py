@@ -5,7 +5,7 @@ from data_fetcher.sub_fetchers.base_fetcher import BaseFetcher
 class SalesFetcher(BaseFetcher):
     def __init__(self, file_path='/Users/lorenzleisner/Desktop/CLOUD/GFBD/lleisner/vcom.VComExp', time_mapping_path='data/raw/time_mapping.txt'):
         self.file_path = file_path
-        #self.file_path = '/mnt/c/cloud/gfbd/lleisner/vcom.VComExp'
+        self.file_path = '/mnt/c/cloud/gfbd/lleisner/vcom.VComExp'
         self.time_mapping = self.get_time_mapping(time_mapping_path)
         
         
