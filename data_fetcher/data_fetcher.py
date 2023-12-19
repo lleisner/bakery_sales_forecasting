@@ -26,8 +26,7 @@ class DataFetcher:
             try:
                 fetcher.update_csv(data_directory=self.data_directory, filename=key)
                 logging.info(f"Update successful for fetcher '{key}'")
-                if key == 'sales':
-                    pass
+               # if key == 'sales':
                     #fetcher.remove_vcom_file()
             except Exception as e:
                 logging.error(f"Update failed for fetcher '{key}': {str(e)}")
