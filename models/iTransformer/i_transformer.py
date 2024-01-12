@@ -25,8 +25,10 @@ class Model(keras.Model):
             [
                 EncoderLayer(
                     attention=AttentionLayer(
-                                    FullAttention(False, configs.factor, attention_dropout=configs.dropout,
-                                    output_attention=configs.output_attention), configs.d_model, configs.n_heads),
+                                    FullAttention(
+                                        False, attention_dropout=configs.dropout,output_attention=configs.output_attention
+                                        ),
+                                    configs.d_model, configs.n_heads),
                     d_model=configs.d_model,
                     d_ff=configs.d_ff,
                     dropout=configs.dropout,
@@ -78,8 +80,8 @@ class Model(keras.Model):
 
             dec_out = dec_out * stdev_t + means_t  # De-normalization computation
 
-        return dec_out
-        #return dec_out[:, -self.configs.pred_len:, :]  # [B, L, D]
+        #return dec_out
+        return dec_out[:, -self.configs.pred_len:, :]  # [B, L, D]
 
 
 
@@ -107,7 +109,7 @@ class Model(keras.Model):
         #if self.configs.use_amp:
          #   gradients = scaler.get_scaled_gradients(gradients)
         
-        #gradients = [tf.clip_by_value(grad, -self.configs.clip, self.configs.clip) for grad in gradients]
+        gradients = [tf.clip_by_value(grad, -self.configs.clip, self.configs.clip) for grad in gradients]
        
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
         for metric in self.metrics:

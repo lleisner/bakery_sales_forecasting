@@ -61,6 +61,8 @@ class SalesDataProvider(BaseProvider):
         df = df.reindex(sorted(df.columns, key=int), axis=1)
         df = df.clip(lower=0)
         df = df[sorted(list(self._filter_range() & set(df.columns)))]
+        df = self._clean_invalid_sales(df)
+        df = self._add_opening_times(df)
         return df
 
     def _filter_range(self):
@@ -74,6 +76,38 @@ class SalesDataProvider(BaseProvider):
         for start, end in self.item_intervals:
             selected_cols.update(int(col) for col in range(start, end + 1) if start <= col <= end)
         return selected_cols
+    
+    def _clean_invalid_sales(self, df, threshold=0.15):
+        """
+        Cleans out unwanted noise from outliers:
+            - sales outside regular opening hours (8:00-17:00)
+            - sales during irregular closing hours (caused by e.g. a midday break)
+        
+        Args:
+        - df (pd.DataFrame): Input DataFrame with outliers
+        - threshold (float): min percentage compared to previous/following hour sales to not be considered an outlier.
+        
+        Returns:
+        - df (pd.DataFrame): Cleaned up DataFrame
+        """
+
+        valid_time_range = pd.to_datetime(df.index).to_series().between_time('8:00', '16:00')
+        invalid_rows_mask = ~df.index.isin(valid_time_range.index)
+        df.loc[invalid_rows_mask] = 0
+        """
+        row_sums = df.sum(axis=1)
+        prev_row_sums = row_sums.shift(1)
+        next_row_sums = row_sums.shift(-1)
+        outlier_rows = (row_sums < prev_row_sums * threshold) | (row_sums < next_row_sums * threshold)
+        df.loc[outlier_rows] = 0
+        """
+        return df
+    
+    
+    def _add_opening_times(self, df):
+        df['is_open'] = df.any(axis=1).astype(int)
+        return df
+
 
 
 

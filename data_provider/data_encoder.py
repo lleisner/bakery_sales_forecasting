@@ -2,30 +2,35 @@ import pandas as pd
 import joblib
 import numpy as np
 import tensorflow as tf
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from collections import OrderedDict
 from models.autoencoder.training import build_autoencoder, train_model
 from data_provider.data_provider import DataProvider
-from utils.configs import ProviderConfigs
+from utils.configs import ProviderConfigs, Settings
 
 class BaseEncoder:
-    def __init__(self, encoder_filename: str):
+    def __init__(self, encoder_filename: str=None):
         self.encoder_filename = encoder_filename
 
-    def fit_encoder(self, data: pd.DataFrame) -> StandardScaler:
+    def fit_encoder(self, data: pd.DataFrame):
         if self.encoder_filename:
             encoder = StandardScaler()
+            #encoder = MinMaxScaler()
             encoder.fit(data)
             joblib.dump(encoder, self.encoder_filename)
             return encoder
+        else:
+            return None
     
-    def load_encoder(self) -> StandardScaler:
+    def load_encoder(self):
         if self.encoder_filename:
             try:
                 return joblib.load(self.encoder_filename)
             except FileNotFoundError as e:
                 raise Exception("Error while loading encoder. Try running BaseEncoder.fit_encoder() or BaseEncoder.fit_and_encode() first to create a new encoder") from e
-
+        else:
+            return None
+        
     def encode(self, data: pd.DataFrame) -> pd.DataFrame:
         encoder = self.load_encoder()
         return self._encode_data(data, encoder)
@@ -35,13 +40,10 @@ class BaseEncoder:
         return self._encode_data(data, encoder)
     
     def _encode_data(self, data, encoder):
-        pass
+        return data
         
 
 class TemporalEncoder(BaseEncoder):
-    def __init__(self, encoder_filename: str=None):
-        super().__init__(encoder_filename)
-
     def _encode_data(self, data: pd.DatetimeIndex, encoder):
         dataframes = []
         dataframes.append(pd.get_dummies(data.year, prefix='year', dtype=float))
@@ -67,7 +69,7 @@ class SalesEncoder(BaseEncoder):
     def __init__(self, encoder_filename: str='saved_models/sales_encoding.save'):
         super().__init__(encoder_filename)
 
-    def _encode_data(self, data: pd.DataFrame, encoder: StandardScaler) -> pd.DataFrame:
+    def _encode_data(self, data: pd.DataFrame, encoder) -> pd.DataFrame:
         encoding = encoder.transform(data)
         encoding = pd.DataFrame(encoding, index=data.index, columns=data.columns)
         return encoding
@@ -144,13 +146,14 @@ class SineCosineEncoder:
 
 
 class DataProcessor:
-    def __init__(self, data: pd.DataFrame, future_days: int):
+    def __init__(self, data: pd.DataFrame, future_days: int, reduce_one_hots: bool=False):
         self.future_days = future_days
         self.data = {
             'datetime': data.index,
             'weather': data[['temperature', 'precipitation', 'cloud_cover', 'wind_speed', 'wind_direction']],
             'ferien': data[['BW', 'BY', 'BE', 'BB', 'HB', 'HH', 'HE', 'MV', 'NI', 'NW', 'RP', 'SL', 'SN', 'ST', 'SH', 'TH']],
             'fahrten': data[['SP1_an', 'SP2_an', 'SP4_an', 'SP1_ab', 'SP2_ab', 'SP4_ab']],
+            'is_open': data[['is_open']],
             'labels': data[[col for col in data.columns if str(col).isnumeric()]]
         }
         self._create_sales_features()
@@ -158,8 +161,9 @@ class DataProcessor:
         self.encoders = {
             'datetime': TemporalEncoder(),
             'weather': WeatherEncoder(),
-            'ferien': FerienEncoder(),
-            'fahrten': FahrtenEncoder(),
+            'ferien': FerienEncoder() if reduce_one_hots else BaseEncoder(),
+            'fahrten': FahrtenEncoder() if reduce_one_hots else BaseEncoder(),
+            'is_open': BaseEncoder(),
             'labels': LabelEncoder(),
             'sales': SalesEncoder()
         }
@@ -169,12 +173,14 @@ class DataProcessor:
         sales_feature = self.data['labels'].copy().add_prefix(f'(t-{self.future_days})')
         sales_feature.index = sales_feature.index + pd.Timedelta(days=self.future_days)
         self.data['sales'] = sales_feature
+        
 
     def get_uncoded_data(self):
         datetime_df = pd.DataFrame({'datetime': self.data['datetime']})
 
         # Extracting DataFrames for concatenation
-        data_frames = [datetime_df] + [self.data[key] for key in ['weather', 'ferien', 'fahrten', 'labels', 'sales']]
+        data_frames = [datetime_df] + [self.data[key] for key in ['weather', 'ferien', 'fahrten', 'is_open', 'labels', 'sales']]
+      #  data_frames = [datetime_df] + [self.data[key] for key in self.data.keys() if key != 'datetime']
 
         # Merging the DataFrames using reduce
         from functools import reduce
@@ -195,9 +201,10 @@ class DataProcessor:
         for key, data in self.data.items():
             encoder = self.encoders[key]
             encoded_data[key] = encoder.fit_and_encode(data) if fit_encoder else encoder.encode(data)
+            print(encoded_data[key])
             print(key, "encoder done")
             
-        new_order = ['sales','datetime','weather','ferien','fahrten','labels']
+        new_order = ['sales','datetime','is_open','weather','ferien','fahrten','labels']
         encoded_data = OrderedDict((key, encoded_data[key]) for key in new_order)
         return pd.concat(encoded_data.values(), axis=1).dropna()
 
@@ -212,14 +219,17 @@ class DataProcessor:
         
 
 if __name__ == "__main__":
+    settings = Settings()
     configs = ProviderConfigs()
     provider = DataProvider(configs)
+    provider.create_new_database(provider_list=['sales'])
     df = provider.load_database()
-    processor = DataProcessor(data=df, future_days = 4)
+    processor = DataProcessor(data=df, future_days=settings.future_days)
     uncoded = processor.get_uncoded_data()
-    print(uncoded[['10', '(t-4)10']])
+    
     try:
         encoding = processor.encode()
     except:
         encoding = processor.fit_and_encode()
     print(encoding)
+

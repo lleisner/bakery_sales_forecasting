@@ -7,7 +7,8 @@ from tensorboard.plugins.hparams import api as hp
 
 from utils.loss import custom_time_series_loss, CustomLoss
 from utils.plot_hist import plot_training_history
-from utils.configs import Settings, ProviderConfigs, PipelineConfigs
+from utils.visual_season import visualize_seasonality
+from utils.configs import Settings, ProviderConfigs, PipelineConfigs, TransformerConfigs
 from models.lstm_model.lstm import CustomLSTM
 
 from models.iTransformer.i_transformer import Model
@@ -25,21 +26,31 @@ if __name__ == "__main__":
     provider_configs = ProviderConfigs()
 
     provider = DataProvider(provider_configs)
+    
+    provider.create_new_database(provider_list=['sales'])
+        
     df = provider.load_database()
-    processor = DataProcessor(data=df, future_days = 4)
+        
+    processor = DataProcessor(data=df, future_days=settings.future_days)
+    
+    encoding = processor.fit_and_encode()
+        
     try:
         encoding = processor.encode()
     except:
         encoding = processor.fit_and_encode()
+    
 
+    print(encoding)
     num_features, num_targets = processor.get_shape()
     pipeline_configs = PipelineConfigs(settings, num_features, num_targets)
 
 
-    to_predict = encoding.tail(512)
+    to_predict = encoding.tail(settings.seq_length)
     print(to_predict)
     # Set train cutoff to two months ago
-    dataset = encoding[:-1048]
+    dataset = encoding#[:-1024]
+    print('dataset')
     print(dataset)
 
     steps_per_epoch, validation_steps, test_steps = settings.calculate_steps(dataset.shape[0])
@@ -49,9 +60,11 @@ if __name__ == "__main__":
     train, val, test = pipeline.generate_data(dataset)
 
     loss = CustomLoss(settings.length_of_day)
+    #loss = tf.keras.losses.MeanSquaredError()
 
-    configs = Configurator()
-    model = Model(configs)
+   # configs = Configurator()
+    t_configs = TransformerConfigs(settings)
+    model = Model(t_configs)
 
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=settings.learning_rate), loss=loss, metrics=[tf.keras.metrics.MeanSquaredError()], weighted_metrics=[])
 
@@ -87,7 +100,7 @@ if __name__ == "__main__":
 
     x_s , x_mark = X.iloc[:, :num_targets].values, X.iloc[:, num_targets:].values
     x_s, x_mark = np.expand_dims(x_s, axis=0), np.expand_dims(x_mark, axis=0)
-    x_s, _x_mark = tf.convert_to_tensor(x_s), tf.convert_to_tensor(x_mark)
+    x_s, x_mark = tf.convert_to_tensor(x_s), tf.convert_to_tensor(x_mark)
 
     prediction = model.predict((x_s, x_mark))
     df = pd.DataFrame(np.squeeze(prediction), index=index)

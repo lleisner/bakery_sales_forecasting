@@ -7,6 +7,9 @@ from data_provider.data_provider import DataProvider
 from utils.configs import ProviderConfigs, PipelineConfigs, Settings
 
 class BaseGenerator(ABC):
+    def __init__(self, configs):
+        self.configs = configs
+    
     @abstractmethod
     def preprocess(self, dataset):
         pass
@@ -16,51 +19,35 @@ class BaseGenerator(ABC):
     
 
 class WindowGenerator(BaseGenerator):
-    def __init__(self, window_size: int, sliding_step: int):
-        self.window_size = window_size
-        self.sliding_step = sliding_step
-
     def preprocess(self, dataset: tf.data.Dataset) -> tf.data.Dataset:
-        windows = dataset.window(self.window_size, shift=self.sliding_step)
+        windows = dataset.window(self.configs.window_size, shift=self.configs.sliding_step)
         def sub_to_batch(sub):
-            return sub.batch(self.window_size, drop_remainder=True)
+            return sub.batch(self.configs.window_size, drop_remainder=True)
         windows = windows.flat_map(sub_to_batch)
         return windows
     
 
 class BatchGenerator(BaseGenerator):
-    def __init__(self, num_targets: int, num_features: int, num_epochs: int, batch_size: int):
-        self.num_targets = num_targets
-        self.num_features = num_features
-        self.num_epochs = num_epochs
-        self.batch_size = batch_size
-
     def _get_variate_covariate_tuple(self, data_slice):
-        batch_x = data_slice[:, :self.num_targets]
-        batch_x_mark = data_slice[:, self.num_targets:-self.num_targets]
-        batch_y = data_slice[:, -self.num_targets:]
+        batch_x = data_slice[:, :self.configs.num_targets]
+        batch_x_mark = data_slice[:, self.configs.num_targets:-self.configs.num_targets]
+        batch_y = data_slice[:, -self.configs.num_targets:]
         return batch_x, batch_y, batch_x_mark
 
     def preprocess(self, dataset: tf.data.Dataset):
-        dataset = dataset.shuffle(buffer_size=1000, seed=42)
+        #dataset = dataset.shuffle(buffer_size=self.configs.buffer_size, seed=42)
         dataset = dataset.map(self._get_variate_covariate_tuple, num_parallel_calls=tf.data.AUTOTUNE)
-        dataset = dataset.batch(self.batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
-        dataset = dataset.repeat(self.num_epochs)
+        dataset = dataset.batch(self.configs.batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
+        dataset = dataset.repeat(self.configs.num_epochs)
         return dataset
 
 
 class DatasetSplitter(BaseGenerator):
-    def __init__(self, validation_size: float=0.1, test_size: float=0.1, buffer_size: int=1000, seed: int=42):
-        self.validation_size = validation_size
-        self.test_size = test_size
-        self.buffer_size = buffer_size
-        self.seed = seed
-    
     def preprocess(self, dataset: tf.data.Dataset) -> Tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
         dataset_list = list(dataset.as_numpy_iterator())
         num_samples = len(dataset_list)
-        valid_size = int(self.validation_size * num_samples)
-        test_size = int(self.test_size * num_samples)
+        valid_size = int(self.configs.validation_size * num_samples)
+        test_size = int(self.configs.test_size * num_samples)
 
         #shuffled_dataset = dataset.shuffle(buffer_size=self.buffer_size, seed=self.seed)
         shuffled_dataset = dataset
@@ -74,9 +61,9 @@ class DatasetSplitter(BaseGenerator):
 
 class DataPipeline:
     def __init__(self, configs):
-        self.window_generator = WindowGenerator(configs.window_size, configs.sliding_step)
-        self.data_splitter = DatasetSplitter(configs.validation_size, configs.test_size, configs.buffer_size, configs.seed)
-        self.batch_generator = BatchGenerator(configs.num_targets, configs.num_features, configs.num_epochs, configs.batch_size)
+        self.window_generator = WindowGenerator(configs)
+        self.data_splitter = DatasetSplitter(configs)
+        self.batch_generator = BatchGenerator(configs)
     
     def generate_data(self, data):
         data = self.window_generator(data)
@@ -92,7 +79,7 @@ if __name__ == "__main__":
 
     provider = DataProvider(provider_configs)
     df = provider.load_database()
-    processor = DataProcessor(data=df, future_days = 4)
+    processor = DataProcessor(data=df, future_steps=settings.future_steps)
     try:
         encoding = processor.encode()
     except:

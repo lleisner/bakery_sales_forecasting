@@ -15,7 +15,7 @@ class DataProvider:
             'fahrten': FahrtenDataProvider(),
             'weather': WeatherDataProvider(),
             'ferien': FerienDataProvider(),
-            'sales': SalesDataProvider(),
+            'sales': SalesDataProvider(item_intervals=configs.item_selection),
         }
         self.data_directory = data_directory
         self.configs = configs
@@ -98,6 +98,6 @@ class DataProvider:
 if __name__ == "__main__":
     configs = ProviderConfigs()
     provider = DataProvider(configs=configs)
-    #provider.create_new_database(provider_list=['fahrten'])
+    provider.create_new_database(provider_list=['sales'])
     df = provider.load_database()
     print(df)
