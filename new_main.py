@@ -49,7 +49,7 @@ if __name__ == "__main__":
     to_predict = encoding.tail(settings.seq_length)
     print(to_predict)
     # Set train cutoff to two months ago
-    dataset = encoding#[:-1024]
+    dataset = encoding[:-512]
     print('dataset')
     print(dataset)
 

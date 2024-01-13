@@ -15,7 +15,7 @@ class DataProvider:
             'fahrten': FahrtenDataProvider(),
             'weather': WeatherDataProvider(),
             'ferien': FerienDataProvider(),
-            'sales': SalesDataProvider(item_intervals=configs.item_selection),
+            'sales': SalesDataProvider(item_selection=configs.item_selection),
         }
         self.data_directory = data_directory
         self.configs = configs

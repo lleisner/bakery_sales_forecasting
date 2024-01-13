@@ -49,7 +49,7 @@ class DatasetSplitter(BaseGenerator):
         valid_size = int(self.configs.validation_size * num_samples)
         test_size = int(self.configs.test_size * num_samples)
 
-        #shuffled_dataset = dataset.shuffle(buffer_size=self.buffer_size, seed=self.seed)
+        #shuffled_dataset = dataset.shuffle(buffer_size=self.configs.buffer_size, seed=self.configs.seed)
         shuffled_dataset = dataset
         validation_dataset = shuffled_dataset.take(valid_size)
         remaining_dataset = shuffled_dataset.skip(valid_size)

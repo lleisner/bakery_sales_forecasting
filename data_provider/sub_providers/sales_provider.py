@@ -5,7 +5,7 @@ from data_provider.sub_providers.base_provider import BaseProvider
 
 
 class SalesDataProvider(BaseProvider):
-    def __init__(self, source_directory = 'data/raw/sales', item_intervals = [(10, 50), (80, 130)]):
+    def __init__(self, source_directory = 'data/raw/sales', item_selection = ["broetchen", "plunder"]):
         """
         Initialize SalesDataProvider instance.
 
@@ -15,7 +15,13 @@ class SalesDataProvider(BaseProvider):
                                            Each tuple represents a range (start, end).
         """
         super().__init__(source_directory)
-        self.item_intervals = item_intervals
+        
+        item_selection_dict = {
+            "broetchen": [(10, 13), (16), (20, 32), (35), (38, 39)],
+            "plunder": [(80), (82, 86), (97, 99), (105, 107), (111, 112)],
+            "suppe": [(250, 271)]
+        }
+        self.item_intervals = [item_selection_dict[category] for category in item_selection]
         
     def _read_file(self, file_path):
         """
@@ -60,12 +66,13 @@ class SalesDataProvider(BaseProvider):
         df = df.sort_index()
         df = df.reindex(sorted(df.columns, key=int), axis=1)
         df = df.clip(lower=0)
-        df = df[sorted(list(self._filter_range() & set(df.columns)))]
+        df = df[sorted(list(self._filter_range(self.item_intervals) & set(df.columns)))]
         df = self._clean_invalid_sales(df)
         df = self._add_opening_times(df)
         return df
 
-    def _filter_range(self):
+    
+    def _filter_range(self, item_intervals):
         """
         Helper method to generate a set of selected column indices based on item intervals.
 
@@ -73,9 +80,19 @@ class SalesDataProvider(BaseProvider):
         - set: Set containing selected column indices.
         """
         selected_cols = set()
-        for start, end in self.item_intervals:
-            selected_cols.update(int(col) for col in range(start, end + 1) if start <= col <= end)
+        
+        if isinstance(item_intervals, int):
+            selected_cols.add(item_intervals)
+        elif isinstance(item_intervals, tuple):
+            selected_cols.update(set(int(col) for col in range(item_intervals[0], item_intervals[1] + 1)))
+        elif isinstance(item_intervals, list):
+            for sub_range in item_intervals:
+                selected_cols.update(self._filter_range(sub_range))
+        else:
+            raise ValueError(f'item_range {item_intervals} not of valid type: {type(item_intervals)}')
+        
         return selected_cols
+
     
     def _clean_invalid_sales(self, df, threshold=0.15):
         """
