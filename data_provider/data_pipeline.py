@@ -37,8 +37,8 @@ class BatchGenerator(BaseGenerator):
     def preprocess(self, dataset: tf.data.Dataset):
         #dataset = dataset.shuffle(buffer_size=self.configs.buffer_size, seed=42)
         dataset = dataset.map(self._get_variate_covariate_tuple, num_parallel_calls=tf.data.AUTOTUNE)
-        dataset = dataset.batch(self.configs.batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
-        dataset = dataset.repeat(self.configs.num_epochs)
+        dataset = dataset.batch(self.configs.batch_size, drop_remainder=True).prefetch(buffer_size=tf.data.AUTOTUNE)
+        dataset = dataset.repeat(self.configs.num_repeats)
         return dataset
 
 

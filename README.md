@@ -29,7 +29,11 @@ The dataset ranges from 01.01.2017 to 31.08.2023 in hourly intervals. Considerin
 - weather: (temperature, precipitation, wind_speed, wind_direction) (4)
 - tourism: (time of arrivals, departues of each ferry)              (6)
 - holidays: (holidays of all Bundesländer)                          (16)
-- sales: (sales for a selected range / each item)                   (50 / 200+)
+- sales: (sales for a selected range / each item)                   (selection from 1-50)
+
+
+
+
 
 ## Models
 

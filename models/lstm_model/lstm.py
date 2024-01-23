@@ -2,107 +2,57 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.layers import LSTM, Dense, Dropout, InputLayer, LeakyReLU
 
-class CustomLSTM(keras.Model):
-    def __init__(self, seq_length, pred_len, num_features, num_targets):
-        super().__init__()
-        self.pred_len = pred_len
+from models.training import CustomModel
+
+class CustomLSTM(CustomModel):
+    def __init__(self, configs):
+        super().__init__(configs=configs)
         
-        self.lstm1 = LSTM(32, return_sequences=True, input_shape=(seq_length, num_features))
+        self.lstm1 = LSTM(64, return_sequences=True, input_shape=(configs.seq_len, configs.num_features))
         self.lstm2 = LSTM(64, return_sequences=True)
         self.lstm3 = LSTM(32, return_sequences=True)
+        self.l_relu = LeakyReLU(alpha=0.5)
         
-        self.dropout = Dropout(0.2)
-        self.out = Dense(num_targets)
+        self.dropout = Dropout(configs.dropout)
+        self.out = Dense(configs.num_targets)
         
-        self.build((None,seq_length, num_features))
-
-    @tf.function
+    """
+        self.custom_layers = [
+            LSTM(128, return_sequences=True, input_shape=(configs.seq_len, configs.num_features)),
+            LeakyReLU(alpha=0.5),
+            LSTM(128, return_sequences=True),
+            LeakyReLU(alpha=0.5),
+            Dropout(0.3),
+            LSTM(64, return_sequences=False),
+            Dropout(0.3),
+            Dense(configs.num_targets)
+        ]
+    
     def call(self, x):
-        x = self.lstm1(x)
-        x = self.dropout(x)
-        x = self.lstm2(x)
-        x = self.dropout(x)
-        x = self.lstm3(x)
-        x = self.out(x)
+        batch_x, batch_x_mark = x
+        x = tf.concat([batch_x, batch_x_mark], axis=-1)
+        for layer in self.custom_layers:
+            try:
+                x = layer(x)
+            except:
+                x = layer(x)
         return x
     
-    def build(self, input_shape):
-        self.lstm1.build(input_shape)
-        self.lstm2.build(self.lstm1.compute_output_shape(input_shape))
-        self.lstm3.build(self.lstm2.compute_output_shape(input_shape))
-        super().build(input_shape)
-    
-
+    """   
     @tf.function
-    def train_step(self, data):
-            inputs, targets = data
-            inputs = tf.cast(inputs, dtype=tf.float32)
-            targets = tf.cast(targets, dtype=tf.float32)
-
-            with tf.GradientTape() as tape:
-                outputs = self(inputs)
-                outputs = outputs[:, -self.pred_len:, :]
-                targets = targets[:, -self.pred_len:, :]
-                loss = self.compute_loss(y=targets, y_pred=outputs)
-                
-            gradients = tape.gradient(loss, self.trainable_variables)
-            self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
-            
-            for metric in self.metrics:
-                if metric.name == "loss":
-                    metric.update_state(loss)
-                else:
-                    metric.update_state(targets, outputs)
-            
-            return {m.name: m.result() for m in self.metrics}
-
+    def call(self, x, training):
+        batch_x, batch_x_mark = x
+        x = tf.concat([batch_x, batch_x_mark], axis=-1)
+        x = self.lstm1(x)
+        x = self.l_relu(x)
+        x = self.lstm2(x)
+        x = self.l_relu(x)
+        x = self.dropout(x, training)
+        x = self.lstm3(x)
+        x = self.dropout(x, training)
+        x = self.out(x)
+        return x[:, -self.configs.pred_len:, :]
     
 
-        
-    @tf.function
-    def train_step(self, data):
-        batch_x, batch_y, batch_x_mark = data   
-        inputs = tf.concat([batch_x, batch_x_mark], axis=-1)
-        
-        inputs = tf.cast(inputs, dtype=tf.float32)
-        batch_y = tf.cast(batch_y, dtype=tf.float32)
-
-        with tf.GradientTape() as tape:
-            outputs = self(inputs)
-            
-            outputs = outputs[:, -self.pred_len:, :]
-            batch_y = batch_y[:, -self.pred_len:, :]
-
-            loss = self.compute_loss(y=batch_y, y_pred=outputs)
-            
-        gradients = tape.gradient(loss, self.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
-        
-        for metric in self.metrics:
-            if metric.name == "loss":
-                metric.update_state(loss)
-            else:
-                metric.update_state(batch_y, outputs)
-        
-        return {m.name: m.result() for m in self.metrics}
-    
-    
-    @tf.function
-    def test_step(self, data):
-        batch_x, batch_y, batch_x_mark = data
-        inputs = tf.concat([batch_x, batch_x_mark], axis=-1)
-        
-        outputs = self(inputs)
-        outputs = outputs[:, -self.pred_len:, :]
-        batch_y = batch_y[:, -self.pred_len:, :]
-        
-        self.compute_loss(y=batch_y, y_pred=outputs)
-        
-        for metric in self.metrics:
-            if metric.name != "loss":
-                metric.update_state(batch_y, outputs)
-
-        return {m.name: m.result() for m in self.metrics}
-    

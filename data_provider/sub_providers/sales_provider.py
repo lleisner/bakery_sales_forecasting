@@ -19,7 +19,8 @@ class SalesDataProvider(BaseProvider):
         item_selection_dict = {
             "broetchen": [(10, 13), (16), (20, 32), (35), (38, 39)],
             "plunder": [(80), (82, 86), (97, 99), (105, 107), (111, 112)],
-            "suppe": [(250, 271)]
+            "suppe": [(250, 271)],
+            "normale": [(10)]
         }
         self.item_intervals = [item_selection_dict[category] for category in item_selection]
         
@@ -68,6 +69,7 @@ class SalesDataProvider(BaseProvider):
         df = df.clip(lower=0)
         df = df[sorted(list(self._filter_range(self.item_intervals) & set(df.columns)))]
         df = self._clean_invalid_sales(df)
+        df = self.remove_outlier_days(df)
         df = self._add_opening_times(df)
         return df
 
@@ -124,11 +126,37 @@ class SalesDataProvider(BaseProvider):
     def _add_opening_times(self, df):
         df['is_open'] = df.any(axis=1).astype(int)
         return df
+    
 
+    def aggregate_days(self, df):
+        return df.resample('D').sum()
+    
+    
+    def remove_outlier_days(self, df, positive_multiplier=2, negative_multiplier=3):
+        daily_totals = df.resample('D').sum()
 
+        # Calculate the sum for each row (across all columns)
+        total_sum = daily_totals.sum(axis=1)
 
+        # Calculate rolling mean and standard deviation for the total sum
+        rolling_mean = total_sum.rolling(window=8, min_periods=3).mean()
+        rolling_std = total_sum.rolling(window=8, min_periods=3).std()
+
+        # Calculate threshold for potential outliers
+        threshold_positive = rolling_mean + positive_multiplier * rolling_std
+        threshold_negative = rolling_mean - negative_multiplier * rolling_std
+
+        # Identify potential outliers
+        potential_outliers = (total_sum > threshold_positive) | (total_sum < threshold_negative)
+        
+        outlier_bools = potential_outliers.resample('H').ffill()
+        
+        inverse_bools = ~outlier_bools
+
+        return df.loc[inverse_bools.index.intersection(df.index)][inverse_bools]
 
 if __name__ == "__main__":
     processor = SalesDataProvider()
     df = processor.get_data()
     print(df)
+ 
