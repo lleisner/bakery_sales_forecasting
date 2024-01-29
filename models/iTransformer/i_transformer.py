@@ -70,8 +70,8 @@ class Model(CustomModel):
         # De-Normalization from Non-stationary Transformer
         
         
-        dec_out = self.tester(tf.concat([dec_out, x_mark_enc[:, -self.configs.pred_len:, :]], axis=-1))
-        dec_out = self.out(dec_out)
+        #dec_out = self.tester(tf.concat([dec_out, x_mark_enc[:, -self.configs.pred_len:, :]], axis=-1))
+        #dec_out = self.out(dec_out)
 
         
         if self.configs.use_norm:

@@ -2,13 +2,14 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
+import keras_tuner
 import os
 from tensorboard.plugins.hparams import api as hp
 
 from utils.loss import custom_time_series_loss, CustomLoss
 from utils.plot_hist import plot_training_history
 from utils.visual_season import visualize_seasonality
-from utils.configs import Settings, ProviderConfigs, ProcessorConfigs, PipelineConfigs, TransformerConfigs
+from utils.configs import Settings, ProviderConfigs, ProcessorConfigs, PipelineConfigs, TransformerConfigs, build_model
 from models.lstm_model.lstm import CustomLSTM
 
 from models.iTransformer.i_transformer import Model
@@ -52,7 +53,7 @@ if __name__ == "__main__":
     print("dataset features: ", encoding.columns)
     num_features, num_targets = processor.get_shape()
     pipeline_configs = PipelineConfigs(settings, num_features, num_targets)
-
+    t_configs = TransformerConfigs(settings, num_features, num_targets)
 
     to_predict = encoding.tail(settings.seq_length)
     # Set train cutoff to two months ago
@@ -63,17 +64,57 @@ if __name__ == "__main__":
     dataset = tf.data.Dataset.from_tensor_slices(dataset.values)
     pipeline = DataPipeline(pipeline_configs)
     train, val, test = pipeline.generate_data(dataset)
+    
+    
+    
 
-    #loss = CustomLoss(settings.length_of_day)
-    loss = tf.keras.losses.MeanSquaredError()
+    
+    log_dir = "logs/tmp/tb_logs/"
+    checkpoint_path = 'saved_models/i_transformer_weights/checkpoint.ckpt'
+
+    checkpoint = ModelCheckpoint(
+        filepath=checkpoint_path,
+        monitor='val_loss',
+        save_best_only=True,
+        save_weights_only=True,
+        verbose=1
+    )
+    
+    early_stopping = EarlyStopping(
+        monitor='val_loss',  # Monitor loss
+        patience=settings.early_stopping_patience,         # Number of epochs with no improvement to wait
+        restore_best_weights=True  # Restore the best weights when stopped
+    )
+    tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+    search_best_model = False
+    if search_best_model:
+        tuner = keras_tuner.RandomSearch(
+        hypermodel=lambda hp: build_model(hp, model=Model, configs=t_configs),
+        objective="val_loss",
+        max_trials=50,
+        executions_per_trial=1,
+        overwrite=True,
+        directory="logs/tuner",
+        project_name="iTransformer",
+        )
+        tuner.search_space_summary()
+        tuner.search(train, epochs=settings.num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback, checkpoint], use_multiprocessing=True)
+        tuner.results_summary()
+        best_hps = tuner.get_best_hyperparameters(5)
+        print("best hyperparameters: ", best_hps)
+
+    
+
 
    # configs = Configurator()
-    t_configs = TransformerConfigs(settings, num_features, num_targets)
+    
     model = Model(t_configs)
     #model = CustomLSTM(t_configs)
     #model = CustomModel(t_configs)
 
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=settings.learning_rate), loss=loss, metrics=[tf.keras.metrics.MeanSquaredError()], weighted_metrics=[])
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=t_configs.learning_rate), loss=t_configs.loss, metrics=[tf.keras.metrics.MeanAbsolutePercentageError()], weighted_metrics=[])
+
 
 
     log_dir = "logs/fit/"

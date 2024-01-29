@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import tensorflow as tf
+from utils.loss import CustomLoss
 
 class Settings:
     def __init__(self):
@@ -11,9 +13,9 @@ class Settings:
         self.future_steps = self.future_days * self.length_of_day
         self.seq_length = self.past_days * self.length_of_day
 
-        self.num_epochs = 200
-        self.early_stopping_patience = max(self.num_epochs//10, 2)
-        self.learning_rate = 1e-4
+        self.num_epochs = 80
+        self.early_stopping_patience = max(self.num_epochs//20, 1)
+        
         self.batch_size = 32
         self.validation_size = 0.25
         self.test_size = 0.05
@@ -38,7 +40,7 @@ class ProviderConfigs:
 
 class ProcessorConfigs:
     def __init__(self, settings):
-        self.covariate_selection = ["datetime", "is_open", "ferien", "fahrten", "weather"]  
+        self.covariate_selection = ["datetime"]#, "is_open", "ferien", "fahrten", "weather"]  
         self.reduce_one_hots = False 
         self.future_days = settings.future_days     
         self.temp_encoder = "standard"
@@ -69,12 +71,40 @@ class TransformerConfigs:
         self.num_features = num_features
         
         self.output_attention = False
-        self.dropout = 0.3  # 0.4
-        self.d_model = 32  # 16
+        self.dropout = 0.2  # 0.4
+        self.d_model = 16  # 16
         self.n_heads = 8
-        self.d_ff = 128    # 64
+        self.d_ff = 64    # 64
         self.activation = 'gelu'
-        self.e_layers = 2
+        self.e_layers = 4
         self.clip = 2.0
         self.use_amp = True
         self.use_norm = True
+        
+        #self.loss = tf.keras.losses.MeanSquaredError()
+        self.loss = tf.keras.losses.MeanAbsoluteError()
+        #self.loss = tf.keras.losses.MeanAbsolutePercentageError()
+        #self.loss = CustomLoss(settings.length_of_day)
+        self.learning_rate = 0.001
+        
+
+
+def call_on_model(model_class, model_configs):
+    model = model_class(model_configs)
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=model_configs.learning_rate), loss=model_configs.loss, metrics=["mse", "mae"], weighted_metrics=[])
+    return model
+
+
+def build_model(hp, model, configs):
+    configs.d_model = hp.Int("d_model", min_value=4, max_value=16, step=4)
+    configs.d_ff = hp.Int("d_ff", min_value=64, max_value=256, step=64)
+    configs.n_heads = hp.Int("n_heads", min_value=4, max_value=8, step=4)
+    configs.e_layers = hp.Int("e_layers", min_value=2, max_value=6, step=2)
+    #configs.use_norm = hp.Boolean("use_norm")
+    #configs.dropout = hp.Float("dropout", min_value=0.2, max_value=0.4, step=0.2)
+    #configs.learning_rate = hp.Float("lr", min_value=1e-4, max_value=1e-2, sampling="log")
+    
+    return call_on_model(model, configs)
+    
+
+
