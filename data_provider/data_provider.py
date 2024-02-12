@@ -5,6 +5,7 @@ from utils.configs import ProviderConfigs
 from data_provider.sub_providers import (
     SalesDataProvider,
     FahrtenDataProvider,
+    GaestezahlenProvider,
     WeatherDataProvider,
     FerienDataProvider
 )
@@ -12,6 +13,7 @@ from data_provider.sub_providers import (
 class DataProvider:
     def __init__(self, configs, data_directory='data/database'):
         self.providers = {
+            'gaeste': GaestezahlenProvider(),
             'fahrten': FahrtenDataProvider(),
             'weather': WeatherDataProvider(),
             'ferien': FerienDataProvider(),
@@ -98,6 +100,6 @@ class DataProvider:
 if __name__ == "__main__":
     configs = ProviderConfigs()
     provider = DataProvider(configs=configs)
-    provider.create_new_database(provider_list=['sales'])
+    provider.create_new_database(provider_list=['gaeste'])
     df = provider.load_database()
     print(df)

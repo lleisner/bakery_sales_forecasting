@@ -69,6 +69,6 @@ def train_model(data: pd.DataFrame, autoencoder: tf.keras.models.Model, save_to_
     eval = autoencoder.evaluate(X_test, y_test, batch_size=64)
     print(f'evaluation metrics: {eval}')
     percentage, count = test_encoding(data, autoencoder)
-    print(f'autoencoder training finished with {percentage}% accuracy on the data and predicted {count} entries wrong')
+    print(f'autoencoder training finished with {1-percentage}% accuracy on the data and predicted {count} entries wrong')
 
     autoencoder.save(save_to_file)

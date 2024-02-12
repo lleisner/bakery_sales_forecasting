@@ -20,7 +20,7 @@ class SalesDataProvider(BaseProvider):
             "broetchen": [(10, 13), (16), (20, 32), (35), (38, 39)],
             "plunder": [(80), (82, 86), (97, 99), (105, 107), (111, 112)],
             "suppe": [(250, 271)],
-            "normale": [(10)]
+            "test": [(10, 11), (83, 84)]
         }
         self.item_intervals = [item_selection_dict[category] for category in item_selection]
         

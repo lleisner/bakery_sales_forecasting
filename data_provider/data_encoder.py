@@ -7,6 +7,7 @@ from collections import OrderedDict
 from models.autoencoder.training import build_autoencoder, train_model
 from data_provider.data_provider import DataProvider
 from utils.configs import ProviderConfigs, Settings, ProcessorConfigs
+import warnings
 
 class BaseEncoder:
     def __init__(self, encoder_model="standard", encoder_filename: str=None):
@@ -39,16 +40,9 @@ class BaseEncoder:
     def get_uncoded_data(self, data):
         return data
     
-class TimeFeatureEncoder:
-    @staticmethod
-    def create_encoding(data: pd.Series, name: str, parameter_range: int) -> pd.DataFrame:
-        feature = data / parameter_range - 0.5
-        encoding_df = pd.DataFrame({name: feature})
-        return encoding_df
-
 class SineCosineEncoder:
     @staticmethod
-    def create_encoding(data: pd.Series, name: str, parameter_range: int) -> pd.DataFrame:
+    def create_encoding(data: pd.Series, name: str) -> pd.DataFrame:
         """
         Create sine and cosine encodings for a column of cyclic data within the range of -0.5 to 0.5.
 
@@ -60,8 +54,9 @@ class SineCosineEncoder:
         Returns:
             pd.DataFrame: A DataFrame containing two columns: 'sine_encoding' and 'cosine_encoding' scaled to the range [-0.5, 0,5].
         """
+        data -= min(data)
         # Convert the column to radians
-        radians = (data / parameter_range) * 2 * np.pi
+        radians = (data / max(data)) * 2 * np.pi
 
         # Calculate sine and cosine encodings
         sine_encoding = 0.5 * (np.sin(radians) + 1) - 0.5
@@ -71,34 +66,59 @@ class SineCosineEncoder:
         encoding_df = pd.DataFrame({f'{name}_sine_encoding': sine_encoding, f'{name}_cosine_encoding': cosine_encoding})
 
         return encoding_df
+    
+class TimeFeatureEncoder:
+    @staticmethod
+    def create_encoding(data: pd.Series, name: str) -> pd.DataFrame:
+        data -= min(data)
+        feature = data / max(data) - 0.5
+        encoding_df = pd.DataFrame({name: feature})
+        return encoding_df
+    
+class OneHotEncoder:
+    @staticmethod
+    def create_encoding(data: pd.Series, name: str) -> pd.DataFrame:
+        return pd.get_dummies(data, prefix=name, dtype=float)
         
 
 class TemporalEncoder(BaseEncoder):
     def __init__(self, encoder_model="standard"):
         self.encoder = SineCosineEncoder() if encoder_model=="sine_cosine" else TimeFeatureEncoder()
+        self.one_hot = OneHotEncoder()
         self.encoder_filename = None
+        
+    def process_data(self, data: pd.DatetimeIndex, encode=True):
+        encoding_specs = [
+            ('hour', lambda x: x.hour),
+            ('dayofweek', lambda x: x.dayofweek),
+            ('dayofmonth', lambda x: x.day),
+            ('dayofyear', lambda x: x.dayofyear), 
+            ('month', lambda x: x.month), 
+            ('quarter', lambda x: x.quarter)
+            ]
+        dataframes = []
+        for name, value_func in encoding_specs:
+            if encode:
+                df = self.encoder.create_encoding(data=value_func(data), name=name)
+            else:
+                df = pd.DataFrame({name: value_func(data)})
+                
+            dataframes.append(df)
+            
+        return pd.concat(dataframes, axis=1).set_index(data)
     
     def _encode_data(self, data: pd.DatetimeIndex):
-        dataframes = []
-      #  dataframes.append(pd.get_dummies(data.year, prefix='year', dtype=float))
-        dataframes.append(self.encoder.create_encoding(data.hour, 'hour', 24))
-        dataframes.append(self.encoder.create_encoding(data.dayofweek, 'dayofweek', 7))
-        dataframes.append(self.encoder.create_encoding((data.day - 1), 'dayofmonth', 30))
-        dataframes.append(self.encoder.create_encoding((data.dayofyear - 1), 'dayofyear', 364))
-      #  dataframes.append(self.encoder.create_encoding((data.isocalendar().week -1), 'week', 51))
-        dataframes.append(self.encoder.create_encoding((data.month - 1), 'month', 11))
-        dataframes.append(self.encoder.create_encoding((data.quarter - 1), 'quarter', 3))
-
-        df = pd.concat(dataframes, axis=1).set_index(data)
-        return df
+        return self.process_data(data, encode=True)
     
+    def get_uncoded_data(self, data):
+        return self.process_data(data, encode=False)
 
 class WeatherEncoder(BaseEncoder):
     def __init__(self, encoder_model, encoder_filename: str='saved_models/weather_encoding.save'):
         super().__init__(encoder_model=encoder_model, encoder_filename=encoder_filename)
     
     def _encode_data(self, data: pd.DataFrame) -> pd.DataFrame:
-        sin_cos_coding = SineCosineEncoder.create_encoding(data['wind_direction'], 'wind_direction', 360).set_index(data.index)
+        sin_cos_coding = SineCosineEncoder.create_encoding(data['wind_direction'], 'wind_direction').set_index(data.index)
         encoding = pd.DataFrame(self.encoder.transform(data), index=data.index, columns=data.columns)
         encoding = pd.concat([sin_cos_coding, encoding], axis=1).drop(['wind_direction'], axis=1)
         return encoding
@@ -156,94 +176,98 @@ class FahrtenEncoder(AutoEncoder):
         super().__init__(encoder_filename=encoder_filename)
 
 
-class DataProcessor:
-    def __init__(self, data: pd.DataFrame, configs):
+class DataEncoder:
+    def __init__(self, configs):
         self.configs = configs
-        self.data = {
-            'datetime': data.index,
-            'weather': data[['temperature', 'precipitation', 'cloud_cover', 'wind_speed', 'wind_direction']],
-            'ferien': data[['BW', 'BY', 'BE', 'BB', 'HB', 'HH', 'HE', 'MV', 'NI', 'NW', 'RP', 'SL', 'SN', 'ST', 'SH', 'TH']],
-            'fahrten': data[['SP1_an', 'SP2_an', 'SP4_an', 'SP1_ab', 'SP2_ab', 'SP4_ab']],
-            'is_open': data[['is_open']],
-            'labels': data[[col for col in data.columns if str(col).isnumeric()]]
-        }
-        self._create_sales_features()
-
         self.encoders = {
             'datetime': TemporalEncoder(encoder_model=self.configs.temp_encoder),
             'weather': WeatherEncoder(encoder_model=self.configs.def_encoder),
             'ferien': FerienEncoder() if self.configs.reduce_one_hots else BaseEncoder(encoder_model=self.configs.def_encoder),
             'fahrten': FahrtenEncoder() if self.configs.reduce_one_hots else BaseEncoder(encoder_model=self.configs.def_encoder),
             'is_open': BaseEncoder(encoder_model=self.configs.def_encoder),
+            'gaeste': BaseEncoder(encoder_model=self.configs.def_encoder),
             'labels': LabelEncoder(encoder_model=self.configs.def_encoder),
             'sales': SalesEncoder(encoder_model=self.configs.def_encoder)
         }
-        selected_keys = self.configs.covariate_selection
-        selected_keys.insert(0, "sales")
-        selected_keys.append("labels")
-        self.data = OrderedDict((key, self.data[key]) for key in selected_keys)
         self.shape = None
+    
+    def process_data(self, data: pd.DataFrame, encode: bool=True):
+        data = self._categorize_data(data)
+        num_targets = len(data['labels'].columns)
         
-    def _create_sales_features(self) -> None:
-        sales_feature = self.data['labels'].copy().add_prefix(f'(t-{self.configs.future_days})')
-        sales_feature.index = sales_feature.index + pd.Timedelta(days=self.configs.future_days)
-        self.data['sales'] = sales_feature
-
-    def fit_and_encode(self) -> pd.DataFrame:
-        return self._encode_data(fit_encoder=True)
+        data = self._encode_or_return_raw(data, encode)
+        num_features = len(data.columns) - num_targets
+        
+        self.shape = (num_features, num_targets)
+        return data
     
-    def encode(self) -> pd.DataFrame:
-        return self._encode_data(fit_encoder=False)
-    
-    def _encode_data(self, fit_encoder: bool) -> pd.DataFrame:
-        encoded_data = {}
-        for key, data in self.data.items():
-            encoder = self.encoders[key]
-            encoded_data[key] = encoder.fit_and_encode(data) if fit_encoder else encoder.encode(data)
-   
-        result = pd.concat(encoded_data.values(), axis=1).dropna()
-        num_targets = len(self.data['labels'].columns)
-        num_features = result.shape[1] - num_targets
-        self.shape = num_features, num_targets
-        return result
-
-    def get_uncoded_data(self):
-        uncoded_data = {}
-        for key, data in self.data.items():
-            encoder = self.encoders[key]
-            if key == "datetime":
-                uncoded_data[key] = encoder.encode(data)
-            else:
-                uncoded_data[key] = encoder.get_uncoded_data(data)
-        result = pd.concat(uncoded_data.values(), axis=1).dropna()
-        num_targets = len(self.data['labels'].columns)
-        num_features = result.shape[1] - num_targets
-        self.shape = num_features, num_targets
-        return result
-    
-    
-    def decode_data(self, data: pd.DataFrame):
+    def decode_data(self, data: pd.DataFrame, col_names):
         decoder = self.encoders['labels']
-        return pd.DataFrame(decoder.decode_data(data), columns=self.data['labels'].columns, index=data.index).astype(int)
+        return pd.DataFrame(decoder.decode_data(data), columns=col_names, index=data.index).astype(int)
     
-    def get_shape(self):
-        # shape = num_features, num_targets
-        if self.shape is None:
-            raise ValueError('shape of encoding is None, run .encode() first to determine the shape of the data')
-        return self.shape
+    def get_feature_target_nums(self, df):
+        return (pd.to_numeric(df.columns, errors='coerce').isnull().sum(), pd.to_numeric(df.columns, errors='coerce').notnull().sum())
+
         
+    def _categorize_data(self, data: pd.DataFrame):
+        selected_keys = self.configs.covariate_selection
+        grouped_data = {
+            'datetime': data.index,
+            'weather': data[['temperature', 'precipitation', 'cloud_cover', 'wind_speed', 'wind_direction']],
+            'ferien': data[['BW', 'BY', 'BE', 'BB', 'HB', 'HH', 'HE', 'MV', 'NI', 'NW', 'RP', 'SL', 'SN', 'ST', 'SH', 'TH']],
+            'fahrten': data[['SP1_an', 'SP2_an', 'SP4_an', 'SP1_ab', 'SP2_ab', 'SP4_ab']],
+            'gaeste': data[['gaestezahlen']],
+            'is_open': data[['is_open']],
+            'labels': data[[col for col in data.columns if str(col).isnumeric()]]
+        }
+        
+        if self.configs.create_sales_features:
+            grouped_data = self._create_sales_features(grouped_data)
+            selected_keys.insert(0, "sales")
+        
+        selected_keys.append("labels")
+        grouped_data = OrderedDict((key, grouped_data[key]) for key in selected_keys)
+        return grouped_data
+        
+    
+    def _create_sales_features(self, data):
+        sales_feature = data['labels'].copy().add_prefix(f'(t-{self.configs.future_days})')
+        sales_feature.index = sales_feature.index + pd.Timedelta(days=self.configs.future_days)
+        data['sales'] = sales_feature
+        return data
+    
+    def _encode_or_return_raw(self, data, encode=True):
+        encoded_data = {}
+        for key, df in data.items():
+            encoder = self.encoders[key]
+            encoded_data[key] = encoder.fit_and_encode(df) if encode else encoder.get_uncoded_data(df)
+        return pd.concat(encoded_data.values(), axis=1).dropna()
+
+
+
 
 if __name__ == "__main__":
+    warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn.utils.validation")
+
     settings = Settings()
     configs = ProviderConfigs()
     provider = DataProvider(configs)
-    provider.create_new_database(provider_list=['sales'])
+    #provider.create_new_database(provider_list=['sales', 'gaeste'])
     df = provider.load_database()
     p_configs = ProcessorConfigs(settings)
     processor = DataProcessor(data=df, configs=p_configs)
+    encoder = DataEncoder(configs=p_configs)
+    encoder_def = encoder.process_data(df, encode=False)
+    print(encoder_def)
+    print(encoder.get_feature_target_nums(encoder_def))
+    encoder_enc = encoder.process_data(df, encode=True)
+    print(encoder_enc)
+    print(encoder.get_feature_target_nums(encoder_enc))
+    
     uncoded = processor.get_uncoded_data()
-    print(uncoded)
+    #print(uncoded)
     
     encoding = processor.fit_and_encode()
-    print(encoding)
+    #print(encoding)
+    #print(encoding.columns)
 

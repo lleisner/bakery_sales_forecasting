@@ -45,7 +45,7 @@ class Model(CustomModel):
     def call(self, x, training):
         # Normalization from Non-stationary Transformer
         x_enc, x_mark_enc = x
-        print(f" x, x_mark: {x_enc.shape, x_mark_enc.shape}")
+        #print(f" x, x_mark: {x_enc.shape, x_mark_enc.shape}")
 
         means = tf.reduce_mean(x_enc, axis=1, keepdims=True)
         x_enc = x_enc - means
