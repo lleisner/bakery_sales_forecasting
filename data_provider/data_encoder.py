@@ -201,9 +201,12 @@ class DataEncoder:
         self.shape = (num_features, num_targets)
         return data
     
-    def decode_data(self, data: pd.DataFrame, col_names):
+    def decode_data(self, data: pd.DataFrame, col_names=None):
         decoder = self.encoders['labels']
-        return pd.DataFrame(decoder.decode_data(data), columns=col_names, index=data.index).astype(int)
+        try:
+            return pd.DataFrame(decoder.decode_data(data), columns=col_names, index=data.index).astype(int)
+        except:
+            return decoder.decode_data(data).astype(int)
     
     def get_feature_target_nums(self, df):
         return (pd.to_numeric(df.columns, errors='coerce').isnull().sum(), pd.to_numeric(df.columns, errors='coerce').notnull().sum())

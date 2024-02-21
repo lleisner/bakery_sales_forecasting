@@ -21,7 +21,7 @@ class Model(CustomModel):
         self.enc_embedding = DataEmbeddingInverted(configs.seq_len, configs.d_model, configs.dropout)
         # Encoder-only architecture
         self.encoder = Encoder(
-            [
+            attn_layers=[
                 EncoderLayer(
                     attention=AttentionLayer(
                                     FullAttention(
@@ -45,7 +45,7 @@ class Model(CustomModel):
     def call(self, x, training):
         # Normalization from Non-stationary Transformer
         x_enc, x_mark_enc = x
-        #print(f" x, x_mark: {x_enc.shape, x_mark_enc.shape}")
+        print(f" x, x_mark: {x_enc.shape, x_mark_enc.shape}")
 
         means = tf.reduce_mean(x_enc, axis=1, keepdims=True)
         x_enc = x_enc - means
@@ -58,9 +58,10 @@ class Model(CustomModel):
         # N: number of variate (tokens), can also includes covariates
 
         # Embedding
-        # B L N -> B N E                
+        # B L N -> B N E          
         emb_out = self.enc_embedding(x_enc, x_mark_enc, training=training)  # covariates (e.g timestamp) can be also embedded as tokens
-
+        print("embedding_out:", emb_out.shape)
+        
         # B N E -> B N E               
         # the dimensions of embedded time series have been inverted, and then processed by native attn, layernorm and ffn modules
         enc_out, attns = self.encoder(emb_out, attn_mask=None, training=training)

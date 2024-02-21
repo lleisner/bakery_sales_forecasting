@@ -81,7 +81,6 @@ class DataPipeline:
         data = tf.data.Dataset.from_tensor_slices(data.values)
         data = self.window_generator(data)
         train, val, test = self.data_splitter(data)
-        
         train, val, test =  self.batch_generator(train), self.batch_generator(val), self.batch_generator(test)
         return train, val, test     
     

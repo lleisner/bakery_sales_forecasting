@@ -1,4 +1,5 @@
 from utils.configs import *
+from utils.predict_sample import predict_sample
 from utils.plot_hist import plot_training_history
 from models.iTransformer.i_transformer import Model
 from models.training import CustomModel
@@ -8,6 +9,7 @@ from data_provider.data_encoder import DataEncoder
 from data_provider.data_pipeline import DataPipeline
 
 import warnings
+import numpy as np
 
 if __name__ == "__main__":
     warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn.utils.validation")
@@ -45,5 +47,20 @@ if __name__ == "__main__":
 
     itransformer.summary()
     itransformer.evaluate(test, steps=test_steps)
+    
+    sample = test.take(1).unbatch().take(1)
+
+    for x, y, x_mark in sample:
+        x, x_mark = tf.expand_dims(x, axis=0), tf.expand_dims(x_mark, axis=0)
+        prediction = np.squeeze(itransformer.predict((x, x_mark), batch_size=1))
+    
+    prediction = encoder.decode_data(prediction)
+    y = encoder.decode_data(y)
+    
+    print(prediction)
+    print(y)
+  
+
+    
     
     plot_training_history(hist)

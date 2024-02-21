@@ -5,15 +5,15 @@ from utils.loss import CustomLoss, CombinedLossWithDynamicWeights
 class Settings:
     def __init__(self):
         self.past_days = 64     # 64
-        self.future_days = 8
-        self.length_of_day = 12
+        self.future_days = 32
+        self.length_of_day = 8
         
-        self.strides = 12
+        self.strides = 8
         
         self.future_steps = self.future_days * self.length_of_day
         self.seq_length = self.past_days * self.length_of_day
 
-        self.num_epochs = 100
+        self.num_epochs = 20
         self.early_stopping_patience = max(self.num_epochs//10, 1)
         
         self.batch_size = 32
@@ -35,8 +35,8 @@ class ProviderConfigs:
         self.start_date = '2019-01-01'
         #self.end_date = str(datetime.combine(datetime.now() + timedelta(days=1), datetime.min.time()).date())
         self.end_date = '2023-08-01'
-        self.start_time = '06:00:00'
-        self.end_time = '17:00:00'
+        self.start_time = '08:00:00'
+        self.end_time = '15:00:00'
         self.item_selection = ["test"]#["broetchen", "plunder"]
 
 class ProcessorConfigs:
@@ -73,10 +73,10 @@ class TransformerConfigs:
         self.num_features = num_features
         
         self.output_attention = False
-        self.dropout = 0.4  # 0.4
-        self.d_model = 32  # 16
+        self.dropout = 0.2  # 0.4
+        self.d_model = 512  # 16
         self.n_heads = 8
-        self.d_ff = 512    # 64
+        self.d_ff = 2048    # 64
         self.activation = 'gelu'
         self.e_layers = 2
         self.clip = 5.0
