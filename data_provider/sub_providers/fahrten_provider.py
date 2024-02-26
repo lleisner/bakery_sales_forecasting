@@ -14,6 +14,7 @@ class FahrtenDataProvider(BaseProvider):
         - source_directory (str): Directory path where Fahrten data is located.
         """
         super().__init__(source_directory)
+        
 
     def _read_file(self, filepath):
         """
@@ -102,10 +103,18 @@ class FahrtenDataProvider(BaseProvider):
         
         return one_hot_encoding
     
+    def _aggregate(self, df):
+        arrivals = [col for col in df.columns if 'an' in col]
+        departures = [col for col in df.columns if 'ab' in col]
+        
+        df['arrival'] = df[arrivals].any(axis=1).astype(int)
+        df['departure'] = df[departures].any(axis=1).astype(int)
+        return df[['arrival', 'departure']]
+    
 
 
 
 if __name__ == "__main__":
     processor = FahrtenDataProvider()
-    df = processor.get_data()
+    df = processor.get_data(aggregate=True)
     print(df)

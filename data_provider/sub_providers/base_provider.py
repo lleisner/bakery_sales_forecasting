@@ -14,7 +14,6 @@ class BaseProvider(ABC):
         """
         self.source_directory = source_directory
         
-    @abstractmethod
     def _read_file(self, file_path):
         """
         Abstract method to read data from a file.
@@ -24,7 +23,7 @@ class BaseProvider(ABC):
         """
         pass
     
-    @abstractmethod
+    
     def _process_data(self, df):
         """
         Abstract method to process data in a DataFrame.
@@ -36,6 +35,7 @@ class BaseProvider(ABC):
         - pd.DataFrame: Processed DataFrame.
         """
         pass
+    
     
     def _read_dir(self):
         """
@@ -50,15 +50,22 @@ class BaseProvider(ABC):
             dataframes.append(self._read_file(file_path))
         return pd.concat(dataframes).fillna(0)
     
-    def get_data(self):
+    def _aggregate(self, df):
+        return df
+    
+    def get_data(self, aggregate=True):
         """
         Retrieve and process data.
 
         Returns:
         - Any: Processed data.
         """
-        df = self._read_dir()
+
+        df = self._read_dir() if self.source_directory else None
         df = self._process_data(df)
+            
+        if aggregate:
+            df = self._aggregate(df)
         return df
     
     def save_to_csv(self, data_directory, filename):

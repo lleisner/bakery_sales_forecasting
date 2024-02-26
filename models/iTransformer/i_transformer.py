@@ -16,7 +16,7 @@ class Model(CustomModel):
 
     def __init__(self, configs):
         super().__init__(configs=configs)
-    
+        self.attns = None
         # Embedding
         self.enc_embedding = DataEmbeddingInverted(configs.seq_len, configs.d_model, configs.dropout)
         # Encoder-only architecture
@@ -38,8 +38,8 @@ class Model(CustomModel):
         )
         self.projector = keras.layers.Dense(configs.pred_len)  
             
-        self.tester = keras.layers.Dense(configs.d_ff, activation="relu")
-        self.out = keras.layers.Dense(configs.num_targets)
+        #self.tester = keras.layers.Dense(configs.d_ff, activation="relu")
+        #self.out = keras.layers.Dense(configs.num_targets)
 
     @tf.function
     def call(self, x, training):
@@ -59,12 +59,14 @@ class Model(CustomModel):
 
         # Embedding
         # B L N -> B N E          
-        emb_out = self.enc_embedding(x_enc, x_mark_enc, training=training)  # covariates (e.g timestamp) can be also embedded as tokens
-        print("embedding_out:", emb_out.shape)
+        enc_out = self.enc_embedding(x_enc, x_mark_enc, training=training)  # covariates (e.g timestamp) can be also embedded as tokens
+        print("embedding_out:", enc_out.shape)
         
         # B N E -> B N E               
         # the dimensions of embedded time series have been inverted, and then processed by native attn, layernorm and ffn modules
-        enc_out, attns = self.encoder(emb_out, attn_mask=None, training=training)
+        enc_out, attns = self.encoder(enc_out, attn_mask=None, training=training)
+        self.attns = attns
+        print(attns)
         # B N E -> B N S -> B S N 
         dec_out = self.projector(enc_out)
         dec_out = tf.transpose(dec_out, perm=[0, 2, 1])[:, :, :N]  # filter the covariates 

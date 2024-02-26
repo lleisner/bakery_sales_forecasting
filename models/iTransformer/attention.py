@@ -39,7 +39,7 @@ class AttentionLayer(layers.Layer):
         )
         
         out = tf.reshape(out, (B, L, -1))
-        
+        print('attention layer is being used')
         return self.out_projection(out), attn
     
 class FullAttention(layers.Layer):
@@ -66,7 +66,7 @@ class FullAttention(layers.Layer):
 
         A = self.dropout(tf.nn.softmax(scale * scores, axis=-1))
         V = tf.einsum("bhls,bshd->blhd", A, values)
-
+        print('full attention is being used')
         if self.output_attention:
             return (V, A)
         
@@ -80,4 +80,5 @@ class TriangularCausalMask(tf.Module):
         #print(f"TriangularCausalMask shape: {self._mask.shape}")
     @property
     def mask(self):
+        print('mask is being used')
         return self._mask

@@ -5,13 +5,7 @@ import time
 
 class FerienDataProvider(BaseProvider):
     
-    def get_data(self):
-        return self._process_data()
-
-    def _read_file(self):
-        pass
-    
-    def _process_data(self, start: str='2018-12-01', end: str='2025-09-01') -> pd.DataFrame:
+    def _process_data(self, df, start: str='2018-12-01', end: str='2025-09-01') -> pd.DataFrame:
         """
         Retrieves and compiles vacation data for different states within a specified date range using the ferien-api
 
@@ -55,9 +49,12 @@ class FerienDataProvider(BaseProvider):
         all_states_hourly = all_states.resample('H').ffill()
         all_states_hourly.index.name = 'datetime'
         return all_states_hourly
+    
+    def _aggregate(self, df):
+        return df.sum(axis=1).rename('holidays').to_frame()
 
 if __name__ == "__main__":
     processor = FerienDataProvider()
-    df = processor.get_data()
+    df = processor.get_data(aggregate=True)
     print(df)
     

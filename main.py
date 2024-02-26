@@ -10,6 +10,7 @@ from data_provider.data_pipeline import DataPipeline
 
 import warnings
 import numpy as np
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn.utils.validation")
@@ -47,6 +48,18 @@ if __name__ == "__main__":
 
     itransformer.summary()
     itransformer.evaluate(test, steps=test_steps)
+    print('attention:', itransformer.attns)
+    
+    first_attn_layer = itransformer.attns[0]
+    first_head = first_attn_layer[0, 0, :, :]
+    
+    
+    plt.figure(figsize=(10,8))
+    plt.imshow(first_head, xmap='viridis')
+    plt.xlabel('input')
+    plt.ylabel('output')
+    plt.colorbar()
+    plt.show()
     
     sample = test.take(1).unbatch().take(1)
 

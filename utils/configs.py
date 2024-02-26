@@ -4,22 +4,22 @@ from utils.loss import CustomLoss, CombinedLossWithDynamicWeights
 
 class Settings:
     def __init__(self):
-        self.past_days = 64     # 64
-        self.future_days = 32
-        self.length_of_day = 8
+        self.past_days = 16     # 64
+        self.future_days = 4
+        self.length_of_day = 16
         
-        self.strides = 8
+        self.strides = 16
         
         self.future_steps = self.future_days * self.length_of_day
         self.seq_length = self.past_days * self.length_of_day
 
-        self.num_epochs = 20
+        self.num_epochs = 10
         self.early_stopping_patience = max(self.num_epochs//10, 1)
         
         self.batch_size = 32
         self.validation_size = 0.2
         self.test_size = 0.05
-        self.iters_per_epoch = 2
+        self.iters_per_epoch = 1
         
 
     def calculate_steps(self, len_data):
@@ -35,17 +35,18 @@ class ProviderConfigs:
         self.start_date = '2019-01-01'
         #self.end_date = str(datetime.combine(datetime.now() + timedelta(days=1), datetime.min.time()).date())
         self.end_date = '2023-08-01'
-        self.start_time = '08:00:00'
-        self.end_time = '15:00:00'
+        self.start_time = '06:00:00'
+        self.end_time = '21:00:00'
         self.item_selection = ["test"]#["broetchen", "plunder"]
 
 class ProcessorConfigs:
     def __init__(self, settings):
-        self.covariate_selection = ["datetime", "is_open", "gaeste", "ferien", "fahrten", "weather"]  
+        self.covariate_selection =["datetime", "is_open", "gaeste", "ferien", "fahrten", "weather"]  
         self.reduce_one_hots = False 
         self.create_sales_features = True
         self.future_days = settings.future_days     
-        self.temp_encoder = "standard"
+        self.aggregate = True
+        self.temp_encoder = "sine_cosine"
         self.def_encoder = "standard"
 
 class PipelineConfigs:
@@ -74,11 +75,11 @@ class TransformerConfigs:
         
         self.output_attention = False
         self.dropout = 0.2  # 0.4
-        self.d_model = 512  # 16
+        self.d_model = 32  # 16
         self.n_heads = 8
-        self.d_ff = 2048    # 64
+        self.d_ff = 128    # 64
         self.activation = 'gelu'
-        self.e_layers = 2
+        self.e_layers = 1
         self.clip = 5.0
         self.use_amp = True
         self.use_norm = True
@@ -92,10 +93,10 @@ class TransformerConfigs:
             overprediction_penalty=1.0,
             interval=settings.length_of_day
         )
-        #self.loss = tf.keras.losses.MeanSquaredError()
+        self.loss = tf.keras.losses.MeanSquaredError()
         #self.loss = tf.keras.losses.MeanAbsoluteError()
         #self.loss = tf.keras.losses.MeanAbsolutePercentageError()
-        self.learning_rate = 0.0001
+        self.learning_rate = 0.001
         
 
 
