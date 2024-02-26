@@ -15,7 +15,6 @@ class BaseEncoder:
         self.encoder = MinMaxScaler() if encoder_model=="min_max" else StandardScaler()
         
     def fit_encoder(self, data: pd.DataFrame):
-
         try:
             self.encoder.fit(data)
         except:
@@ -40,8 +39,7 @@ class BaseEncoder:
     
     def _encode_data(self, data: pd.DataFrame) -> pd.DataFrame:
         encoding = self.encoder.transform(data)
-        encoding = pd.DataFrame(encoding, index=data.index, columns=data.columns)
-        return encoding
+        return pd.DataFrame(encoding, index=data.index, columns=data.columns)
     
     def get_uncoded_data(self, data):
         return data
@@ -120,21 +118,13 @@ class TemporalEncoder(BaseEncoder):
         return self.process_data(data, encode=False)
 
 class WeatherEncoder(BaseEncoder):
-    def __init__(self, encoder_model, encoder_filename: str='saved_models/weather_encoding.save'):
-        super().__init__(encoder_model=encoder_model, encoder_filename=encoder_filename)
-    
     def _encode_data(self, data: pd.DataFrame) -> pd.DataFrame:
         sin_cos_coding = SineCosineEncoder.create_encoding(data['wind_direction'], 'wind_direction').set_index(data.index)
-        encoding = pd.DataFrame(self.encoder.transform(data), index=data.index, columns=data.columns)
-        encoding = pd.concat([sin_cos_coding, encoding], axis=1).drop(['wind_direction'], axis=1)
-        return encoding
+        encoding = super()._encode_data(data)
+        return pd.concat([sin_cos_coding, encoding], axis=1).drop(['wind_direction'], axis=1)
 
 class SalesEncoder(BaseEncoder):
-    def __init__(self, encoder_model, encoder_filename: str='saved_models/sales_encoding.save'):
-        super().__init__(encoder_model=encoder_model, encoder_filename=encoder_filename)
-
-class LabelEncoder(SalesEncoder):
-    def __init__(self, encoder_model, encoder_filename: str='saved_models/sales_encoding.save'):
+    def __init__(self, encoder_model, encoder_filename: str='saved_models/decoder.save'):
         super().__init__(encoder_model=encoder_model, encoder_filename=encoder_filename)
 
     def decode_data(self, data: pd.DataFrame):
@@ -148,11 +138,11 @@ class DataEncoder:
         self.encoders = {
             'datetime': TemporalEncoder(encoder_model=self.configs.temp_encoder),
             'weather': WeatherEncoder(encoder_model=self.configs.def_encoder),
-            'ferien': FerienEncoder() if self.configs.reduce_one_hots else BaseEncoder(encoder_model=self.configs.def_encoder),
-            'fahrten': FahrtenEncoder() if self.configs.reduce_one_hots else BaseEncoder(encoder_model=self.configs.def_encoder),
+            'ferien': BaseEncoder(encoder_model=self.configs.def_encoder),
+            'fahrten': BaseEncoder(encoder_model=self.configs.def_encoder),
             'is_open': BaseEncoder(encoder_model=self.configs.def_encoder),
             'gaeste': BaseEncoder(encoder_model=self.configs.def_encoder),
-            'labels': LabelEncoder(encoder_model=self.configs.def_encoder),
+            'labels': SalesEncoder(encoder_model=self.configs.def_encoder),
             'sales': SalesEncoder(encoder_model=self.configs.def_encoder)
         }
         self.shape = None
@@ -214,38 +204,6 @@ class DataEncoder:
 
 
 
-class AutoEncoder(BaseEncoder):
-    def __init__(self, encoder_filename: str='saved_models/autoencoder.h5'):
-        super().__init__(encoder_model=None, encoder_filename=encoder_filename)
-        
-
-    def fit_encoder(self, data: pd.DataFrame) -> pd.DataFrame:
-        self.encoder = build_autoencoder(data.shape[1])
-        train_model(data, self.encoder, self.encoder_filename)
-        return self.encoder.get_layer('encoder')
-
-    def load_encoder(self) -> tf.keras.models.Model:
-        try:
-            if self.encoder_filename:
-                return tf.keras.models.load_model(self.encoder_filename).get_layer('encoder')
-        except FileNotFoundError as e:
-            raise Exception("Error while loading encoder. Try running BaseEncoder.fit_encoder() or BaseEncoder.fit_and_encode() first to create a new encoder") from e
-    
-    def _encode_data(self, data: pd.DataFrame) -> pd.DataFrame:
-        encoding = self.encoder.predict(data)
-        columns = [f"{self.encoder_filename.split('/')[-1].split('.h5')[0]}_{i}" for i in range(encoding.shape[1])]
-        encoding =  pd.DataFrame(encoding, index=data.index, columns=columns)
-        return encoding
-    
-
-class FerienEncoder(AutoEncoder):
-    def __init__(self, encoder_filename: str='saved_models/ferien_encoding.h5'):
-        super().__init__(encoder_filename=encoder_filename)
-
-
-class FahrtenEncoder(AutoEncoder):
-    def __init__(self, encoder_filename: str='saved_models/fahrten_encoding.h5'):
-        super().__init__(encoder_filename=encoder_filename)
         
         
 if __name__ == "__main__":

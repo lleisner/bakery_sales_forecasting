@@ -4,7 +4,6 @@ from statsmodels.tsa.seasonal import STL
 def visualize_seasonality(df, item, start_date=None, end_date=None, period=24):
     # Select data for the specified week
     if (start_date is not None) & (end_date is not None):
-        print('fuck')
         df = df[(df.index >= start_date) & (df.index <= end_date)]
 
     """
