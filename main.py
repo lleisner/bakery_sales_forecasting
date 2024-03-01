@@ -40,11 +40,25 @@ if __name__ == "__main__":
     baseline = CustomModel(model_configs)
     itransformer = Model(model_configs)
     
-    baseline.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=model_configs.learning_rate), loss=model_configs.loss, weighted_metrics=[])
-    itransformer.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=model_configs.learning_rate), loss=model_configs.loss, weighted_metrics=[])
+    baseline.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=model_configs.learning_rate), 
+                     loss=model_configs.loss, 
+                     weighted_metrics=[])
+    itransformer.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=model_configs.learning_rate), 
+                         loss=model_configs.loss, 
+                         weighted_metrics=[])
 
-    baseline.fit(train, epochs=1, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps)
-    hist = itransformer.fit(train, epochs=settings.num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, verbose=1, use_multiprocessing=True)
+    baseline.fit(train, 
+                 epochs=1, 
+                 steps_per_epoch=steps_per_epoch, 
+                 validation_data=val, 
+                 validation_steps=validation_steps)
+    
+    hist = itransformer.fit(train, 
+                            epochs=settings.num_epochs, 
+                            steps_per_epoch=steps_per_epoch, 
+                            validation_data=val, 
+                            validation_steps=validation_steps, 
+                            use_multiprocessing=True)
 
     itransformer.summary()
     itransformer.evaluate(test, steps=test_steps)

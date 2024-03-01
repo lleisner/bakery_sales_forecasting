@@ -42,6 +42,7 @@ class BatchGenerator(BaseGenerator):
         batch_x_mark = data_slice[:, self.num_targets:-self.num_targets]
         batch_y = data_slice[:, -self.num_targets:]
         return batch_x, batch_y, batch_x_mark
+        # for TiDE it should be: batch_x, batch_y, batch_xcov, batch_y_cov, batch_x_catcov, batch_y_catcov
 
     def preprocess(self, dataset: tf.data.Dataset):
         dataset = dataset.map(self._get_variate_covariate_tuple, num_parallel_calls=tf.data.AUTOTUNE)

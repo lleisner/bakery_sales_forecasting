@@ -23,7 +23,6 @@ from data_provider.data_provider import DataProvider
 from data_provider.data_encoder import DataEncoder
 from data_provider.data_pipeline import DataPipeline
 from data_provider.new_data_pipeline import NewDataPipeline
-from data_provider.time_configs import TimeConfigs
 from tensorflow.keras.callbacks import Callback, EarlyStopping, TensorBoard, ModelCheckpoint
 
 import warnings
@@ -126,8 +125,8 @@ if __name__ == "__main__":
 
    # configs = Configurator()
     #model = HybridModel(t_configs)
-    model = Model(t_configs)
-    #model = CustomLSTM(t_configs)
+    #model = Model(t_configs)
+    model = CustomLSTM(t_configs)
     baseline = CustomModel(t_configs)
 
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=t_configs.learning_rate), loss=t_configs.loss, weighted_metrics=[])
@@ -152,6 +151,9 @@ if __name__ == "__main__":
         restore_best_weights=True  # Restore the best weights when stopped
     )
     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
+    
+   # model.build(input_shape=(None, t_configs.seq_len, t_configs.num_features))
+    #model.summary()
 
     #model.load_weights(checkpoint_path)
     print("baseline:\n")
@@ -175,8 +177,8 @@ if __name__ == "__main__":
             combined_history.history['val_loss'].extend(history.history['val_loss'])
         plot_training_history(combined_history)
             
+    
     model.summary()
-
     model.evaluate(test, steps=test_steps)
     baseline.evaluate(test, steps=test_steps)
 
@@ -184,16 +186,18 @@ if __name__ == "__main__":
     for layer in model.layers:
         #print(f"found layer {layer}")
         layer.trainable=False
+    
+    fine_tune = False
+    if fine_tune:
+        fine_tuning_model = FineTuner(t_configs, model)
+        fine_tuning_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=t_configs.learning_rate), loss=t_configs.loss, weighted_metrics=[])
 
-    fine_tuning_model = FineTuner(t_configs, model)
-    fine_tuning_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=t_configs.learning_rate), loss=t_configs.loss, weighted_metrics=[])
-
-    
-    fine_tuning_hist = fine_tuning_model.fit(train, epochs=settings.num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback, checkpoint], use_multiprocessing=True)
-    
-    fine_tuning_model.summary()
-    
-    fine_tuning_model.evaluate(test, steps=test_steps)
+        
+        fine_tuning_hist = fine_tuning_model.fit(train, epochs=settings.num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=[early_stopping, tensorboard_callback, checkpoint], use_multiprocessing=True)
+        
+        fine_tuning_model.summary()
+        
+        fine_tuning_model.evaluate(test, steps=test_steps)
     
     plot_training_history(hist)
     plot_training_history(fine_tuning_hist)

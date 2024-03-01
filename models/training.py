@@ -16,6 +16,7 @@ class CustomModel(tf.keras.Model):
         
         with tf.GradientTape() as tape:
             outputs = self((batch_x, batch_x_mark), training=True)
+            print(outputs.shape)
             
             outputs = outputs[:, -self.configs.pred_len:, :]
             batch_y = batch_y[:, -self.configs.pred_len:, :]

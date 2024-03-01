@@ -13,7 +13,7 @@ class Settings:
         self.future_steps = self.future_days * self.length_of_day
         self.seq_length = self.past_days * self.length_of_day
 
-        self.num_epochs = 10
+        self.num_epochs = 100
         self.early_stopping_patience = max(self.num_epochs//10, 1)
         
         self.batch_size = 32
@@ -37,16 +37,16 @@ class ProviderConfigs:
         self.end_date = '2023-08-01'
         self.start_time = '06:00:00'
         self.end_time = '21:00:00'
-        self.item_selection = ["test"]#["broetchen", "plunder"]
+        self.item_selection = ["test"] #["broetchen", "plunder"]
 
 class ProcessorConfigs:
     def __init__(self, settings):
-        self.covariate_selection =["datetime", "is_open", "gaeste", "ferien", "fahrten", "weather"]  
+        self.covariate_selection =["is_open", "gaeste", "ferien", "fahrten", "weather"]#, "datetime"]  
         self.reduce_one_hots = False 
-        self.create_sales_features = True
+        self.create_sales_features = False
         self.future_days = settings.future_days     
         self.aggregate = True
-        self.temp_encoder = "sine_cosine"
+        self.temp_encoder = "standard"
         self.def_encoder = "standard"
 
 class PipelineConfigs:
@@ -96,7 +96,22 @@ class TransformerConfigs:
         self.loss = tf.keras.losses.MeanSquaredError()
         #self.loss = tf.keras.losses.MeanAbsoluteError()
         #self.loss = tf.keras.losses.MeanAbsolutePercentageError()
-        self.learning_rate = 0.001
+        self.learning_rate = 0.0001
+        
+class TIDEConfigs:
+    def __init__(self, settings, num_features, num_targets):
+        self.seq_len = settings.seq_length
+        self.pred_len = settings.future_steps
+        self.num_targets = num_targets
+        self.num_features = num_features
+        self.hidden_dims = [32,32,32,32]
+        self.time_encoder_dims = [64,4]
+        self.dec_out = num_targets
+        self.cat_size = 1
+        self.transform = False
+        self.cat_emb = 1
+        self.layer_norm = True
+        self.dropout_rate = 0.5
         
 
 

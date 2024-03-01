@@ -4,7 +4,6 @@ import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from collections import OrderedDict
-from models.autoencoder.training import build_autoencoder, train_model
 from data_provider.data_provider import DataProvider
 from utils.configs import ProviderConfigs, Settings, ProcessorConfigs
 import warnings
@@ -201,6 +200,17 @@ class DataEncoder:
             encoder = self.encoders[key]
             encoded_data[key] = encoder.fit_and_encode(df) if encode else encoder.get_uncoded_data(df)
         return pd.concat(encoded_data.values(), axis=1).dropna()
+    
+    def _get_cat_cols(self, cat_cov_cols):
+        """Get categorical columns."""
+        cat_vars = []
+        cat_sizes = []
+        for col in cat_cov_cols:
+            dct = {x: i for i, x in enumerate(self.data_df[col].unique())}
+            cat_sizes.append(len(dct))
+            mapped = self.data_df[col].map(lambda x: dct[x]).to_numpy().transpose()  
+            cat_vars.append(mapped)
+        return np.vstack(cat_vars), cat_sizes
 
 
 
@@ -212,12 +222,14 @@ if __name__ == "__main__":
     settings = Settings()
     configs = ProviderConfigs()
     provider = DataProvider(configs)
-    #provider.create_new_database()
+    #provider.create_new_database(['sales'])
     df = provider.load_database()
     p_configs = ProcessorConfigs(settings)
     encoder = DataEncoder(configs=p_configs)
     encoder_def = encoder.process_data(df, encode=False)
     print(encoder_def)
+    encoder_def.index.name = 'datetime'
+    encoder_def.reset_index().to_csv('data/tide_data.csv')
     print(encoder.get_feature_target_nums(encoder_def))
     encoder_enc = encoder.process_data(df, encode=True)
     print(encoder_enc)
