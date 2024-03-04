@@ -128,8 +128,15 @@ if __name__ == "__main__":
     #model = Model(t_configs)
     model = CustomLSTM(t_configs)
     baseline = CustomModel(t_configs)
+    
+    lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
+        initial_learning_rate=1e-4,
+        decay_steps=30 * steps_per_epoch
+        )
+    optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule, clipvalue=1e3)
 
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=t_configs.learning_rate), loss=t_configs.loss, weighted_metrics=[])
+
+    model.compile(optimizer=optimizer, loss=t_configs.loss, weighted_metrics=[])
     baseline.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=t_configs.learning_rate), loss=t_configs.loss, weighted_metrics=[])
 
 
@@ -198,9 +205,10 @@ if __name__ == "__main__":
         fine_tuning_model.summary()
         
         fine_tuning_model.evaluate(test, steps=test_steps)
+        plot_training_history(fine_tuning_hist)
     
     plot_training_history(hist)
-    plot_training_history(fine_tuning_hist)
+    
 
     index = to_predict.index[-settings.future_steps:]
     

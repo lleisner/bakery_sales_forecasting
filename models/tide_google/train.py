@@ -35,6 +35,7 @@ def training(dtl, model, lr, train_epochs, sum_dir):
         
         iterator = tqdm(dtl.tf_dataset(mode='train'), mininterval=2)
         for i, batch in enumerate(iterator):
+            print("should look like this:", batch)
             past_data = batch[:3]
             future_features = batch[4:6]
             tsidx = batch[-1]

@@ -4,7 +4,7 @@ from utils.loss import CustomLoss, CombinedLossWithDynamicWeights
 
 class Settings:
     def __init__(self):
-        self.past_days = 16     # 64
+        self.past_days = 64     # 64
         self.future_days = 4
         self.length_of_day = 16
         
@@ -43,7 +43,7 @@ class ProcessorConfigs:
     def __init__(self, settings):
         self.covariate_selection =["is_open", "gaeste", "ferien", "fahrten", "weather"]#, "datetime"]  
         self.reduce_one_hots = False 
-        self.create_sales_features = False
+        self.create_sales_features = True
         self.future_days = settings.future_days     
         self.aggregate = True
         self.temp_encoder = "standard"
@@ -76,10 +76,10 @@ class TransformerConfigs:
         self.output_attention = False
         self.dropout = 0.2  # 0.4
         self.d_model = 32  # 16
-        self.n_heads = 8
+        self.n_heads = 4
         self.d_ff = 128    # 64
         self.activation = 'gelu'
-        self.e_layers = 1
+        self.e_layers = 2
         self.clip = 5.0
         self.use_amp = True
         self.use_norm = True
@@ -87,13 +87,13 @@ class TransformerConfigs:
 
         #self.loss = CustomLoss(settings.length_of_day)
         self.loss = CombinedLossWithDynamicWeights(
-            hourly_weight=0.95,
-            daily_weight=0.05,
+            hourly_weight=0.2,
+            daily_weight=0.8,
             underprediction_penalty=1.5,
             overprediction_penalty=1.0,
             interval=settings.length_of_day
         )
-        self.loss = tf.keras.losses.MeanSquaredError()
+        #self.loss = tf.keras.losses.MeanSquaredError()
         #self.loss = tf.keras.losses.MeanAbsoluteError()
         #self.loss = tf.keras.losses.MeanAbsolutePercentageError()
         self.learning_rate = 0.0001

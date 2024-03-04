@@ -21,6 +21,8 @@ import tensorflow as tf
 from tensorflow import keras
 from tqdm import tqdm
 
+from models.tide_google.data_loader import TimeSeriesdata as tsd
+
 EPS = 1e-7
 
 train_loss = keras.losses.MeanSquaredError()
@@ -110,6 +112,8 @@ class TideModel(keras.Model):
     super().__init__()
     self.model_config = model_config
     self.transform = transform
+    self.loss_tracker = tf.keras.metrics.Mean(name="loss")
+    self.mae_metric = tf.keras.metrics.MeanAbsoluteError(name="mae")
     if self.transform:
       self.affine_weight = self.add_weight(
           name='affine_weight',
@@ -175,6 +179,7 @@ class TideModel(keras.Model):
     future_features = inputs[1]
     bsize = past_data[0].shape[0]
     tsidx = inputs[2]
+    print(f"inputs: {inputs}\npast_data: {past_data}\nfuture_features: {future_features}\nbatch_size: {bsize}\ntsidx: {tsidx}")
     past_feats = self._assemble_feats(past_data[1], past_data[2])
     future_feats = self._assemble_feats(future_features[0], future_features[1])
     past_ts = past_data[0]
@@ -218,15 +223,81 @@ class TideModel(keras.Model):
     return out
 
   @tf.function
+  def train_step(self, data):
+    inputs, y_true = data
+    with tf.GradientTape() as tape:
+      all_preds = self(inputs, training=True)
+      loss = tf.keras.losses.mean_squared_error(y_true, all_preds)
+
+      #loss = self.compute_loss(y_true, all_preds)
+      
+    grads = tape.gradient(loss, self.trainable_variables)
+    self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
+    
+    for metric in self.metrics:
+      if metric.name == "loss":
+        metric.update_state(loss)
+      else:
+        metric.update_state(y_true, all_preds)
+    return {m.name: m.result() for m in self.metrics}
+  
+  @tf.function
+  def test_step(self, data):
+    inputs, y_true = data
+    all_preds = self(inputs, training=False)
+    tf.keras.losses.mean_squared_error(y_true, all_preds)
+
+    #self.compute_loss(y_true, all_preds)
+    for metric in self.metrics:
+      if metric.name != "loss":
+        metric.update_state(y_true, all_preds)
+    return {m.name: m.result() for m in self.metrics}
+  
+
+
+  
+  @tf.function
+  def train_step(self, data):
+    inputs, y_true = tsd.prepare_batch(*data)
+    with tf.GradientTape() as tape:
+      all_preds = self(inputs, training=True)
+      print(f"all preds: {all_preds}, y true: {y_true}")
+      loss = tf.keras.losses.mean_squared_error(y_true, all_preds)
+      #loss = self.compute_loss(y_true, all_preds)
+    grads = tape.gradient(loss, self.trainable_variables)
+    self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
+    
+    # Compute our own metrics
+    self.loss_tracker.update_state(loss)
+    self.mae_metric.update_state(y_true, all_preds)
+    return {"loss": self.loss_tracker.result(), "mae": self.mae_metric.result()}
+
+  
+  @tf.function
+  def test_step(self, data):
+    inputs, y_true = tsd.prepare_batch(*data)
+    all_preds = self(inputs, training=False)
+    loss = tf.keras.losses.mean_squared_error(y_true, all_preds)
+
+    #self.compute_loss(y_true, all_preds)
+    # Compute our own metrics
+    self.loss_tracker.update_state(loss)
+    self.mae_metric.update_state(y_true, all_preds)
+    return {"loss": self.loss_tracker.result(), "mae": self.mae_metric.result()}
+
+  """
+  
+  @tf.function
   def train_step(self, past_data, future_features, ytrue, tsidx, optimizer):
-    """One step of training."""
     with tf.GradientTape() as tape:
       all_preds = self((past_data, future_features, tsidx), training=True)
+      print(f"all preds: {all_preds}, y true: {ytrue}")
       loss = train_loss(ytrue, all_preds)
 
     grads = tape.gradient(loss, self.trainable_variables)
     optimizer.apply_gradients(zip(grads, self.trainable_variables))
     return loss
+  
 
   def get_all_eval_data(self, data, mode, num_split=1):
     y_preds = []
@@ -360,3 +431,5 @@ METRICS = {
     'rmse': rmse,
     'mae': mae_loss,
 }
+
+"""

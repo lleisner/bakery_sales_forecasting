@@ -46,6 +46,7 @@ class TimeSeriesdata(object):
       freq='H',
       normalize=True,
       epoch_len=None,
+      val_samples=None,
       holiday=False,
       permute=True,
   ):
@@ -120,8 +121,10 @@ class TimeSeriesdata(object):
         self.num_feat_mat.shape,
         self.cat_feat_mat.shape,
     )
+
     self.epoch_len = epoch_len
     self.permute = permute
+    self.val_samples = val_samples
 
   def _get_cat_cols(self, cat_cov_cols):
     """Get categorical columns."""
@@ -155,7 +158,8 @@ class TimeSeriesdata(object):
     else:
       epoch_len = self.epoch_len
     for idx in perm[0:epoch_len]:
-      for _ in range(num_ts // self.batch_size + 1):
+      #for i in range(num_ts // self.batch_size + 1):
+      for i in range(num_ts//self.batch_size):
         if self.permute:
           tsidx = np.random.choice(num_ts, size=self.batch_size, replace=False)
         else:
@@ -199,6 +203,8 @@ class TimeSeriesdata(object):
       epoch_len = self.epoch_len
     else:
       epoch_len = len(perm)
+    self.val_samples = len(perm)
+    
     for idx in perm[0:epoch_len]:
       for batch_idx in range(0, num_ts, self.batch_size):
         tsidx = np.arange(batch_idx, min(batch_idx + self.batch_size, num_ts))
@@ -256,6 +262,23 @@ class TimeSeriesdata(object):
     output_types = tuple(
         [tf.float32] * 2 + [tf.int32] + [tf.float32] * 2 + [tf.int32] * 2
     )
-    dataset = tf.data.Dataset.from_generator(gen_fn, output_types)
+
+    ts, t_feats, n_feats, c_feats = self.data_mat.shape[0], self.time_mat.shape[0], self.num_feat_mat.shape[0], self.cat_feat_mat.shape[0]
+    output_shapes = ((ts, self.hist_len), 
+                     (t_feats + n_feats, self.hist_len), 
+                     (c_feats, self.hist_len), 
+                     (ts, self.pred_len), 
+                     (t_feats + n_feats, self.pred_len), 
+                     (c_feats, self.pred_len), 
+                     (ts,))
+    dataset = tf.data.Dataset.from_generator(gen_fn, output_types=output_types, output_shapes=output_shapes)
     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
     return dataset
+  
+  @staticmethod
+  def prepare_batch(bts_train, bfeats_train, bcfeats_train, bts_pred, bfeats_pred, bcfeats_pred, tsidx):
+    past_data = (bts_train, bfeats_train, bcfeats_train)
+    future_features = (bfeats_pred, bcfeats_pred)
+    y_true = bts_pred
+    inputs = (past_data, future_features, tsidx)
+    return inputs, y_true
