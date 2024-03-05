@@ -23,10 +23,14 @@ fix_gpu()
 data = pd.read_csv('data/tide_data.csv', index_col=0)
 print(data)
 
-pred_len = 64
+ts_cols = ['10', '11', '12', '13', '20', '21', '22', '23', '24', '27', '28', '29', '31', '32', '35', '38', '39', '83', '84', '85', '86', '97', '98', '99', '105', '107', '111', '112']
+numerical_covariates = ['gaestezahlen', 'wind_direction', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed']
+categorical_covariates = ['is_open', 'holidays', 'arrival', 'departure']
+
+pred_len = 16
 hist_len = 512
-num_ts = 4
-batch_size = 4
+num_ts = len(ts_cols)
+batch_size = num_ts
 batch_size = min(num_ts, batch_size)
 
 hidden_size = 256
@@ -38,12 +42,13 @@ num_epochs = 5
 patience = 20
 lr = 1e-4
 
+
 time_series = TimeSeriesdata(
     data_path='data/tide_data.csv',
     datetime_col='datetime',
-    num_cov_cols=['gaestezahlen', 'wind_direction', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed'],
-    cat_cov_cols=['is_open', 'holidays', 'arrival', 'departure'],
-    ts_cols=['10', '11', '83', '84'],
+    num_cov_cols=numerical_covariates,
+    cat_cov_cols=categorical_covariates,
+    ts_cols=ts_cols,
     train_range=(0, 20087),
     val_range=(20088, 23435),
     test_range=(23436, 26783),
@@ -106,7 +111,7 @@ inputs, y_true = tsd.prepare_batch(*sample)
 (sample2,) = train_ds.take(1)
 inputs2, y_true2 = tsd.prepare_batch(*sample2)
 
-plot_preds_actuals(y_true, y_true)
+#plot_preds_actuals(y_true, y_true)
 
 tide_model.fit(train_ds, validation_data=val_ds, epochs=num_epochs, steps_per_epoch=train_samples, validation_steps=test_val_samples, callbacks=callbacks, batch_size=batch_size)
 tide_model.evaluate(test_ds, steps=test_val_samples)

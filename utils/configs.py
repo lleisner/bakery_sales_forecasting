@@ -37,13 +37,13 @@ class ProviderConfigs:
         self.end_date = '2023-08-01'
         self.start_time = '06:00:00'
         self.end_time = '21:00:00'
-        self.item_selection = ["test"] #["broetchen", "plunder"]
+        self.item_selection = ["broetchen", "plunder"]
 
 class ProcessorConfigs:
     def __init__(self, settings):
         self.covariate_selection =["is_open", "gaeste", "ferien", "fahrten", "weather"]#, "datetime"]  
         self.reduce_one_hots = False 
-        self.create_sales_features = True
+        self.create_sales_features = False
         self.future_days = settings.future_days     
         self.aggregate = True
         self.temp_encoder = "standard"
