@@ -212,6 +212,9 @@ class DataEncoder:
             cat_vars.append(mapped)
         return np.vstack(cat_vars), cat_sizes
 
+    def aggregate_daily(self, data):
+        pass
+
 
 
         
@@ -229,10 +232,13 @@ if __name__ == "__main__":
     encoder_def = encoder.process_data(df, encode=False)
     print(encoder_def)
     encoder_def.index.name = 'datetime'
-    encoder_def.reset_index().to_csv('data/tide_data.csv')
+    encoder_def.to_csv('data/tide_data.csv')
     print(encoder.get_feature_target_nums(encoder_def))
     encoder_enc = encoder.process_data(df, encode=True)
     print(encoder_enc)
+    daily_data = encoder_def.resample('D').sum()
+    daily_data.to_csv('data/tide_data_daily.csv')
+    print(daily_data)
     print(encoder_enc.columns)
     print(encoder.get_feature_target_nums(encoder_enc))
     

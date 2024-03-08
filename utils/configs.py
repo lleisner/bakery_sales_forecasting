@@ -6,9 +6,9 @@ class Settings:
     def __init__(self):
         self.past_days = 64     # 64
         self.future_days = 4
-        self.length_of_day = 16
+        self.length_of_day = 8
         
-        self.strides = 16
+        self.strides = 8
         
         self.future_steps = self.future_days * self.length_of_day
         self.seq_length = self.past_days * self.length_of_day
@@ -35,8 +35,8 @@ class ProviderConfigs:
         self.start_date = '2019-01-01'
         #self.end_date = str(datetime.combine(datetime.now() + timedelta(days=1), datetime.min.time()).date())
         self.end_date = '2023-08-01'
-        self.start_time = '06:00:00'
-        self.end_time = '21:00:00'
+        self.start_time = '08:00:00'
+        self.end_time = '15:00:00'
         self.item_selection = ["broetchen", "plunder"]
 
 class ProcessorConfigs:

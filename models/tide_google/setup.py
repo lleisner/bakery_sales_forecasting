@@ -1,7 +1,7 @@
 from models.tide_google.data_loader import TimeSeriesdata
 from models.tide_google.tide_model import *
 from models.tide_google.train import training
-from utils.plot_preds_and_actuals import plot_preds_actuals
+from utils.plot_preds_and_actuals import plot_preds_actuals, plot_df_per_column
 
 import pandas as pd
 from models.tide_google.data_loader import TimeSeriesdata as tsd
@@ -20,51 +20,66 @@ def fix_gpu():
 
 fix_gpu()
 
-data = pd.read_csv('data/tide_data.csv', index_col=0)
-print(data)
+filename = 'data/tide_data_daily.csv'
+
+data = pd.read_csv('data/tide_data_daily.csv', index_col=0, parse_dates=True)
+
+plot_df_per_column(data)
+
+data = data.reset_index()
+
+total_timestamps = data.shape[0]
+train_end = int(total_timestamps * 0.7)
+val_end = int((total_timestamps - train_end) * 0.5) + train_end
+
+
 
 ts_cols = ['10', '11', '12', '13', '20', '21', '22', '23', '24', '27', '28', '29', '31', '32', '35', '38', '39', '83', '84', '85', '86', '97', '98', '99', '105', '107', '111', '112']
 numerical_covariates = ['gaestezahlen', 'wind_direction', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed']
 categorical_covariates = ['is_open', 'holidays', 'arrival', 'departure']
 
-pred_len = 16
-hist_len = 512
+pred_len = 128
+hist_len = 128
 num_ts = len(ts_cols)
 batch_size = num_ts
 batch_size = min(num_ts, batch_size)
 
-hidden_size = 256
-decoder_output_dim = 16
+hidden_size = 512
+decoder_output_dim = 64
 final_decoder_hidden = 64
-num_layers = 1
+num_layers = 4
 
-num_epochs = 5
-patience = 20
+num_epochs = 100
+patience = 100
 lr = 1e-4
 
+epoch_len=train_end-pred_len-hist_len
+val_samples=val_end-train_end-pred_len
+
+print("epoch and samples: ", epoch_len, val_samples)
 
 time_series = TimeSeriesdata(
-    data_path='data/tide_data.csv',
+    data_path='data/tide_data_daily.csv',
     datetime_col='datetime',
     num_cov_cols=numerical_covariates,
     cat_cov_cols=categorical_covariates,
     ts_cols=ts_cols,
-    train_range=(0, 20087),
-    val_range=(20088, 23435),
-    test_range=(23436, 26783),
+    train_range=(0, train_end-1),
+    val_range=(train_end, val_end-1),
+    test_range=(val_end, total_timestamps-1),
     hist_len=hist_len,
     pred_len=pred_len,
     batch_size=batch_size,
-    freq='h',
-    normalize=False, 
-    epoch_len=19511, 
-    val_samples=3284
+    freq='d',
+    normalize=True, 
+    epoch_len=epoch_len, 
+    val_samples=val_samples
     )
 
 model_config = {
     'model_type': 'dnn',
     'hidden_dims': [hidden_size] * num_layers,
-    'time_encoder_dims': [64, 4],
+    'time_encoder_dims': [128, 8],
     'decoder_output_dim': decoder_output_dim,
     'final_decoder_hidden': final_decoder_hidden,
     'batch_size': time_series.batch_size
@@ -77,7 +92,7 @@ tide_model = TideModel(
     cat_sizes=time_series.cat_sizes,
     transform=True,
     layer_norm=True,
-    dropout_rate=0.3
+    dropout_rate=0.5
 )
 
 lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
@@ -103,7 +118,7 @@ print("total train samples:", train_samples)
 test_val_samples = time_series.val_samples
 print("total validation samples: ", test_val_samples)
 
-(sample,) = test_ds.take(1)
+(sample,) = val_ds.take(1)
 inputs, y_true = tsd.prepare_batch(*sample)
 
 
@@ -113,13 +128,25 @@ inputs2, y_true2 = tsd.prepare_batch(*sample2)
 
 #plot_preds_actuals(y_true, y_true)
 
-tide_model.fit(train_ds, validation_data=val_ds, epochs=num_epochs, steps_per_epoch=train_samples, validation_steps=test_val_samples, callbacks=callbacks, batch_size=batch_size)
+tide_model.fit(train_ds, 
+    validation_data=val_ds, 
+    epochs=num_epochs, 
+    steps_per_epoch=train_samples, 
+    validation_steps=test_val_samples, 
+    callbacks=callbacks, 
+    batch_size=batch_size, 
+    verbose=2,
+    use_multiprocessing=True, 
+    )
+
 tide_model.evaluate(test_ds, steps=test_val_samples)
 
 predictions = tide_model(inputs)
 
 plot_preds_actuals(predictions, y_true)
 
+print(predictions)
+print(y_true)
 
 
 

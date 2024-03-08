@@ -45,3 +45,34 @@ def plot_preds_actuals(predictions, actuals):
             axs[row, col].axis('off')
 
     plt.show()
+
+def plot_df_per_column(df):
+
+    df_normalized = df.copy()
+    df_normalized.index = df.index.map(lambda x: x.replace(year=2020))
+    n_days, n_items = df.shape
+
+    plt_cols = int(np.ceil(np.sqrt(n_items)))
+    plt_rows = int(np.ceil(n_items / plt_cols))
+
+    fig, axes = plt.subplots(
+            plt_rows, 
+            plt_cols, 
+            figsize=(plt_cols * 5, plt_rows * 5), 
+            sharex=True,
+            constrained_layout=True
+        )
+    for i, item in enumerate(df.columns):
+        ax = axes.flatten()[i]
+        for year, group in df.groupby(df.index.year)[item]:
+            normalized_dates = group.index.map(lambda x: x.replace(year=2020))
+            group.index = normalized_dates
+            group.plot(ax=ax, label=str(year))
+
+
+            #group.plot(ax=ax, label=str(year))
+        ax.set_title(item)
+        ax.legend(title='Year')
+    
+    plt.tight_layout()
+    plt.show()

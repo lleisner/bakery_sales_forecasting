@@ -222,37 +222,7 @@ class TideModel(keras.Model):
       out = out * batch_std[:, None] + batch_mean[:, None]
     return out
 
-  @tf.function
-  def train_step(self, data):
-    inputs, y_true = data
-    with tf.GradientTape() as tape:
-      all_preds = self(inputs, training=True)
-      loss = tf.keras.losses.mean_squared_error(y_true, all_preds)
 
-      #loss = self.compute_loss(y_true, all_preds)
-      
-    grads = tape.gradient(loss, self.trainable_variables)
-    self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
-    
-    for metric in self.metrics:
-      if metric.name == "loss":
-        metric.update_state(loss)
-      else:
-        metric.update_state(y_true, all_preds)
-    return {m.name: m.result() for m in self.metrics}
-  
-  @tf.function
-  def test_step(self, data):
-    inputs, y_true = data
-    all_preds = self(inputs, training=False)
-    tf.keras.losses.mean_squared_error(y_true, all_preds)
-
-    #self.compute_loss(y_true, all_preds)
-    for metric in self.metrics:
-      if metric.name != "loss":
-        metric.update_state(y_true, all_preds)
-    return {m.name: m.result() for m in self.metrics}
-  
 
 
   
@@ -286,6 +256,38 @@ class TideModel(keras.Model):
     return {"loss": self.loss_tracker.result(), "mae": self.mae_metric.result()}
 
   """
+
+  @tf.function
+  def train_step(self, data):
+    inputs, y_true = data
+    with tf.GradientTape() as tape:
+      all_preds = self(inputs, training=True)
+      #loss = tf.keras.losses.mean_squared_error(y_true, all_preds)
+
+      loss = self.compute_loss(y_true, all_preds)
+      
+    grads = tape.gradient(loss, self.trainable_variables)
+    self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
+    
+    for metric in self.metrics:
+      if metric.name == "loss":
+        metric.update_state(loss)
+      else:
+        metric.update_state(y_true, all_preds)
+    return {m.name: m.result() for m in self.metrics}
+  
+  @tf.function
+  def test_step(self, data):
+    inputs, y_true = data
+    all_preds = self(inputs, training=False)
+    tf.keras.losses.mean_squared_error(y_true, all_preds)
+
+    #self.compute_loss(y_true, all_preds)
+    for metric in self.metrics:
+      if metric.name != "loss":
+        metric.update_state(y_true, all_preds)
+    return {m.name: m.result() for m in self.metrics}
+  
   
   @tf.function
   def train_step(self, past_data, future_features, ytrue, tsidx, optimizer):
