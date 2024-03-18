@@ -45,38 +45,38 @@ class BaseEncoder:
     
 class SineCosineEncoder:
     @staticmethod
-    def create_encoding(data: pd.Series, name: str) -> pd.DataFrame:
-        """
-        Create sine and cosine encodings for a column of cyclic data within the range of -0.5 to 0.5.
+    def create_encoding(data: pd.Series, name: str, range=(-0.5, 0.5)) -> pd.DataFrame:
+        """Create sine and cosine encodings for a column of cyclic data in a given range
 
         Args:
-            data (pd.Series): The DataFrame column containing the cyclic data.
-            name (str): Name for the encoding columns.
-            parameter_range (int): The range of the cyclic data (e.g. 12 for months).
+            data (pd.Series): The DataFrame column containing the cyclic data
+            name (str): Name of the column to be encoded
+            range (tuple): range to scale the data to
 
         Returns:
-            pd.DataFrame: A DataFrame containing two columns: 'sine_encoding' and 'cosine_encoding' scaled to the range [-0.5, 0,5].
+            pd.DataFrame: A DataFrame containing the scaled sine and cosine encodings
         """
+        # normalize data
         data -= min(data)
-        # Convert the column to radians
+        # Convert values to radians
         radians = (data / max(data)) * 2 * np.pi
-
-        # Calculate sine and cosine encodings
-        sine_encoding = 0.5 * (np.sin(radians) + 1) - 0.5
-        cosine_encoding = 0.5 * (np.cos(radians) + 1) - 0.5
-
-        # Create a DataFrame with the encodings
-        encoding_df = pd.DataFrame({f'{name}_sine_encoding': sine_encoding, f'{name}_cosine_encoding': cosine_encoding})
-
-        return encoding_df
-    
+        
+        # Calculate sine and cosine encodings and scale to range
+        sine_encoding = (np.sin(radians) + 1) * range[1] + range[0]
+        cosine_encoding = (np.cos(radians) + 1) * range[1] + range[0]
+        
+        # Return a DataFrame with encodings and fitting column names
+        return pd.DataFrame({f'{name}_sine_encoding': sine_encoding, f'{name}_cosine_encoding': cosine_encoding})
+        
 class TimeFeatureEncoder:
     @staticmethod
-    def create_encoding(data: pd.Series, name: str) -> pd.DataFrame:
+    def create_encoding(data: pd.Series, range=(-0.5, 0.5)) -> pd.Series:
+        data = data.copy()
         data -= min(data)
-        feature = data / max(data) - 0.5
-        encoding_df = pd.DataFrame({name: feature})
-        return encoding_df
+        normalized = (data - min(data)) / (max(data) - min(data))
+        normalized_to_range = normalized * range[1] + range[0]
+        return normalized_to_range
+    
     
 class OneHotEncoder:
     @staticmethod

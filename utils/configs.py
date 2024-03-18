@@ -4,8 +4,8 @@ from utils.loss import CustomLoss, CombinedLossWithDynamicWeights
 
 class Settings:
     def __init__(self):
-        self.past_days = 64     # 64
-        self.future_days = 4
+        self.past_days = 7     # 64
+        self.future_days = 7
         self.length_of_day = 8
         
         self.strides = 8
@@ -43,7 +43,7 @@ class ProcessorConfigs:
     def __init__(self, settings):
         self.covariate_selection =["is_open", "gaeste", "ferien", "fahrten", "weather"]#, "datetime"]  
         self.reduce_one_hots = False 
-        self.create_sales_features = False
+        self.create_sales_features = True
         self.future_days = settings.future_days     
         self.aggregate = True
         self.temp_encoder = "standard"

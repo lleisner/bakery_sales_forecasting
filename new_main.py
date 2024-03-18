@@ -49,7 +49,7 @@ if __name__ == "__main__":
     #encoding = processor.fit_and_encode()
     encoding = encoder.process_data(df)
         
-
+    print(encoding)
         
     #encoding = processor.get_uncoded_data()
     
@@ -125,8 +125,8 @@ if __name__ == "__main__":
 
    # configs = Configurator()
     #model = HybridModel(t_configs)
-    #model = Model(t_configs)
-    model = CustomLSTM(t_configs)
+    model = Model(t_configs)
+    #model = CustomLSTM(t_configs)
     baseline = CustomModel(t_configs)
     
     lr_schedule = tf.keras.optimizers.schedules.CosineDecay(

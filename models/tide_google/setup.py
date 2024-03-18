@@ -24,7 +24,7 @@ filename = 'data/tide_data_daily.csv'
 
 data = pd.read_csv('data/tide_data_daily.csv', index_col=0, parse_dates=True)
 
-plot_df_per_column(data)
+#plot_df_per_column(data)
 
 data = data.reset_index()
 
@@ -38,18 +38,18 @@ ts_cols = ['10', '11', '12', '13', '20', '21', '22', '23', '24', '27', '28', '29
 numerical_covariates = ['gaestezahlen', 'wind_direction', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed']
 categorical_covariates = ['is_open', 'holidays', 'arrival', 'departure']
 
-pred_len = 128
-hist_len = 128
+pred_len = 112
+hist_len = 112
 num_ts = len(ts_cols)
 batch_size = num_ts
 batch_size = min(num_ts, batch_size)
 
-hidden_size = 512
-decoder_output_dim = 64
+hidden_size = 256
+decoder_output_dim = 4
 final_decoder_hidden = 64
-num_layers = 4
+num_layers = 2
 
-num_epochs = 100
+num_epochs = 40
 patience = 100
 lr = 1e-4
 
@@ -70,16 +70,17 @@ time_series = TimeSeriesdata(
     hist_len=hist_len,
     pred_len=pred_len,
     batch_size=batch_size,
-    freq='d',
+    freq='h',
     normalize=True, 
     epoch_len=epoch_len, 
-    val_samples=val_samples
+    val_samples=val_samples,
+    permute=True,
     )
 
 model_config = {
     'model_type': 'dnn',
     'hidden_dims': [hidden_size] * num_layers,
-    'time_encoder_dims': [128, 8],
+    'time_encoder_dims': [64, 4],
     'decoder_output_dim': decoder_output_dim,
     'final_decoder_hidden': final_decoder_hidden,
     'batch_size': time_series.batch_size
@@ -90,9 +91,9 @@ tide_model = TideModel(
     pred_len=pred_len,
     num_ts=num_ts,
     cat_sizes=time_series.cat_sizes,
-    transform=True,
+    transform=False,
     layer_norm=True,
-    dropout_rate=0.5
+    dropout_rate=0.5,
 )
 
 lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
