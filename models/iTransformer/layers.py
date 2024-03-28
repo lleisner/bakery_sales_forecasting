@@ -12,6 +12,7 @@ class EncoderLayer(layers.Layer):
                                             dropout=dropout,
                                             output_shape=d_model
                                             )
+
         #self.attention = attention
         self.conv1 = layers.Conv1D(
             filters=d_ff,

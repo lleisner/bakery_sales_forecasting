@@ -1,4 +1,6 @@
 from models.iTransformer.data_loader import ITransformerData
+from models.iTransformer.i_transformer import Model
+import tensorflow as tf
 
 data_loader = ITransformerData(
                 data_path = 'data/tide_data.csv',
@@ -18,13 +20,17 @@ data_loader = ITransformerData(
                 val_len=None,
                 normalize=True,
             )
-
 dataset = data_loader.get_data()
 print(dataset)
 print(dataset.columns)
 
 train, val, test = data_loader.get_train_test_splits()
 print(train)
+
+
+print("dataset cardinality: ", tf.data.experimental.cardinality(train))
+
+
 
 def inspect_dataset_shapes(dataset, num_batches_to_inspect=1):
     for i, batch in enumerate(dataset.take(num_batches_to_inspect)):

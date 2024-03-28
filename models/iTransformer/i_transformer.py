@@ -13,7 +13,52 @@ class Model(CustomModel):
     """
     Paper link: https://arxiv.org/abs/2310.06625
     """
-
+    def __init__(self, 
+                 seq_len,
+                 pred_len,
+                 d_model,
+                 n_heads,
+                 d_ff,
+                 e_layers,
+                 dropout,
+                 output_attention,
+                 activation='gelu',
+                 clip=None,
+                 use_amp=True,
+                 use_norm=True,
+                 ):
+        self.use_amp = use_amp
+        self.use_norm = use_norm
+        self.attns = None
+        
+        super().__init__(seq_len=seq_len, 
+                         pred_len=pred_len, 
+                         output_attention=output_attention, 
+                         clip=clip,)
+        self.attns = None
+        # Embedding
+        self.enc_embedding = DataEmbeddingInverted(seq_len, d_model, dropout)
+        # Encoder-only architecture
+        self.encoder = Encoder(
+            attn_layers=[
+                EncoderLayer(
+                    attention=AttentionLayer(
+                                    FullAttention(
+                                        False, attention_dropout=dropout,output_attention=output_attention
+                                        ),
+                                    d_model=d_model, n_heads=n_heads),
+                    d_model=d_model,
+                    d_ff=d_ff,
+                    dropout=dropout,
+                    activation=activation
+                ) for l in range(e_layers)
+            ],
+            norm_layer=keras.layers.LayerNormalization()
+        )
+        self.projector = keras.layers.Dense(pred_len)
+        
+        
+    """
     def __init__(self, configs):
         super().__init__(configs=configs)
         self.attns = None
@@ -40,7 +85,7 @@ class Model(CustomModel):
             
         #self.tester = keras.layers.Dense(configs.d_ff, activation="relu")
         #self.out = keras.layers.Dense(configs.num_targets)
-
+    """
     @tf.function
     def call(self, x, training):
         # Normalization from Non-stationary Transformer
@@ -66,21 +111,22 @@ class Model(CustomModel):
         # the dimensions of embedded time series have been inverted, and then processed by native attn, layernorm and ffn modules
         enc_out, attns = self.encoder(enc_out, attn_mask=None, training=training)
         self.attns = attns
-        print(attns)
+        print("attention_scores:", attns)
         # B N E -> B N S -> B S N 
         dec_out = self.projector(enc_out)
         dec_out = tf.transpose(dec_out, perm=[0, 2, 1])[:, :, :N]  # filter the covariates 
-        # De-Normalization from Non-stationary Transformer
+        
         
         
         #dec_out = self.tester(tf.concat([dec_out, x_mark_enc[:, -self.configs.pred_len:, :]], axis=-1))
         #dec_out = self.out(dec_out)
 
         
-        if self.configs.use_norm:
+        if self.use_norm:
+            # De-Normalization from Non-stationary Transformer
             dec_out = self.norm(dec_out, means, stdev)   
          
-        if self.configs.output_attention:
+        if self.output_attention:
             return dec_out, attns
         
         return dec_out
@@ -89,11 +135,11 @@ class Model(CustomModel):
         # De-Normalization in TensorFlow
         stdev_t = stdev[:, 0, :]  # Selecting standard deviations for each sample in the batch
         stdev_t = tf.expand_dims(stdev_t, axis=1)  # Equivalent to unsqueeze(1) in PyTorch
-        stdev_t = tf.tile(stdev_t, [1, self.configs.pred_len, 1])  # Equivalent to repeat() in PyTorch
+        stdev_t = tf.tile(stdev_t, [1, self.pred_len, 1])  # Equivalent to repeat() in PyTorch
         
         means_t = means[:, 0, :]  # Selecting means for each sample in the batch
         means_t = tf.expand_dims(means_t, axis=1)  # Equivalent to unsqueeze(1) in PyTorch
-        means_t = tf.tile(means_t, [1, self.configs.pred_len, 1])  # Equivalent to repeat() in PyTorch
+        means_t = tf.tile(means_t, [1, self.pred_len, 1])  # Equivalent to repeat() in PyTorch
 
         dec_out = dec_out * stdev_t + means_t  # De-normalization computation
         return dec_out

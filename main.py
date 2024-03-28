@@ -1,93 +1,214 @@
 from utils.configs import *
 from utils.predict_sample import predict_sample
 from utils.plot_hist import plot_training_history
+from utils.plot_attention import plot_attention_weights
+
 from models.iTransformer.i_transformer import Model
 from models.training import CustomModel
+from models.iTransformer.data_loader import ITransformerData
 
 from data_provider.data_provider import DataProvider
 from data_provider.data_encoder import DataEncoder
 from data_provider.data_pipeline import DataPipeline
 
 import warnings
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+
+
 if __name__ == "__main__":
     warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn.utils.validation")
+
+    hist_len = 112
+    pred_len = 56
+    batch_size = 32
+    learning_rate = 0.0001
+    num_epochs = 15
     
-    settings = Settings()
-    provider_configs = ProviderConfigs()
-    encoder_configs = ProcessorConfigs(settings=settings)
-    pipeline_configs = PipelineConfigs(settings=settings)
+
+    """   
+    data_loader = ITransformerData(
+                data_path = 'ts_datasets/ETTh2.csv',
+                datetime_col='date',
+                numerical_cov_cols=None,
+                categorical_cov_cols=None,
+                cyclic_cov_cols=None,
+                timeseries_cols=None, #['HUFL', 'HULL', 'MUFL', 'MULL', 'LUFL', 'LULL', 'OT'],
+                train_range=(0, 8544),
+                val_range=(8545, 11425),
+                test_range=(11426, 14307),
+                hist_len=hist_len,
+                pred_len=pred_len,
+                stride=1,
+                sample_rate=1,
+                batch_size=batch_size,
+                epoch_len=None,
+                val_len=None,
+                normalize=True,
+            )
     
-    provider = DataProvider(configs=provider_configs)
-    encoder = DataEncoder(configs=encoder_configs)
-    pipeline = DataPipeline(configs=pipeline_configs)
+    data_loader = ITransformerData(
+                data_path = 'ts_datasets/electricity.csv',
+                datetime_col='date',
+                numerical_cov_cols=None,
+                categorical_cov_cols=None,
+                cyclic_cov_cols=None,
+                timeseries_cols=None,
+                train_range=(0, 18317),
+                val_range=(18318, 20951),
+                test_range=(20952, 26207),
+                hist_len=hist_len,
+                pred_len=pred_len,
+                stride=1,
+                sample_rate=1,
+                batch_size=batch_size,
+                epoch_len=None,
+                val_len=None,
+                normalize=True,
+            )
+    data_loader = ITransformerData(
+                data_path = 'ts_datasets/traffic.csv',
+                datetime_col='date',
+                numerical_cov_cols=None,
+                categorical_cov_cols=None,
+                cyclic_cov_cols=None,
+                timeseries_cols=None,
+                train_range=(0, 12185),
+                val_range=(12186, 13939),
+                test_range=(13940, 17447),
+                hist_len=hist_len,
+                pred_len=pred_len,
+                stride=1,
+                sample_rate=1,
+                batch_size=batch_size,
+                epoch_len=None,
+                val_len=None,
+                normalize=True,
+            )
+    """
     
-    database = provider.load_database()
-    encoding = encoder.process_data(database)
-    train, val, test = pipeline.generate_train_test_splits(encoding)
     
+    data_loader = ITransformerData(
+                    data_path = 'data/tide_data.csv',
+                    datetime_col='datetime',
+                    numerical_cov_cols=['gaestezahlen', 'holidays', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed'],
+                    categorical_cov_cols=None,
+                    cyclic_cov_cols=None, #['wind_direction'],
+                    timeseries_cols=None,
+                    train_range=(0, 9015),
+                    val_range=(9016, 10947),
+                    test_range=(10948, 12623),
+                    hist_len=hist_len,
+                    pred_len=pred_len,
+                    stride=1,
+                    sample_rate=1,
+                    batch_size=batch_size,
+                    epoch_len=None,
+                    val_len=None,
+                    normalize=True,
+                    drop_remainder=True,
+                )
+    
+    """
+        data_loader = ITransformerData(
+                    data_path = 'data/tide_data_daily.csv',
+                    datetime_col='datetime',
+                    numerical_cov_cols=None, #['gaestezahlen', 'holidays', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed'],
+                    categorical_cov_cols=None,
+                    cyclic_cov_cols=None, #['wind_direction'],
+                    timeseries_cols=None,
+                    train_range=(0, 1103),
+                    val_range=(1104, 1339),
+                    test_range=(1340, 1577),
+                    hist_len=hist_len,
+                    pred_len=pred_len,
+                    stride=1,
+                    batch_size=batch_size,
+                    epoch_len=None,
+                    val_len=None,
+                    normalize=True,
+                    drop_remainder=True,
+                )
+    """
+    
+    database = data_loader.get_data()
+    data_columns = data_loader.get_feature_names_out()
+    train, val, test = data_loader.get_train_test_splits()
     print(database)
-    print(encoding)
     print(train)
+    print("data_columns: ", data_columns)
     
     num_targets = train.element_spec[1].shape[-1]
-    model_configs = TransformerConfigs(settings=settings, num_features=0, num_targets=num_targets)
+    print("num targets: ", num_targets)
     
-    steps_per_epoch, validation_steps, test_steps = settings.calculate_steps(encoding.shape[0])
+    # Calculate optimal model size as described in TimesNet  
+    C = num_targets
+    dmin = 64
+    dmax = 512
+    opt = 2 ** math.ceil(math.log2(C))
+    print("optimal d_model: ", opt)
 
-    baseline = CustomModel(model_configs)
-    itransformer = Model(model_configs)
+    dmodel = min(max(opt, dmin), dmax)
     
-    baseline.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=model_configs.learning_rate), 
-                     loss=model_configs.loss, 
+    baseline = CustomModel(seq_len=hist_len,
+                           pred_len=pred_len,
+                           )
+    
+    itransformer = Model(seq_len=hist_len,
+                         pred_len=pred_len,
+                         d_model=dmodel,
+                         n_heads=8,
+                         d_ff=4*dmodel,
+                         e_layers=2,
+                         dropout=0.2,
+                         output_attention=True,
+                         
+                         )
+    
+    loss = tf.keras.losses.MeanSquaredError()
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    
+    
+    baseline.compile(optimizer=optimizer, 
+                     loss=loss, 
                      weighted_metrics=[])
-    itransformer.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=model_configs.learning_rate), 
-                         loss=model_configs.loss, 
+    
+    itransformer.compile(optimizer=optimizer, 
+                         loss=loss, 
+                         metrics=['mae'],
                          weighted_metrics=[])
+    
+    sample = train.take(1)
+    out, attns = itransformer.predict(sample)
+    
+    attention_heads = attns[0][0]
+    variate_labels = [item.split("__")[-1] for item in data_columns[:-num_targets]]
 
+   # plot_attention_weights(variate_labels, attention_heads)
+    
+    
     baseline.fit(train, 
                  epochs=1, 
-                 steps_per_epoch=steps_per_epoch, 
                  validation_data=val, 
-                 validation_steps=validation_steps)
+                 use_multiprocessing=True)
     
     hist = itransformer.fit(train, 
-                            epochs=settings.num_epochs, 
-                            steps_per_epoch=steps_per_epoch, 
-                            validation_data=val, 
-                            validation_steps=validation_steps, 
+                            epochs=num_epochs, 
+                            validation_data=val,
                             use_multiprocessing=True)
 
     itransformer.summary()
-    itransformer.evaluate(test, steps=test_steps)
-    print('attention:', itransformer.attns)
+    itransformer.evaluate(test)
     
-    first_attn_layer = itransformer.attns[0]
-    first_head = first_attn_layer[0, 0, :, :]
+    sample = test.take(1)
+    out, attns = itransformer.predict(sample)
     
-    
-    plt.figure(figsize=(10,8))
-    plt.imshow(first_head, xmap='viridis')
-    plt.xlabel('input')
-    plt.ylabel('output')
-    plt.colorbar()
-    plt.show()
-    
-    sample = test.take(1).unbatch().take(1)
+    attention_heads = attns[0][0]
 
-    for x, y, x_mark in sample:
-        x, x_mark = tf.expand_dims(x, axis=0), tf.expand_dims(x_mark, axis=0)
-        prediction = np.squeeze(itransformer.predict((x, x_mark), batch_size=1))
-    
-    prediction = encoder.decode_data(prediction)
-    y = encoder.decode_data(y)
-    
-    print(prediction)
-    print(y)
-  
-
+    plot_attention_weights(variate_labels, attention_heads)
     
     
     plot_training_history(hist)

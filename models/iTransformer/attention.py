@@ -82,3 +82,4 @@ class TriangularCausalMask(tf.Module):
     def mask(self):
         print('mask is being used')
         return self._mask
+

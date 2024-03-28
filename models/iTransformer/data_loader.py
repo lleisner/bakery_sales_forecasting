@@ -42,40 +42,8 @@ class WindowGenerator():
   
         
 
-    def make_dataset(self, X, y):
-        ts_dfa = tf.keras.utils.timeseries_dataset_from_array
-        print(f"batch size: {self.batch_size}")
-        input_dataset = ts_dfa(
-            data=X,
-            targets=None,
-            sequence_length=self.hist_len,
-            sequence_stride=self.shift,
-            sampling_rate=1,
-            batch_size=self.batch_size,
-            shuffle=False,
-        )
-        target_dataset = ts_dfa(
-            data=y,
-            targets=None,
-            sequence_length=self.pred_len,
-            sequence_stride=self.shift,
-            sampling_rate=1,
-            batch_size=self.batch_size,
-            shuffle=False,
-        )    
-        return input_dataset.set_shape([self.batch_size, self.hist_len, None]), target_dataset.set_shape([self.batch_size, self.pred_len, None])
-    
-    @property
-    def train(self):
-        return self.make_dataset(*self.train_df)
-    
-    @property
-    def val(self):
-        return self.make_dataset(*self.val_df)
-    
-    @property
-    def test(self):
-        return self.make_dataset(*self.test_df)
+
+
     
     @property
     def example(self):
@@ -105,6 +73,7 @@ class ITransformerData(object):
         hist_len,
         pred_len,
         stride,
+        sample_rate,
         batch_size,
         epoch_len,
         val_len,
@@ -143,10 +112,11 @@ class ITransformerData(object):
 
         self.num_cov_cols = numerical_cov_cols
         self.cat_cov_cols = categorical_cov_cols
-        self.cyc_cov_cols = cyclic_cov_cols
+        self.cyc_cov_cols = cyclic_cov_cols if cyclic_cov_cols else []
         if timeseries_cols:
             self.ts_cols = timeseries_cols
         else:
+            #self.ts_cols = self.data_df.columns.tolist()
             self.ts_cols = self.use_num_columns_as_ts_list()
 
         self.train_range = train_range
@@ -156,6 +126,7 @@ class ITransformerData(object):
         self.hist_len = hist_len
         self.pred_len = pred_len
         self.stride = stride
+        self.sampling_rate = sample_rate
         self.batch_size = batch_size
         self.freq = freq
         self.normalize = normalize
@@ -169,6 +140,8 @@ class ITransformerData(object):
         self.cyc_cov_cols.extend(time_df.columns.tolist())
         # Concatenate temporal features with data_df
         self.data_df = pd.concat([time_df, self.data_df], axis=1)
+        print(self.data_df)
+        print(self.ts_cols)
         # Get data in the right order for splitting into x, y, x_mark
         self.data_df = self.data_df[self.ts_cols + [col for col in self.data_df if col not in self.ts_cols]]
         
@@ -204,7 +177,7 @@ class ITransformerData(object):
         }
         return pd.DataFrame(features, index=data)
     
-    def create_lagged_features(self, targets):
+    def create_lagged_features(self, targets, include_mean_max_min=False):
         """Creates lagged and rolling statistical features (mean, max, min) for target variables
 
         Args:
@@ -218,18 +191,20 @@ class ITransformerData(object):
         the batch_x, batch_x_mark separation for the iTransformer later on    
         """
         feature_frames = []   
-        operations = {
-            'rolling_mean': 'mean',
-            'rolling_max': 'max',
-            'rolling_min': 'min',
-        }
-        
-        for op_name, op in operations.items():
-            result = getattr(targets.shift(1).rolling(window=self.pred_len), op)()
-            result.columns = [f"{col}_{op_name}_{self.pred_len}h" for col in result.columns]
-            feature_frames.append(result)
-        
-        lagged = targets.shift(self.pred_len).rename(columns=lambda x: f"{x}_lagged_{self.pred_len}h")
+        lag = self.pred_len * self.stride * self.sampling_rate
+        if include_mean_max_min:
+            operations = {
+                'rolling_mean': 'mean',
+                'rolling_max': 'max',
+                'rolling_min': 'min',
+            }
+            
+            for op_name, op in operations.items():
+                result = getattr(targets.shift(1).rolling(window=lag), op)()
+                result.columns = [f"{col}_{op_name}_{lag}h" for col in result.columns]
+                feature_frames.append(result)
+            
+        lagged = targets.shift(lag).rename(columns=lambda x: f"lagged_{lag}h_{x}")
         feature_frames.append(lagged)
             
         return pd.concat(feature_frames, axis=1)
@@ -259,10 +234,10 @@ class ITransformerData(object):
         
         # Dictionary mapping column types to their transformers and prefixes
         cols_dict = {
-            'ts_cols': (MinMaxScaler(), "target"), 
-            'num_cov_cols': (MinMaxScaler(), "numerical"),
+            'ts_cols': (StandardScaler(), "target"), 
+            'num_cov_cols': (StandardScaler(), "numerical"),
             'cat_cov_cols': (OneHotEncoder(), "categorical"),
-            'cyc_cov_cols': (CyclicEncoder(), "cyclic"),
+            'cyc_cov_cols': (StandardScaler(), "cyclic"),
         }
         
         # Append appropriate transformers to the list if columns are available
@@ -295,7 +270,7 @@ class ITransformerData(object):
             targets=None,
             sequence_length=self.hist_len,
             sequence_stride=self.stride,
-            sampling_rate=1,
+            sampling_rate=self.sampling_rate,
             batch_size=None,
             shuffle=False,
             start_index=start_index,
@@ -307,11 +282,11 @@ class ITransformerData(object):
         return dataset
         
         
-    def split_batch(self, window):
+    def split_batch(self, batch):
         num_targets = len(self.ts_cols)
-        batch_y = window[:, -self.pred_len:, :num_targets]
-        batch_x = window[:, :, -num_targets:]
-        batch_x_mark = window[:, :, num_targets:-num_targets]
+        batch_y = batch[:, -self.pred_len:, :num_targets]
+        batch_x = batch[:, :, -num_targets:]
+        batch_x_mark = batch[:, :, num_targets:-num_targets]
         
         batch_y.set_shape([None, self.pred_len, None])
         batch_x.set_shape([None, self.hist_len, None])
@@ -329,6 +304,9 @@ class ITransformerData(object):
 
     def get_data(self):
         return self.data_df
+    
+    def get_feature_names_out(self):
+        return self.data_df.columns
     
     def use_num_columns_as_ts_list(self):
         return [col for col in self.data_df.columns if str(col).isnumeric()]
