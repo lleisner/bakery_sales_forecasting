@@ -20,4 +20,4 @@ logs/
 run_script.sh
 
 # Ignore timeseries datasets (too large for upload)
-ts_datasets
+ts_datasets/
