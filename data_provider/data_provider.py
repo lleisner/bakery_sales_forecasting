@@ -11,82 +11,115 @@ from data_provider.sub_providers import (
 )
 
 class DataProvider:
-    def __init__(self, configs, data_directory='data/database'):
+    def __init__(self, 
+                 length_of_day='8h',
+                 start_date='2019-02-01',
+                 end_date='2023-08-01',
+                 source_directory='data/database',
+                 item_selection = ["broetchen", "plunder"]):
+        
         self.providers = {
+            'sales': SalesDataProvider(item_selection=item_selection),
+            'ferien': FerienDataProvider(),
             'gaeste': GaestezahlenProvider(),
             'fahrten': FahrtenDataProvider(),
             'weather': WeatherDataProvider(),
-            'ferien': FerienDataProvider(),
-            'sales': SalesDataProvider(item_selection=configs.item_selection),
         }
-        self.data_directory = data_directory
-        self.configs = configs
+        self.source_directory = source_directory
+        self.start_date = start_date
+        self.end_date = end_date
+        self.length_of_day = length_of_day
         
 
-    def create_new_database(self, provider_list=None):
+    def create_new_sub_databases(self, provider_list=None):
         provider_list = list(self.providers.keys()) if provider_list is None else provider_list
         for key, provider in self.providers.items():
             if key in provider_list:
                 try:
                     # Save data to their respective files and append to main data
-                    provider.save_to_csv(data_directory=self.data_directory, filename=key)
+                    provider.save_to_csv(source_directory=self.source_directory, filename=key)
                     print(f"Created new {key} database")
                 except Exception as e:
                     print(f"Failed to create new {key} database: {str(e)}")
 
+    
+    def load_and_concat_sub_databases(self):
+        data = []
+        for key in self.providers.keys():
+            file_path = os.path.join(self.source_directory, key)
+            sub_database = pd.read_csv(f'{file_path}.csv', index_col=0, parse_dates=True)
+            data.append(sub_database)
+
+        result = pd.concat(data, axis=1, join='outer').fillna(0)
+        result.index.name = 'date'
+        filtered_result = self.filter_time_and_date(result)
+        
+        return filtered_result
+    
+    def save_combined_data(self, directory='ts_datasets'):
+        combined_data = self.load_and_concat_sub_databases()
+        filename = f"sales_forecasting_{self.length_of_day}.csv"
+        file_path = os.path.join(directory, filename)
+        combined_data.to_csv(file_path)
+        print(f"Combined data saved to {file_path}")
+        
+    
+    def filter_time_and_date(self, df):
+        time_mapping = {
+            '8h': ("08:00:00", "15:00:00"),
+            '16h': ("06:00:00", "21:00:00"),
+            '24h': ("00:00:00", "23:00:00"),
+            '1d':("00:00:00", "23:00:00"),
+        }
+        
+        if self.length_of_day not in time_mapping:
+            raise ValueError(f"Invalid length of day {self.length_of_day}. Please choose among 8, 16, or 24.")
+        elif self.length_of_day == '1d':
+            df = df.resample('D').sum()
+        start_time, end_time = time_mapping[self.length_of_day]
+
+        df = df[(df.index >= pd.Timestamp(f"{self.start_date} {start_time}")) & 
+                (df.index <= pd.Timestamp(f"{self.end_date} {end_time}"))]
+        
+        df = df.between_time(start_time, end_time)
+        
+        return df
+
+    """    
+    DEPRECEATED
+    
     def load_database(self):
         data = []
         for key in self.providers.keys():
-            file_path = os.path.join(self.data_directory, key)
+            file_path = os.path.join(self.source_directory, key)
             database = pd.read_csv(f'{file_path}.csv', index_col=0, parse_dates=True)
+            
             try:
+                # try integration of new data (unused so far)
                 new_data = pd.read_csv(f'data/new_data/{key}.csv', index_col=0, parse_dates=True)
                 result = new_data.combine_first(database)
             except:
                 result = database
+                
             data.append(result)
 
+        # Join all dataframes
         result = data[0]
         for df in data[1:]:
             result = result.join(df, how='outer')
+            
+        result = pd.concat(data, axis=1, join='outer')
         result = self.filter_time_and_date(result)
         
         return result.fillna(0)
-        
-    
-    def filter_time_and_date(self, df) -> pd.DataFrame:
-        df = df[(df.index >= pd.Timestamp(self.configs.start_date + ' ' + self.configs.start_time)) & (df.index <= pd.Timestamp(self.configs.end_date + ' ' + self.configs.end_time))]
-        df = df.between_time(self.configs.start_time, self.configs.end_time)
-        return df
-
-    def categorize_columns(self, df):
-        numeric_col_names = []
-        dtype_categories = {}
-
-        for col in df.columns:
-            # Check if column name is numeric
-            try:
-                float(col)  # Attempt to convert the column name to float
-                numeric_col_names.append(col)
-            except ValueError:
-                # Categorize remaining columns by their dtype
-                col_dtype = str(df[col].dtype)
-                if col_dtype not in dtype_categories:
-                    dtype_categories[col_dtype] = [col]
-                else:
-                    dtype_categories[col_dtype].append(col)
-
-        return numeric_col_names, dtype_categories
+    """
 
 
 
             
 if __name__ == "__main__":
-    configs = ProviderConfigs()
-    provider = DataProvider(configs=configs)
-    #provider.create_new_database(provider_list=['gaeste'])
-    df = provider.load_database()
-    print(df)
-    labels, categories_dict = provider.categorize_columns(df)
-    print(labels)
-    print(categories_dict)
+    for period in ['8h', '16h', '24h', '1d']:
+        provider = DataProvider(length_of_day=period)
+        provider.save_combined_data()
+
+ 

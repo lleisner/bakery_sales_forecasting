@@ -42,6 +42,10 @@ class TiDEData(object):
         
         self.ts_cols = timeseries_cols if timeseries_cols else self.data_df.columns
         
+        self.train_range = train_range
+        self.val_range = val_range
+        self.test_range = test_range
+        
         self.hist_len = hist_len
         self.pred_len = pred_len
         self.batch_size = batch_size

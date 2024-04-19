@@ -2,6 +2,48 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
 
+
+
+def plot_time_series(*arrays):
+    """
+    Plots actuals and predictions for time series data.
+
+    :param arrays: A variable number of numpy arrays, all with the same shape (sequence_length, number of variates).
+                   The first array is treated as actual values, and subsequent arrays as predictions.
+    """
+    actuals = arrays[0]
+    preds = arrays[1:]
+    num_variates = actuals.shape[1]
+    sequence_length = actuals.shape[0]
+
+    # Determine the plot grid (try to make it as square as possible)
+    num_plots_side = int(np.ceil(np.sqrt(num_variates)))
+    fig, axes = plt.subplots(num_plots_side, num_plots_side, figsize=(15, 15))
+
+    # Flatten the axes array for easy iteration
+    axes = axes.flatten()
+
+    # Plot each variate in a separate subplot
+    for i in range(num_variates):
+        ax = axes[i]
+        ax.plot(range(sequence_length), actuals[:, i], label='Actual', color='blue', marker='o')
+
+        # Plot each set of predictions
+        for idx, pred in enumerate(preds):
+            ax.plot(range(sequence_length), pred[:, i], label=f'Pred_{idx}', linestyle='--', marker='x')
+
+        ax.set_title(f'Variate {i+1}')
+        ax.legend()
+        ax.grid(True)
+
+    # Turn off unused subplots
+    for j in range(i + 1, len(axes)):
+        axes[j].axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
+
 def plot_preds_actuals(predictions, actuals):
     """
     Plots predictions vs actual values for multiple variables over time in a single figure,

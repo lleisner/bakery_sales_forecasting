@@ -23,6 +23,8 @@ class WeatherDataProvider(BaseProvider):
             'wind_speed': 'wind_speed',
             'wind_deg': 'wind_direction'
         })
+        # Remove duplicates, keeping the last occurrence
+        df = df[~df.index.duplicated(keep='last')]
         return df.fillna(0)
 
     def _read_file(self, file_path):
@@ -31,7 +33,6 @@ class WeatherDataProvider(BaseProvider):
         
 
 if __name__ == "__main__":
-    provider = NewWeatherDataProvider()
+    provider = WeatherDataProvider()
     df = provider.get_data()
     print(df)
-

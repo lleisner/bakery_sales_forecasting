@@ -71,3 +71,30 @@ class CombinedLossWithDynamicWeights(tf.keras.losses.Loss):
         return combined_loss
 
 
+
+class SMAPELoss(tf.keras.losses.Loss):
+    def __init__(self, reduction=tf.keras.losses.Reduction.AUTO, name='SMAPELoss'):
+        """
+        Initialize the SMAPELoss class.
+
+        Args:
+        reduction: Type of tf.keras.losses.Reduction to apply to loss. Default value is AUTO.
+        name: Optional name for the operations created when applying the loss. Defaults to 'SMAPELoss'.
+        """
+        super(SMAPELoss, self).__init__(reduction=reduction, name=name)
+
+    def call(self, y_true, y_pred):
+        """
+        Calculate the SMAPE loss between `y_true` and `y_pred`.
+
+        Args:
+        y_true: Actual values. Tensor of the same shape as `y_pred`.
+        y_pred: Predicted values. Tensor of the same shape as `y_true`.
+
+        Returns:
+        smape: The SMAPE loss between `y_true` and `y_pred`.
+        """
+        numerator = tf.abs(y_true - y_pred)
+        denominator = tf.maximum(tf.abs(y_true) + tf.abs(y_pred), 1e-7)  # Avoid division by zero
+        smape = 2.0 * tf.reduce_mean(numerator / denominator)
+        return smape

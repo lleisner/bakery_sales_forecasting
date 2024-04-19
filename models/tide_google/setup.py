@@ -1,6 +1,5 @@
 from models.tide_google.data_loader import TimeSeriesdata
 from models.tide_google.tide_model import *
-from models.tide_google.train import training
 from utils.plot_preds_and_actuals import plot_preds_actuals, plot_df_per_column
 
 import pandas as pd
@@ -38,35 +37,36 @@ ts_cols = ['10', '11', '12', '13', '20', '21', '22', '23', '24', '27', '28', '29
 numerical_covariates = ['gaestezahlen', 'wind_direction', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed']
 categorical_covariates = ['is_open', 'holidays', 'arrival', 'departure']
 
-pred_len = 112
-hist_len = 112
+pred_len = 96
+hist_len = 96
 num_ts = len(ts_cols)
 batch_size = num_ts
 batch_size = min(num_ts, batch_size)
 
-hidden_size = 256
+hidden_size = 128
 decoder_output_dim = 4
 final_decoder_hidden = 64
 num_layers = 2
 
-num_epochs = 40
+num_epochs = 10
 patience = 100
-lr = 1e-4
+lr = 0.001
 
 epoch_len=train_end-pred_len-hist_len
 val_samples=val_end-train_end-pred_len
 
+
 print("epoch and samples: ", epoch_len, val_samples)
 
 time_series = TimeSeriesdata(
-    data_path='data/tide_data_daily.csv',
+    data_path='data/tide_data.csv',
     datetime_col='datetime',
     num_cov_cols=numerical_covariates,
     cat_cov_cols=categorical_covariates,
     ts_cols=ts_cols,
-    train_range=(0, train_end-1),
-    val_range=(train_end, val_end-1),
-    test_range=(val_end, total_timestamps-1),
+    train_range=(0, 9015),
+    val_range=(9016, 10947),
+    test_range=(10948, 12623),
     hist_len=hist_len,
     pred_len=pred_len,
     batch_size=batch_size,
@@ -74,7 +74,7 @@ time_series = TimeSeriesdata(
     normalize=True, 
     epoch_len=epoch_len, 
     val_samples=val_samples,
-    permute=True,
+    permute=False,
     )
 
 model_config = {
@@ -93,7 +93,7 @@ tide_model = TideModel(
     cat_sizes=time_series.cat_sizes,
     transform=False,
     layer_norm=True,
-    dropout_rate=0.5,
+    dropout_rate=0.2,
 )
 
 lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
@@ -136,7 +136,6 @@ tide_model.fit(train_ds,
     validation_steps=test_val_samples, 
     callbacks=callbacks, 
     batch_size=batch_size, 
-    verbose=2,
     use_multiprocessing=True, 
     )
 

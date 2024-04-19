@@ -225,7 +225,7 @@ if __name__ == "__main__":
     settings = Settings()
     configs = ProviderConfigs()
     provider = DataProvider(configs)
-    provider.create_new_database(['sales'])
+    provider.create_sub_databases(['sales'])
     df = provider.load_database()
     p_configs = ProcessorConfigs(settings)
     encoder = DataEncoder(configs=p_configs)

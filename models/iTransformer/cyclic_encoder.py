@@ -13,7 +13,8 @@ class CyclicEncoder(BaseEstimator, TransformerMixin):
         # Determine n_splines and periods for each column in X
         for col in X:
             period = X[col].nunique()
-            n_splines = min(max(period // 2, 2), 6)
+            #n_splines = min(max(period // 2, 2), 6)
+            n_splines = round(np.log(2*period) + 1)
             self.columns_info_[col] = (period, n_splines)
             print("column info", self.columns_info_[col])
             self.feature_names.extend([f"{col}_spline_{i}" for i in range(n_splines)])

@@ -16,6 +16,7 @@ class Model(CustomModel):
     def __init__(self, 
                  seq_len,
                  pred_len,
+                 num_targets,
                  d_model,
                  n_heads,
                  d_ff,
@@ -56,36 +57,10 @@ class Model(CustomModel):
             norm_layer=keras.layers.LayerNormalization()
         )
         self.projector = keras.layers.Dense(pred_len)
+        self.tester = keras.layers.Dense(d_ff, activation="relu")
+        self.out = keras.layers.Dense(num_targets)
         
         
-    """
-    def __init__(self, configs):
-        super().__init__(configs=configs)
-        self.attns = None
-        # Embedding
-        self.enc_embedding = DataEmbeddingInverted(configs.seq_len, configs.d_model, configs.dropout)
-        # Encoder-only architecture
-        self.encoder = Encoder(
-            attn_layers=[
-                EncoderLayer(
-                    attention=AttentionLayer(
-                                    FullAttention(
-                                        False, attention_dropout=configs.dropout,output_attention=configs.output_attention
-                                        ),
-                                    d_model=configs.d_model, n_heads=configs.n_heads),
-                    d_model=configs.d_model,
-                    d_ff=configs.d_ff,
-                    dropout=configs.dropout,
-                    activation=configs.activation
-                ) for l in range(configs.e_layers)
-            ],
-            norm_layer=keras.layers.LayerNormalization()
-        )
-        self.projector = keras.layers.Dense(configs.pred_len)  
-            
-        #self.tester = keras.layers.Dense(configs.d_ff, activation="relu")
-        #self.out = keras.layers.Dense(configs.num_targets)
-    """
     @tf.function
     def call(self, x, training):
         # Normalization from Non-stationary Transformer
@@ -118,7 +93,7 @@ class Model(CustomModel):
         
         
         
-        #dec_out = self.tester(tf.concat([dec_out, x_mark_enc[:, -self.configs.pred_len:, :]], axis=-1))
+       # dec_out = self.tester(tf.concat([dec_out, x_mark_enc[:, -self.pred_len:, :]], axis=-1))
         #dec_out = self.out(dec_out)
 
         
@@ -144,3 +119,60 @@ class Model(CustomModel):
         dec_out = dec_out * stdev_t + means_t  # De-normalization computation
         return dec_out
      
+    @tf.function
+    def train_step(self, data):
+        batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]
+        
+        with tf.GradientTape() as tape:
+            if self.output_attention:
+                outputs, attns = self((batch_x, batch_x_mark), training=True)
+                self.attn_scores = attns
+            else:
+                outputs = self((batch_x, batch_x_mark), training=True)
+            print(outputs.shape)
+            
+            outputs = outputs[:, -self.pred_len:, :]
+            batch_y = batch_y[:, -self.pred_len:, :]
+            
+            loss = self.compute_loss(y=batch_y, y_pred=outputs)
+            
+        gradients = tape.gradient(loss, self.trainable_variables)
+        
+        if self.clip:
+            gradients = [tf.clip_by_value(grad, -self.clip, self.clip) for grad in gradients]
+        
+        self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
+        
+        for metric in self.metrics:
+            if metric.name == "loss":
+                metric.update_state(loss)
+            else:
+                metric.update_state(batch_y, outputs)
+        return {m.name: m.result() for m in self.metrics}
+
+    @tf.function
+    def test_step(self, data):
+        batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]
+        
+        if self.output_attention:
+            outputs, attns = self((batch_x, batch_x_mark), training=False)
+            self.attn_scores = attns
+        else:
+            outputs = self((batch_x, batch_x_mark), training=False)
+        
+        outputs = outputs[:, -self.pred_len:, :]
+        batch_y = batch_y[:, -self.pred_len:, :]
+        
+        self.compute_loss(y=batch_y, y_pred=outputs)
+        
+        for metric in self.metrics:
+            if metric.name != "loss":
+                metric.update_state(batch_y, outputs)
+        return {m.name: m.result() for m in self.metrics}
+    
+    @tf.function
+    def predict_step(self, data):
+        batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]
+        if self.output_attention:
+            return self((batch_x, batch_x_mark), training=False)
+        return self((batch_x, batch_x_mark), training=False)

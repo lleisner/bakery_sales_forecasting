@@ -74,57 +74,65 @@ class TimeSeriesdata(object):
       None
     """
     self.data_df = pd.read_csv(open(data_path, 'r'))
-    if not num_cov_cols:
-      self.data_df['ncol'] = np.zeros(self.data_df.shape[0])
-      num_cov_cols = ['ncol']
-    if not cat_cov_cols:
-      self.data_df['ccol'] = np.zeros(self.data_df.shape[0])
-      cat_cov_cols = ['ccol']
+
     self.data_df.fillna(0, inplace=True)
-    self.data_df.set_index(
-        pd.DatetimeIndex(self.data_df[datetime_col]), inplace=True
-    )
+    self.data_df.set_index(pd.DatetimeIndex(self.data_df[datetime_col]), inplace=True)
     self.num_cov_cols = num_cov_cols
     self.cat_cov_cols = cat_cov_cols
     self.ts_cols = ts_cols
     self.train_range = train_range
     self.val_range = val_range
     self.test_range = test_range
-    data_df_idx = self.data_df.index
-    date_index = data_df_idx.union(
-        pd.date_range(
-            data_df_idx[-1] + pd.Timedelta(1, freq=freq),
-            periods=pred_len + 1,
-            freq=freq,
-        )
-    )
-    self.time_df = TimeCovariates(
-        date_index, holiday=holiday
-    ).get_covariates()
+    
     self.hist_len = hist_len
     self.pred_len = pred_len
     self.batch_size = batch_size
     self.freq = freq
     self.normalize = normalize
-    self.data_mat = self.data_df[self.ts_cols].to_numpy().transpose()
-    self.data_mat = self.data_mat[:, 0 : self.test_range[1]]
-    self.time_mat = self.time_df.to_numpy().transpose()
-    self.num_feat_mat = self.data_df[num_cov_cols].to_numpy().transpose()
-    self.cat_feat_mat, self.cat_sizes = self._get_cat_cols(cat_cov_cols)
-    self.normalize = normalize
-    if normalize:
-      self._normalize_data()
-    logging.info(
-        'Data Shapes: %s, %s, %s, %s',
-        self.data_mat.shape,
-        self.time_mat.shape,
-        self.num_feat_mat.shape,
-        self.cat_feat_mat.shape,
-    )
-
+    
     self.epoch_len = epoch_len
     self.permute = permute
     self.val_samples = val_samples
+    
+    self.normalize = normalize
+    
+      
+    self._add_missing_cols()
+    self._create_temporal_features()
+    self._arrange_data()
+    
+    if self.normalize:
+      self._normalize_data()
+
+    
+  def _add_missing_cols(self):
+    if not self.num_cov_cols:
+      self.data_df['ncol'] = np.zeros(self.data_df.shape[0])
+      self.num_cov_cols = ['ncol']
+    if not self.cat_cov_cols:
+      self.data_df['ccol'] = np.zeros(self.data_df.shape[0])
+      self.cat_cov_cols = ['ccol']
+    
+  def _create_temporal_features(self):
+    index = self.data_df.index
+    date_index = index.union(
+      pd.date_range(
+        index[-1] + pd.Timedelta(1, freq=self.freq),
+        periods=self.pred_len + 1,
+        freq=self.freq,
+      )
+    )
+    self.time_df = TimeCovariates(date_index, holiday=False).get_covariates()
+    
+  def _create_lagged_features(self, include_mean_max_min=False):
+    pass
+    
+  def _arrange_data(self):
+    self.data_mat = self.data_df[self.ts_cols].to_numpy().transpose()
+    self.data_mat = self.data_mat[:, 0 : self.test_range[1]]
+    self.time_mat = self.time_df.to_numpy().transpose()
+    self.num_feat_mat = self.data_df[self.num_cov_cols].to_numpy().transpose()
+    self.cat_feat_mat, self.cat_sizes = self._get_cat_cols(self.cat_cov_cols)
 
   def _get_cat_cols(self, cat_cov_cols):
     """Get categorical columns."""
@@ -154,10 +162,9 @@ class TimeSeriesdata(object):
     hist_len = self.hist_len
     logging.info('Hist len: %s', hist_len)
     if not self.epoch_len:
-      epoch_len = len(perm)
-    else:
-      epoch_len = self.epoch_len
-    for idx in perm[0:epoch_len]:
+      self.epoch_len = len(perm)
+      
+    for idx in perm[0:self.epoch_len]:
       #for i in range(num_ts // self.batch_size + 1):
       for i in range(num_ts//self.batch_size):
         if self.permute:
@@ -199,13 +206,10 @@ class TimeSeriesdata(object):
     hist_len = self.hist_len
     logging.info('Hist len: %s', hist_len)
     perm = np.arange(start, end)
-    if self.epoch_len:
-      epoch_len = self.epoch_len
-    else:
-      epoch_len = len(perm)
-    self.val_samples = len(perm)
+    if not self.val_samples:
+      self.val_samples = len(perm)
     
-    for idx in perm[0:epoch_len]:
+    for idx in perm[0:self.val_samples]:
       for batch_idx in range(0, num_ts, self.batch_size):
         tsidx = np.arange(batch_idx, min(batch_idx + self.batch_size, num_ts))
         dtimes = np.arange(idx - hist_len, idx + self.pred_len)
@@ -282,3 +286,9 @@ class TimeSeriesdata(object):
     y_true = bts_pred
     inputs = (past_data, future_features, tsidx)
     return inputs, y_true
+  
+  def get_train_test_splits(self):
+    train_ds = self.tf_dataset(mode='train')
+    val_ds = self.tf_dataset(mode='val')
+    test_ds = self.tf_dataset(mode='test')
+    return train_ds, val_ds, test_ds

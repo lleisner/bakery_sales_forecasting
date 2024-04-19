@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import tensorflow as tf
 from utils.loss import CustomLoss, CombinedLossWithDynamicWeights
+import math
 
 class Settings:
     def __init__(self):
@@ -137,3 +138,17 @@ def build_model(hp, model, configs):
     
 
 
+def get_d_model(num_targets=32, d_min=32, d_max=512):
+    """
+    Calculate the optimal model dimension as a clamped power of two based on the number of targets.
+
+    Parameters:
+        num_targets (int): The base number of targets to determine the dimension size. Default is 32.
+        d_min (int): Minimum dimension size. Default is 16.
+        d_max (int): Maximum dimension size. Default is 512.
+
+    Returns:
+        int: Dimension size constrained between d_min and d_max.
+    """
+    optimal = 2 ** math.ceil(math.log2(num_targets))
+    return min(max(optimal, d_min), d_max)

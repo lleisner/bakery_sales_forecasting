@@ -23,7 +23,6 @@ class CustomModel(tf.keras.Model):
         
         with tf.GradientTape() as tape:
             if self.output_attention:
-                print("using outputa-tetenions")
                 outputs, attns = self((batch_x, batch_x_mark), training=True)
                 self.attn_scores = attns
             else:
@@ -32,8 +31,6 @@ class CustomModel(tf.keras.Model):
             
             outputs = outputs[:, -self.pred_len:, :]
             batch_y = batch_y[:, -self.pred_len:, :]
-            print("outputs:", outputs.shape)
-            print("batch_y:", batch_y.shape)
             
             loss = self.compute_loss(y=batch_y, y_pred=outputs)
             
@@ -76,4 +73,4 @@ class CustomModel(tf.keras.Model):
         batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]
         if self.output_attention:
             return self((batch_x, batch_x_mark), training=False)
-        return self((batch_x, batch_x_mark), training=False)
+        return self((batch_x, batch_x_mark), training=False), batch_y

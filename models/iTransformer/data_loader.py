@@ -10,51 +10,6 @@ import warnings
 
 # Ignore FutureWarnings in sklearn.utils.validation
 warnings.filterwarnings(action='ignore', category=FutureWarning, module='sklearn.utils.validation')
-
-    
-class WindowGenerator():
-    def __init__(self, data, hist_len, pred_len, shift, label_columns):
-        
-        self.label_columns = label_columns
-        if label_columns is not None:
-            self.label_columns_indicies = {name: i for i, name in enumerate(label_columns)}
-            self.column_indicies = {name: i for i, name in enumerate(data.columns)}
-            
-        self.hist_len = hist_len
-        self.pred_len = pred_len
-        self.shift = shift
-        
-        self.total_window_size = hist_len + shift
-        
-        self.input_slice = slice(0, self.hist_len)
-        self.input_indices = np.arange(self.total_window_size)[self.input_slice]
-        
-        self.label_start = self.total_window_size - self.pred_len
-        self.labels_slice = slice(self.label_start, None)
-        self.label_indices = np.arange(self.total_window_size)[self.labels_slice]
-        
-    def __repr__(self):
-        return '\n'.join([
-            f'Total window size: {self.total_window_size}',
-            f'Input indices: {self.input_indices}',
-            f'Label indices: {self.label_indices}',
-            f'Label column name(s): {self.label_columns}'])
-  
-        
-
-
-
-    
-    @property
-    def example(self):
-        result = getattr(self, '_example', None)
-        if result is None:
-            result = next(iter(self.train))
-            self._example = result
-        return result
-        
-        
-    
     
 class ITransformerData(object):
     """Data Loader class"""
@@ -116,8 +71,8 @@ class ITransformerData(object):
         if timeseries_cols:
             self.ts_cols = timeseries_cols
         else:
-            #self.ts_cols = self.data_df.columns.tolist()
-            self.ts_cols = self.use_num_columns_as_ts_list()
+            self.ts_cols = self.data_df.columns.tolist()
+            #self.ts_cols = self.use_num_columns_as_ts_list()
 
         self.train_range = train_range
         self.val_range = val_range
@@ -135,28 +90,17 @@ class ITransformerData(object):
         
 
         # Create temporal features from index
-        time_df = self.create_temporal_features(self.data_df.index)
-        # Extend cyclic columns list with temporal columns
-        self.cyc_cov_cols.extend(time_df.columns.tolist())
-        # Concatenate temporal features with data_df
-        self.data_df = pd.concat([time_df, self.data_df], axis=1)
-        print(self.data_df)
-        print(self.ts_cols)
+        self.create_temporal_features(self.data_df.index)
+
         # Get data in the right order for splitting into x, y, x_mark
         self.data_df = self.data_df[self.ts_cols + [col for col in self.data_df if col not in self.ts_cols]]
-        
-        print(f"data pre normalization: {self.data_df}")
-        # Normalize the data if needed
+
         if normalize:
             self._normalize() if drop_remainder else self._normalize("passthrough")
         
-        print(f"data post normalization: {self.data_df}")
-        # Create lagged features from targets
-        lagged_features = self.create_lagged_features(self.data_df[self.ts_cols])
-        print(lagged_features)
-        # Concatenate lagged features with data_df
-        self.data_df = pd.concat([self.data_df, lagged_features], axis=1).dropna()
-        print(f"data post lagged features: {self.data_df}")
+
+        self.create_lagged_features()
+        
         
     def create_temporal_features(self, data: pd.DatetimeIndex) -> pd.DataFrame:
         """Generate a DataFrame with temporal features extracted from a DatetimeIndex.
@@ -175,9 +119,12 @@ class ITransformerData(object):
             'month': data.month,
             'quarter': data.quarter,
         }
-        return pd.DataFrame(features, index=data)
+        time_df = pd.DataFrame(features, index=data)
+        self.cyc_cov_cols.extend(time_df.columns.tolist())
+        self.data_df = pd.concat([time_df, self.data_df], axis=1)
+        
     
-    def create_lagged_features(self, targets, include_mean_max_min=False):
+    def _create_lagged_features(self, include_mean_max_min=False):
         """Creates lagged and rolling statistical features (mean, max, min) for target variables
 
         Args:
@@ -190,8 +137,9 @@ class ITransformerData(object):
         Adds the lagged features at the end of the dataframe, which is important for 
         the batch_x, batch_x_mark separation for the iTransformer later on    
         """
+        targets = self.data_df[self.ts_cols]
         feature_frames = []   
-        lag = self.pred_len * self.stride * self.sampling_rate
+        lag = self.pred_len * self.sampling_rate
         if include_mean_max_min:
             operations = {
                 'rolling_mean': 'mean',
@@ -206,8 +154,10 @@ class ITransformerData(object):
             
         lagged = targets.shift(lag).rename(columns=lambda x: f"lagged_{lag}h_{x}")
         feature_frames.append(lagged)
-            
-        return pd.concat(feature_frames, axis=1)
+        
+        lagged_features =  pd.concat(feature_frames, axis=1)
+        self.data_df = pd.concat([self.data_df, lagged_features], axis=1).dropna()
+        
     
     
     def _normalize(self, remainder="drop"):

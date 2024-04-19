@@ -82,7 +82,15 @@ To run the project locally or replicate the environment, follow these steps:
     python -m data_provider.sub_providers.sales_provider
     ```
 
+## ToDo
 
+    - Build streamlined data pipeline for all models:
+        * unified data loader (parent class?)
+        * DONE clear up csv data structure (seperate sub datasets in different folders + 8h_full_ds, 16h_full_ds 24h_full_ds)
+    - streamline experiment setup for different ds and models
+    - set up sensible experiments
+    - visualize experimentsk
+    - Clean up Code
 
 ## License
 
