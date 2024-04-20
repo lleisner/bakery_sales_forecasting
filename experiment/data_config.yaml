@@ -1,0 +1,52 @@
+etth1:
+  file_name: ETTh1.csv
+  train_size: 8545
+  val_size: 2881
+  test_size: 2881
+  dim: 7
+
+etth2:
+  file_name: ETTh2.csv
+  train_size: 8545
+  val_size: 2881
+  test_size: 2881
+  dim: 7
+
+ettm1:
+  file_name: ETTm1.csv
+  train_size: 34465
+  val_size: 11521
+  test_size: 11521
+  dim: 7
+
+ettm2: 
+  file_name: ETTm2.csv
+  train_size: 34465
+  val_size: 11521
+  test_size: 11521
+  dim: 7
+
+exchange_rate:
+  file_name: exchange_rate.csv
+  train_size: 5120
+  val_size: 665
+  test_size: 1422
+  dim: 8
+
+traffic:
+  file_name: traffic.csv
+  train_size: 12185
+  val_size: 1757
+  test_size: 3509  
+  dim: 862
+
+weather:
+  file_name: weather.csv
+  train_size: 36792
+  val_size: 5271
+  test_size: 10540
+  dim: 21
+
+  
+
+  

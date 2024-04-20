@@ -160,10 +160,10 @@ if __name__ == "__main__":
     itransformer = Model(seq_len=hist_len,
                          pred_len=pred_len,
                          num_targets=num_targets,
-                         d_model=32,
+                         d_model=2048,
                          n_heads=8,
-                         d_ff=128,
-                         e_layers=2,
+                         d_ff=8192,
+                         e_layers=4,
                          dropout=0.2,
                          output_attention=True,
                          
@@ -225,8 +225,8 @@ if __name__ == "__main__":
     #loss = tf.keras.losses.MeanAbsoluteError()
     #loss = tf.keras.losses.Huber(delta=1.0)
     #loss = SMAPELoss()
-    loss = asymmetric_loss
-    loss = lambda y_true, y_pred: advanced_custom_loss(y_true, y_pred, alpha=0.5, beta=0.7, gamma=0.5)
+    #loss = asymmetric_loss
+    #loss = lambda y_true, y_pred: advanced_custom_loss(y_true, y_pred, alpha=0.5, beta=0.7, gamma=0.5)
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     
     

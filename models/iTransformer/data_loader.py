@@ -90,7 +90,7 @@ class ITransformerData(object):
         
 
         # Create temporal features from index
-        self.create_temporal_features(self.data_df.index)
+        self._create_temporal_features(self.data_df.index)
 
         # Get data in the right order for splitting into x, y, x_mark
         self.data_df = self.data_df[self.ts_cols + [col for col in self.data_df if col not in self.ts_cols]]
@@ -99,10 +99,10 @@ class ITransformerData(object):
             self._normalize() if drop_remainder else self._normalize("passthrough")
         
 
-        self.create_lagged_features()
+        self._create_lagged_features()
         
         
-    def create_temporal_features(self, data: pd.DatetimeIndex) -> pd.DataFrame:
+    def _create_temporal_features(self, data: pd.DatetimeIndex) -> pd.DataFrame:
         """Generate a DataFrame with temporal features extracted from a DatetimeIndex.
 
         Args:
@@ -261,6 +261,17 @@ class ITransformerData(object):
     def use_num_columns_as_ts_list(self):
         return [col for col in self.data_df.columns if str(col).isnumeric()]
 
+    def __repr__(self):
+        return (f"ITransformerData(data_path={self.data_path!r}, datetime_col={self.datetime_col!r}, "
+                f"num_cov_cols={len(self.numerical_cov_cols) if self.numerical_cov_cols else 0}, "
+                f"cat_cov_cols={len(self.categorical_cov_cols) if self.categorical_cov_cols else 0}, "
+                f"cyc_cov_cols={len(self.cyclic_cov_cols) if self.cyclic_cov_cols else 0}, "
+                f"timeseries_cols={len(self.timeseries_cols) if self.timeseries_cols else 0}, "
+                f"train_range={self.train_range}, val_range={self.val_range}, test_range={self.test_range}, "
+                f"hist_len={self.hist_len}, pred_len={self.pred_len}, stride={self.stride}, "
+                f"sample_rate={self.sample_rate}, batch_size={self.batch_size}, "
+                f"epoch_len={self.epoch_len}, val_len={self.val_len}, normalize={self.normalize})")
+    
     """DEPRECEATED"""
     
     """

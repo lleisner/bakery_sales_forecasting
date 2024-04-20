@@ -2,6 +2,7 @@ import pandas as pd
 import os
 
 from utils.configs import ProviderConfigs
+from utils.analyze_data import analyze_all_datasets
 from data_provider.sub_providers import (
     SalesDataProvider,
     FahrtenDataProvider,
@@ -121,5 +122,7 @@ if __name__ == "__main__":
     for period in ['8h', '16h', '24h', '1d']:
         provider = DataProvider(length_of_day=period)
         provider.save_combined_data()
-
+    
+    analyze_all_datasets("ts_datasets")
+    
  
