@@ -23,7 +23,6 @@ def create_model_config(args):
     }
 
     
-    #dataset_name = list(data_config.keys())[0]
     dataset_name = config['dataset']
     data_config = data_config[dataset_name]
     

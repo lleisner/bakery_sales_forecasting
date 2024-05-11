@@ -80,10 +80,10 @@ if __name__ == "__main__":
     data_loader = ITransformerData(
                     data_path = 'ts_datasets/sales_forecasting_8h.csv',
                     datetime_col='date',
-                    numerical_cov_cols=None, #['gaestezahlen', 'holidays', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed', 'is_open'],
+                    numerical_cov_cols=['gaestezahlen', 'holidays', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed', 'is_open'],
                     categorical_cov_cols=None,
-                    cyclic_cov_cols=None,#['wind_direction'],
-                    timeseries_cols=None,#['10', '11', '12', '13', '16', '20', '21', '22', '23', '24', '80', '82', '83', '84', '85', '86'],
+                    cyclic_cov_cols=['wind_direction'],
+                    timeseries_cols=['10', '11', '12', '13', '16', '20', '21', '22', '23', '24', '80', '82', '83', '84', '85', '86'],
                     train_range=(0, 9015),
                     val_range=(9016, 10947),
                     test_range=(10948, 12000),
@@ -160,10 +160,10 @@ if __name__ == "__main__":
     itransformer = Model(seq_len=hist_len,
                          pred_len=pred_len,
                          num_targets=num_targets,
-                         d_model=2048,
+                         d_model=128,
                          n_heads=8,
-                         d_ff=8192,
-                         e_layers=4,
+                         d_ff=512,
+                         e_layers=2,
                          dropout=0.2,
                          output_attention=True,
                          
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     
     attention_heads = attns[0][0]
 
-    #plot_attention_weights(variate_labels, attention_heads)
+    plot_attention_weights(variate_labels, attention_heads)
     
     
     #plot_training_history(hist)

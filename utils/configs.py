@@ -98,6 +98,7 @@ class TransformerConfigs:
             interval=settings.length_of_day
         )
         self.loss = tf.keras.losses.MeanSquaredError()
+        self.loss = tf.keras.losses.RootMeanSquaredError()
         #self.loss = tf.keras.losses.MeanAbsoluteError()
         #self.loss = tf.keras.losses.MeanAbsolutePercentageError()
         self.learning_rate = 0.0001

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, SplineTransformer, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, SplineTransformer, OneHotEncoder, RobustScaler
 from sklearn.model_selection import TimeSeriesSplit, train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
@@ -184,7 +184,7 @@ class ITransformerData(object):
         
         # Dictionary mapping column types to their transformers and prefixes
         cols_dict = {
-            'ts_cols': (StandardScaler(), "target"), 
+            'ts_cols': (RobustScaler(), "target"), 
             'num_cov_cols': (StandardScaler(), "numerical"),
             'cat_cov_cols': (OneHotEncoder(), "categorical"),
             'cyc_cov_cols': (StandardScaler(), "cyclic"),
