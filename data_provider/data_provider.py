@@ -3,6 +3,7 @@ import os
 
 from utils.configs import ProviderConfigs
 from utils.analyze_data import analyze_all_datasets
+from utils.plot_dataframe import plot_multiple_dataframes
 from data_provider.sub_providers import (
     SalesDataProvider,
     FahrtenDataProvider,
@@ -13,9 +14,9 @@ from data_provider.sub_providers import (
 
 class DataProvider:
     def __init__(self, 
-                 length_of_day='8h',
-                 start_date='2019-02-01',
-                 end_date='2023-08-01',
+                 period='8h',
+                 start_date='2019-02-24',
+                 end_date='2023-09-30',
                  source_directory='data/database',
                  item_selection = ["broetchen", "plunder"]):
         
@@ -29,7 +30,7 @@ class DataProvider:
         self.source_directory = source_directory
         self.start_date = start_date
         self.end_date = end_date
-        self.length_of_day = length_of_day
+        self.period = period
         
 
     def create_new_sub_databases(self, provider_list=None):
@@ -59,7 +60,7 @@ class DataProvider:
     
     def save_combined_data(self, directory='ts_datasets'):
         combined_data = self.load_and_concat_sub_databases()
-        filename = f"sales_forecasting_{self.length_of_day}.csv"
+        filename = f"sales_forecasting_{self.period}.csv"
         file_path = os.path.join(directory, filename)
         combined_data.to_csv(file_path)
         print(f"Combined data saved to {file_path}")
@@ -70,59 +71,34 @@ class DataProvider:
             '8h': ("08:00:00", "15:00:00"),
             '16h': ("06:00:00", "21:00:00"),
             '24h': ("00:00:00", "23:00:00"),
-            '1d':("00:00:00", "23:00:00"),
         }
         
-        if self.length_of_day not in time_mapping:
-            raise ValueError(f"Invalid length of day {self.length_of_day}. Please choose among 8, 16, or 24.")
-        elif self.length_of_day == '1d':
-            df = df.resample('D').sum()
-        start_time, end_time = time_mapping[self.length_of_day]
+        if self.period not in time_mapping:
+            if self.period == '1d':
+                df = df.resample('D').sum()
+            elif self.period == '1w':
+                df = df.resample('W-MON').sum()
+            else:
+                raise ValueError(f"Invalid period {self.period}. Please choose among 8h, 16h, 24h, 1d, 1w.")
+            start_time, end_time = time_mapping['24h']
+        else:
+            start_time, end_time = time_mapping[self.period]
+            df = df.between_time(start_time, end_time)
 
         df = df[(df.index >= pd.Timestamp(f"{self.start_date} {start_time}")) & 
                 (df.index <= pd.Timestamp(f"{self.end_date} {end_time}"))]
         
-        df = df.between_time(start_time, end_time)
-        
         return df
-
-    """    
-    DEPRECEATED
-    
-    def load_database(self):
-        data = []
-        for key in self.providers.keys():
-            file_path = os.path.join(self.source_directory, key)
-            database = pd.read_csv(f'{file_path}.csv', index_col=0, parse_dates=True)
-            
-            try:
-                # try integration of new data (unused so far)
-                new_data = pd.read_csv(f'data/new_data/{key}.csv', index_col=0, parse_dates=True)
-                result = new_data.combine_first(database)
-            except:
-                result = database
-                
-            data.append(result)
-
-        # Join all dataframes
-        result = data[0]
-        for df in data[1:]:
-            result = result.join(df, how='outer')
-            
-        result = pd.concat(data, axis=1, join='outer')
-        result = self.filter_time_and_date(result)
-        
-        return result.fillna(0)
-    """
-
 
 
             
 if __name__ == "__main__":
-    for period in ['8h', '16h', '24h', '1d']:
-        provider = DataProvider(length_of_day=period)
-        provider.save_combined_data()
+    for period in ['8h', '16h', '24h', '1d', '1w']:
+        provider = DataProvider(period=period)
+        provider.save_combined_data("data/timeseries")
+        
+        
     
-    analyze_all_datasets("ts_datasets")
+    analyze_all_datasets("data/timeseries")
     
- 
+    plot_multiple_dataframes("data/timeseries")

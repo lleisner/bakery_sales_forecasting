@@ -1,13 +1,32 @@
 import pandas as pd
 import yaml
+import os
 
-def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_split=0.166, test_split=0.166, window_size=96):
+def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_split=0.166, test_split=0.166, lookback_days=28, number_of_days_included=1680, window_size=None):
+    """
+    Analyzes a time series dataset from a CSV file, providing detailed dataset information and parameters for potential data analysis. Outputs the data in YAML format.
+
+    Parameters:
+    - file_path (str): Path to the CSV file containing the dataset.
+    - timestamp_col (str): Column name in the CSV file that contains timestamp data. Default is 'date'.
+    - train_split (float): Proportion suggested for training data analysis. Default is 0.496.
+    - val_split (float): Proportion suggested for validation data analysis. Default is 0.166.
+    - test_split (float): Proportion suggested for testing data analysis. Default is 0.166.
+    - lookback_days (int): Number of past days to consider for each data point, used to calculate window size if not provided.
+    - number_of_days_included (int): The total number of days the data ranges over.
+    - window_size (int or None): Custom window size for data processing, calculated if not provided.
+
+    Returns:
+    - str: A YAML-formatted string containing metadata about the dataset, such as file name, number of dimensions, suggested window size, and suggested sizes for data analysis, structured for potential future data analysis.
+
+    Raises:
+    - Exception: If there is an error in reading the file, parsing dates, or inferring the time series frequency.
+    """
     # Load the dataset
-    data = pd.read_csv(file_path)
-    
+    data = pd.read_csv(file_path, header=0)
+    # Adjust this parameter based on the size of the daily dataset
     file_name = file_path.split("/")[-1]
     dataset_name = file_name.split('.')[0] 
-    
     # Try to parse the timestamp column and determine frequency
     try:
         data[timestamp_col] = pd.to_datetime(data[timestamp_col])
@@ -19,10 +38,12 @@ def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_spli
     
     
     # Display basic info about the dataset
-    print(f"Total number of entries: {len(data)}")    
-
+    print(f"Total number of entries: {len(data)}")   
     # Calculate total entries that are multiples of the window size
     total_entries = len(data)
+    if not window_size:
+        window_size = int(total_entries / number_of_days_included * lookback_days)
+    
     max_full_windows = total_entries // window_size * window_size
     
     # Calculate raw split sizes
@@ -47,21 +68,35 @@ def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_spli
     output = {
         dataset_name: {
             "file_name": file_name,
+            "dim": len(data.columns),
+            "suggested_window": window_size,
             "train_size": train_size,
             "val_size": val_size,
             "test_size": test_size,
-            "dim": len(data.columns)
         }
     }
     
-    # Print output data in YAML format
-    print(yaml.dump(output, sort_keys=False, default_flow_style=False, allow_unicode=True))
+    # Return output data in YAML format
+    return yaml.dump(output, sort_keys=False, default_flow_style=False, allow_unicode=True)
     
-    return output
-
-import os
 
 def analyze_all_datasets(folder_path, timestamp_col='date', train_split=0.496, val_split=0.166, test_split=0.166):
+    """
+    Analyzes all CSV files in a specified directory for time series data, leveraging the `analyze_dataset` function to extract and print dataset parameters and metadata for each file in YAML format.
+
+    Parameters:
+    - folder_path (str): Path to the directory containing CSV files.
+    - timestamp_col (str): Default column name for dates in the CSV files, passed to `analyze_dataset`.
+    - train_split (float): Default proportion suggested for the training data analysis, passed to `analyze_dataset`.
+    - val_split (float): Default proportion suggested for the validation data analysis, passed to `analyze_dataset`.
+    - test_split (float): Default proportion suggested for the testing data analysis, passed to `analyze_dataset`.
+
+    Returns:
+    - None: Outputs dataset analysis results directly to the console. No return value. Errors during file processing are caught and printed.
+
+    Raises:
+    - Exception: Outputs an error message if no CSV files are found in the directory or if an error occurs during the analysis of any file.
+    """
     # List all files in the folder
     all_files = os.listdir(folder_path)
     # Filter to include only CSV files
@@ -84,5 +119,6 @@ def analyze_all_datasets(folder_path, timestamp_col='date', train_split=0.496, v
                 val_split=val_split, 
                 test_split=test_split
             )
+            print(yaml_output)
         except Exception as e:
             print(f"Failed to analyze {file_path}: {e}")

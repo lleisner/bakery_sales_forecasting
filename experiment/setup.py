@@ -73,3 +73,6 @@ if __name__ == "__main__":
     df = transformer_data.get_data()
     print(df)
     print(df.columns)
+    
+    train, val, test = transformer_data.get_train_test_splits()
+    
