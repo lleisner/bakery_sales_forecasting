@@ -6,7 +6,7 @@ from data_provider.sub_providers.base_provider import BaseProvider
     
  
 class FahrtenDataProvider(BaseProvider):
-    def __init__(self, source_directory='data/raw/nsb_fahrzeiten'):
+    def __init__(self, source_directory='data/raw_sources/nsb_fahrzeiten'):
         """
         Initialize FahrtenDataProvider instance.
 

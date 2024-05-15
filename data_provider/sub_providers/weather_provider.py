@@ -6,7 +6,7 @@ from data_provider.sub_providers.base_provider import BaseProvider
 import os
 
 class WeatherDataProvider(BaseProvider):
-    def __init__(self, source_directory="data/raw/weather"):
+    def __init__(self, source_directory="data/raw_sources/weather"):
         super().__init__(source_directory)
 
     def _process_data(self, df):

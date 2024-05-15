@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, SplineTransforme
 from sklearn.model_selection import TimeSeriesSplit, train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
-from models.iTransformer.cyclic_encoder import CyclicEncoder
+from utils.cyclic_encoder import CyclicEncoder
 import warnings
 
 # Ignore FutureWarnings in sklearn.utils.validation

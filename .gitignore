@@ -7,17 +7,9 @@ __pycache__/
 # Ignore saved models
 saved_models/
 
-# Ignore dataset file
-test/
-
-# Ignore new data
-new_data/
-
 # Ignore logs
 logs/
 
 # Ignore run_script
 run_script.sh
 
-# Ignore timeseries datasets (too large for upload)
-ts_datasets/

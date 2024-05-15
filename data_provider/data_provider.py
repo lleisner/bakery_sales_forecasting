@@ -17,7 +17,7 @@ class DataProvider:
                  period='8h',
                  start_date='2019-02-24',
                  end_date='2023-09-30',
-                 source_directory='data/database',
+                 source_directory='data/sub_datasets',
                  item_selection = ["broetchen", "plunder"]):
         
         self.providers = {
@@ -39,7 +39,7 @@ class DataProvider:
             if key in provider_list:
                 try:
                     # Save data to their respective files and append to main data
-                    provider.save_to_csv(source_directory=self.source_directory, filename=key)
+                    provider.save_to_csv(data_directory=self.source_directory, filename=key)
                     print(f"Created new {key} database")
                 except Exception as e:
                     print(f"Failed to create new {key} database: {str(e)}")
@@ -58,7 +58,7 @@ class DataProvider:
         
         return filtered_result
     
-    def save_combined_data(self, directory='ts_datasets'):
+    def save_combined_data(self, directory='data/sales_forecasting'):
         combined_data = self.load_and_concat_sub_databases()
         filename = f"sales_forecasting_{self.period}.csv"
         file_path = os.path.join(directory, filename)
@@ -95,10 +95,9 @@ class DataProvider:
 if __name__ == "__main__":
     for period in ['8h', '16h', '24h', '1d', '1w']:
         provider = DataProvider(period=period)
-        provider.save_combined_data("data/timeseries")
-        
+        provider.save_combined_data("data/sales_forecasting")
         
     
-    analyze_all_datasets("data/timeseries")
+    analyze_all_datasets("data/sales_forecasting", infer_ts_cols=True)
     
-    plot_multiple_dataframes("data/timeseries")
+    plot_multiple_dataframes("data/sales_forecasting")

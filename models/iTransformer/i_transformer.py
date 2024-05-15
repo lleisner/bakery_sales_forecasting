@@ -92,7 +92,6 @@ class Model(CustomModel):
         dec_out = tf.transpose(dec_out, perm=[0, 2, 1])[:, :, :N]  # filter the covariates 
         
         
-        
        # dec_out = self.tester(tf.concat([dec_out, x_mark_enc[:, -self.pred_len:, :]], axis=-1))
         #dec_out = self.out(dec_out)
 

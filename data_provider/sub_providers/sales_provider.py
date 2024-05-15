@@ -5,7 +5,7 @@ from data_provider.sub_providers.base_provider import BaseProvider
 
 
 class SalesDataProvider(BaseProvider):
-    def __init__(self, source_directory = 'data/raw/sales', item_selection = ["broetchen", "plunder"]):
+    def __init__(self, source_directory = 'data/raw_sources/sales', item_selection = ["broetchen", "plunder"]):
         """
         Initialize SalesDataProvider instance.
 
@@ -17,7 +17,7 @@ class SalesDataProvider(BaseProvider):
         super().__init__(source_directory)
         
         item_selection_dict = {
-            "broetchen": [(10, 13), (16), (20, 32), (35), (38, 39)],
+            "broetchen": [(10, 13), (16), (20, 32), (34,35), (38, 39)],
             "plunder": [(80), (82, 86), (97, 99), (105, 107), (111, 112)],
             "suppe": [(250, 271)],
             "test": [(10, 11), (83, 84)],

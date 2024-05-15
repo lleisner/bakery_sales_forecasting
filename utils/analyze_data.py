@@ -2,7 +2,7 @@ import pandas as pd
 import yaml
 import os
 
-def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_split=0.166, test_split=0.166, lookback_days=28, number_of_days_included=1680, window_size=None):
+def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_split=0.166, test_split=0.166, lookback_days=28, forecast_days=7, number_of_days_included=1680, window_size=None, forecast_size=None, infer_ts_cols=False):
     """
     Analyzes a time series dataset from a CSV file, providing detailed dataset information and parameters for potential data analysis. Outputs the data in YAML format.
 
@@ -15,7 +15,7 @@ def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_spli
     - lookback_days (int): Number of past days to consider for each data point, used to calculate window size if not provided.
     - number_of_days_included (int): The total number of days the data ranges over.
     - window_size (int or None): Custom window size for data processing, calculated if not provided.
-
+    - infer_ts_cols (bool): defaults to False. If true, set numeric column names as time series columns. Tailored to the custom sales_forecasting datasets, where columns with numeric column names are the time series columns.
     Returns:
     - str: A YAML-formatted string containing metadata about the dataset, such as file name, number of dimensions, suggested window size, and suggested sizes for data analysis, structured for potential future data analysis.
 
@@ -41,8 +41,12 @@ def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_spli
     print(f"Total number of entries: {len(data)}")   
     # Calculate total entries that are multiples of the window size
     total_entries = len(data)
+    time_points_per_day = total_entries / number_of_days_included
+    
     if not window_size:
-        window_size = int(total_entries / number_of_days_included * lookback_days)
+        window_size = int(time_points_per_day * lookback_days)
+    if not forecast_size:
+        forecast_size = max(1, int(time_points_per_day * forecast_days))
     
     max_full_windows = total_entries // window_size * window_size
     
@@ -63,24 +67,34 @@ def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_spli
         test_size -= (total_used - max_full_windows)
         
     train_size, val_size, test_size = train_size + 1, val_size + 1, test_size + 1
+    if infer_ts_cols:
+        ts_cols = [col for col in data.columns if str(col).isnumeric()]
+        cov_cols = [x for x in  data.columns if x not in set(ts_cols)]
+    else:
+        ts_cols = data.columns
+        cov_cols = []
 
     # Prepare output data
     output = {
         dataset_name: {
             "file_name": file_name,
-            "dim": len(data.columns),
+            "ts_dim": len(ts_cols),
+            "cov_dim": len(cov_cols), 
             "suggested_window": window_size,
+            "suggested_forecast": forecast_size,
             "train_size": train_size,
             "val_size": val_size,
             "test_size": test_size,
+            "ts_cols": ts_cols,
+            "cov_cols": cov_cols,
         }
     }
-    
-    # Return output data in YAML format
-    return yaml.dump(output, sort_keys=False, default_flow_style=False, allow_unicode=True)
+    return output
+
     
 
-def analyze_all_datasets(folder_path, timestamp_col='date', train_split=0.496, val_split=0.166, test_split=0.166):
+
+def analyze_all_datasets(folder_path, timestamp_col='date', train_split=0.496, val_split=0.166, test_split=0.166, infer_ts_cols=False, yaml_output_path='experiment/dataset_analysis.yaml'):
     """
     Analyzes all CSV files in a specified directory for time series data, leveraging the `analyze_dataset` function to extract and print dataset parameters and metadata for each file in YAML format.
 
@@ -90,6 +104,8 @@ def analyze_all_datasets(folder_path, timestamp_col='date', train_split=0.496, v
     - train_split (float): Default proportion suggested for the training data analysis, passed to `analyze_dataset`.
     - val_split (float): Default proportion suggested for the validation data analysis, passed to `analyze_dataset`.
     - test_split (float): Default proportion suggested for the testing data analysis, passed to `analyze_dataset`.
+    - infer_ts_cols (bool): Defaults to False. If true, set numeric column names as time series columns. Tailored to the custom sales_forecasting datasets, where columns with numeric column names are the time series columns.
+    - yaml_output_path (str): Path to save the output YAML file. Default is 'experiment/dataset_analysis.yaml'.
 
     Returns:
     - None: Outputs dataset analysis results directly to the console. No return value. Errors during file processing are caught and printed.
@@ -107,18 +123,36 @@ def analyze_all_datasets(folder_path, timestamp_col='date', train_split=0.496, v
         print("No CSV files found in the directory.")
         return
 
+    # List to store all YAML outputs
+    yaml_outputs = {}
+
     # Loop through all found CSV files and analyze them
     for file_name in csv_files:
         file_path = os.path.join(folder_path, file_name)
         print(f"\nAnalyzing file: {file_path}")
         try:
-            yaml_output = analyze_dataset(
+            result = analyze_dataset(
                 file_path, 
                 timestamp_col=timestamp_col, 
                 train_split=train_split, 
                 val_split=val_split, 
-                test_split=test_split
+                test_split=test_split,
+                infer_ts_cols=infer_ts_cols,
             )
-            print(yaml_output)
+            print(yaml.dump(result, sort_keys=False, default_flow_style=False, allow_unicode=True))
+            yaml_outputs.update(result)
         except Exception as e:
             print(f"Failed to analyze {file_path}: {e}")
+
+    # Ensure the output directory exists
+    os.makedirs(os.path.dirname(yaml_output_path), exist_ok=True)
+
+    # Write all YAML outputs to a file
+    with open(yaml_output_path, 'w') as yaml_file:
+        yaml.dump(yaml_outputs, yaml_file, sort_keys=False, default_flow_style=False, allow_unicode=True)
+
+    print(f"All entries have been written to '{yaml_output_path}'.")
+
+if __name__ == "__main__":
+    analyze_all_datasets("data/sales_forecasting", infer_ts_cols=True)
+

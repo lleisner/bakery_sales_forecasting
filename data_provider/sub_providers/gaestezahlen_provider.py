@@ -3,7 +3,7 @@ import numpy as np
 from data_provider.sub_providers.base_provider import BaseProvider
 
 class GaestezahlenProvider(BaseProvider):
-    def __init__(self, source_directory='data/raw/gaestezahlen'):
+    def __init__(self, source_directory='data/raw_sources/gaestezahlen'):
         super().__init__(source_directory)
         
     def _read_file(self, filepath):

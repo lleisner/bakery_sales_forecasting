@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def plot_single_dataframe_subplot(ax, df, title, column='10', num_points=96):
+def plot_single_dataframe_subplot(ax, df, title, column=None, num_points=96):
     """
     Creates a subplot for a given dataframe on the provided axes.
 
@@ -11,12 +11,15 @@ def plot_single_dataframe_subplot(ax, df, title, column='10', num_points=96):
     - ax (matplotlib.axes.Axes): The axes on which to plot the dataframe.
     - df (pd.DataFrame): The dataframe to plot.
     - title (str): Title for the subplot, typically the name of the data file.
-    - column (str): The column of the dataframe to plot. Default is '10'.
+    - column (str): The column of the dataframe to plot. Defaults to None, results in using the first column of the dataframe.
     - num_points (int): Number of data points to plot. Default is 192.
 
     Returns:
     - None: Modifies the provided axes with the plot.
     """
+    if column is None:
+        column=df.columns[0]
+        
     if column not in df.columns:
         ax.text(0.5, 0.5, 'Column not found', fontsize=12, ha='center')
         return
@@ -24,21 +27,21 @@ def plot_single_dataframe_subplot(ax, df, title, column='10', num_points=96):
     # Selecting the data to plot based on the number of points specified
     data_to_plot = df.iloc[-num_points:][column] if num_points < len(df) else df[column]
     ax.plot(data_to_plot.index, data_to_plot, label=column, marker='x', linestyle='-')  # Using line plot with 'x' markers
-    ax.set_title(title)  # Setting the title to the file name
+    ax.set_title(f"plot for variate {column} in {title}")  # Setting the title to the file name
     ax.legend()
     ax.grid(True)
 
 
 
 
-def plot_multiple_dataframes(folder_path, timestamp_col='date', column='10', num_points=96):
+def plot_multiple_dataframes(folder_path, timestamp_col='date', column=None, num_points=96):
     """
     Reads all dataframes from a specified directory, creates subplots for each, and displays them in a single figure.
 
     Parameters:
     - folder_path (str): Path to the directory containing the CSV files.
     - timestamp_col (str): Name of the column to parse as the datetime index.
-    - column (str): Column to plot in each dataframe. Default is '10'.
+    - column (str): Column to plot in each dataframe. Default is None.
     - num_points (int): Number of data points to plot in each subplot. Default is 192.
 
     Returns:
