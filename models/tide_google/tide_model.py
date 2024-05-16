@@ -83,7 +83,7 @@ def _make_dnn_residual(hidden_dims, layer_norm=False, dropout_rate=0.0):
   return keras.Sequential(layers)
 
 
-class TideModel(keras.Model):
+class TiDE(keras.Model):
   """Main class for multi-scale DNN model."""
 
   def __init__(

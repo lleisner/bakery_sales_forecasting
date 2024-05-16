@@ -288,7 +288,7 @@ class TimeSeriesdata(object):
     return inputs, y_true
   
   def get_train_test_splits(self):
-    train_ds = self.tf_dataset(mode='train')
-    val_ds = self.tf_dataset(mode='val')
-    test_ds = self.tf_dataset(mode='test')
-    return train_ds, val_ds, test_ds
+    train = self.tf_dataset(mode='train').repeat()
+    val = self.tf_dataset(mode='val').repeat()
+    test = self.tf_dataset(mode='test').repeat()
+    return train, val, test

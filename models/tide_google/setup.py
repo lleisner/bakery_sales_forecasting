@@ -1,5 +1,5 @@
 from models.tide_google.data_loader import TimeSeriesdata
-from models.tide_google.tide_model import *
+from models.tide_google.tide_model import TiDE
 from utils.plot_preds_and_actuals import plot_preds_actuals, plot_df_per_column
 
 import pandas as pd
@@ -19,9 +19,9 @@ def fix_gpu():
 
 fix_gpu()
 
-filename = 'data/tide_data_daily.csv'
+filename = 'data/sales_forecasting/sales_forecasting_8h.csv'
 
-data = pd.read_csv('data/tide_data_daily.csv', index_col=0, parse_dates=True)
+data = pd.read_csv('data/sales_forecasting/sales_forecasting_8h.csv', index_col=0, parse_dates=True)
 
 #plot_df_per_column(data)
 
@@ -33,7 +33,7 @@ val_end = int((total_timestamps - train_end) * 0.5) + train_end
 
 
 
-ts_cols = ['10', '11', '12', '13', '20', '21', '22', '23', '24', '27', '28', '29', '31', '32', '35', '38', '39', '83', '84', '85', '86', '97', '98', '99', '105', '107', '111', '112']
+ts_cols = ['10', '20']
 numerical_covariates = ['gaestezahlen', 'wind_direction', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed']
 categorical_covariates = ['is_open', 'holidays', 'arrival', 'departure']
 
@@ -59,8 +59,8 @@ val_samples=val_end-train_end-pred_len
 print("epoch and samples: ", epoch_len, val_samples)
 
 time_series = TimeSeriesdata(
-    data_path='data/tide_data.csv',
-    datetime_col='datetime',
+    data_path='data/sales_forecasting/sales_forecasting_8h.csv',
+    datetime_col='date',
     num_cov_cols=numerical_covariates,
     cat_cov_cols=categorical_covariates,
     ts_cols=ts_cols,
@@ -71,7 +71,7 @@ time_series = TimeSeriesdata(
     pred_len=pred_len,
     batch_size=batch_size,
     freq='h',
-    normalize=True, 
+    normalize=False, 
     epoch_len=epoch_len, 
     val_samples=val_samples,
     permute=False,
@@ -86,7 +86,7 @@ model_config = {
     'batch_size': time_series.batch_size
 }
 
-tide_model = TideModel(
+tide_model = TiDE(
     model_config=model_config,
     pred_len=pred_len,
     num_ts=num_ts,
@@ -110,9 +110,11 @@ tide_model.compile(optimizer=optimizer,
 
 callbacks = [tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=patience, restore_best_weights=True)]
 
-train_ds = time_series.tf_dataset(mode='train').repeat()
-val_ds = time_series.tf_dataset(mode='val').repeat()
-test_ds = time_series.tf_dataset(mode='test').repeat()
+#train_ds = time_series.tf_dataset(mode='train').repeat()
+#val_ds = time_series.tf_dataset(mode='val').repeat()
+#test_ds = time_series.tf_dataset(mode='test').repeat()
+
+train_ds, val_ds, test_ds = time_series.get_train_test_splits()
 
 train_samples = time_series.epoch_len
 print("total train samples:", train_samples)

@@ -9,7 +9,7 @@ from models.iTransformer.embedding import DataEmbeddingInverted
 
 from models.training import CustomModel
 
-class Model(CustomModel):
+class ITransformer(CustomModel):
     """
     Paper link: https://arxiv.org/abs/2310.06625
     """
@@ -57,15 +57,15 @@ class Model(CustomModel):
             norm_layer=keras.layers.LayerNormalization()
         )
         self.projector = keras.layers.Dense(pred_len)
-        self.tester = keras.layers.Dense(d_ff, activation="relu")
-        self.out = keras.layers.Dense(num_targets)
+        #self.tester = keras.layers.Dense(d_ff, activation="relu")
+        #self.out = keras.layers.Dense(num_targets)
         
         
     @tf.function
     def call(self, x, training):
         # Normalization from Non-stationary Transformer
         x_enc, x_mark_enc = x
-        print(f" x, x_mark: {x_enc.shape, x_mark_enc.shape}")
+        #print(f" x, x_mark: {x_enc.shape, x_mark_enc.shape}")
 
         means = tf.reduce_mean(x_enc, axis=1, keepdims=True)
         x_enc = x_enc - means
@@ -80,19 +80,20 @@ class Model(CustomModel):
         # Embedding
         # B L N -> B N E          
         enc_out = self.enc_embedding(x_enc, x_mark_enc, training=training)  # covariates (e.g timestamp) can be also embedded as tokens
-        print("embedding_out:", enc_out.shape)
+        #print("embedding_out:", enc_out.shape)
         
         # B N E -> B N E               
         # the dimensions of embedded time series have been inverted, and then processed by native attn, layernorm and ffn modules
         enc_out, attns = self.encoder(enc_out, attn_mask=None, training=training)
         self.attns = attns
-        print("attention_scores:", attns)
+        #print("attention_scores:", attns)
+        
         # B N E -> B N S -> B S N 
         dec_out = self.projector(enc_out)
         dec_out = tf.transpose(dec_out, perm=[0, 2, 1])[:, :, :N]  # filter the covariates 
         
         
-       # dec_out = self.tester(tf.concat([dec_out, x_mark_enc[:, -self.pred_len:, :]], axis=-1))
+        #dec_out = self.tester(tf.concat([dec_out, x_mark_enc[:, -self.pred_len:, :]], axis=-1))
         #dec_out = self.out(dec_out)
 
         

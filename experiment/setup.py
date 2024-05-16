@@ -1,12 +1,15 @@
 from models.iTransformer.data_loader import ITransformerData
-from models.iTransformer.i_transformer import Model
+from models.iTransformer.i_transformer import ITransformer
+from models.tide_google.tide_model import TiDE
 from models.training import CustomModel
 from utils.analyze_data import analyze_all_datasets
 from utils.plot_attention import plot_attention_weights
 from utils.plot_preds_and_actuals import plot_time_series
+from utils.callbacks import get_callbacks
 import yaml
 import argparse
 import tensorflow as tf
+
 
 def load_config_from_yaml(filepath):
     with open(filepath, 'r') as file:
@@ -41,7 +44,7 @@ def create_model_config(args):
         "test_range": test_range,
         "hist_len": data_config['suggested_window'],
         "pred_len": data_config['suggested_forecast'],
-        "stride": 1,
+        "stride": 1, #data_config['suggested_forecast'],
         "sample_rate": 1,
         "batch_size": args.batch_size,
         "epoch_len": None,
@@ -50,11 +53,11 @@ def create_model_config(args):
     }, {"seq_len": data_config['suggested_window'],
         "pred_len": data_config['suggested_forecast'],
         "num_targets": data_config['ts_dim'],
-        "d_model": 32,
+        "d_model": 64,
         "n_heads": 8,
-        "d_ff": 128,
+        "d_ff": 256,
         "e_layers": 2,
-        "dropout": 0.2,
+        "dropout": 0.3,
         "output_attention": True,
      }
 
@@ -70,6 +73,23 @@ def parse_arguments(yaml_filepath):
 
     args = parser.parse_args()
     return args
+    
+def train_and_evaluate_model(model, data_loader):
+    yaml_filepath = "experiment/dataset_analysis.yaml"
+    args = parse_arguments(yaml_filepath=yaml_filepath)
+    
+    loader_config, model_config = create_model_config(args)
+    data = data_loader(**loader_config)
+    
+    train, val, test = data.get_train_test_splits()
+    
+    model = model(**model_config)
+    
+    loss = tf.keras.losses.MeanSquaredError()
+    optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
+    
+    model.compile(optimizer=optimizer, loss=loss, )
+    
     
 if __name__ == "__main__":
     yaml_filepath = "experiment/dataset_analysis.yaml"
@@ -89,7 +109,9 @@ if __name__ == "__main__":
     baseline = CustomModel(seq_len=loader_config['hist_len'], 
                            pred_len=loader_config['pred_len'])
     
-    itransformer = Model(**model_config)
+    itransformer = ITransformer(**model_config)
+    
+    #tide = TiDE(**model_config)
     
     loss = tf.keras.losses.MeanSquaredError()
     optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
@@ -98,9 +120,13 @@ if __name__ == "__main__":
     
     itransformer.compile(optimizer=optimizer, loss=loss, metrics=['mae'],weighted_metrics=[])
     
+    #tide.compile(optimizer=optimizer, loss=loss, metrics=['mae'], weighted_metrics=[])
+    
+    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name="iTransformer", dataset_name=args.dataset)
+    
     baseline.fit(train, epochs=1, validation_data=val)
     
-    hist = itransformer.fit(train, epochs=args.num_epochs,validation_data=val)
+    hist = itransformer.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
     
     print(f"baseline evaluation on test data: {baseline.evaluate(test)}")
     print(f"itransformer evaluation on test data: {itransformer.evaluate(test)}")
@@ -111,6 +137,12 @@ if __name__ == "__main__":
     itransformer_preds, attns = itransformer.predict(sample)
     baseline_preds, actuals = baseline.predict(sample)
     
+    p, a = itransformer.predict(test)
+    b, r = baseline.predict(test)
+    print(p.shape)
+    print(p.shape, b.shape, r.shape)
+    
+    p, r, b = p.reshape(args.batch_size * loader_config['pred_len'], model_config['num_targets']), r.reshape(args.batch_size * loader_config['pred_len'], model_config['num_targets']), b.reshape(args.batch_size * loader_config['pred_len'],  model_config['num_targets'])
     labels = transformer_data.get_feature_names_out()[:-model_config['num_targets']]
     
     t_preds = itransformer_preds[0]
@@ -121,3 +153,4 @@ if __name__ == "__main__":
     
     plot_attention_weights(labels, attn_heads)
     plot_time_series(actuals, b_preds, t_preds)
+    plot_time_series(r, b, p)

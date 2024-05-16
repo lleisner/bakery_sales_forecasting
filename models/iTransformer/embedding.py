@@ -18,5 +18,6 @@ class DataEmbeddingInverted(tf.Module):
             x = self.value_embedding(tf.concat([x, tf.transpose(x_mark, perm=[0, 2, 1])], axis=1))
 
         # x: [Batch, variates, d_model]
-        print('embedding is being used')
+        
+        #print('embedding is being used')
         return self.dropout(x, training=training)

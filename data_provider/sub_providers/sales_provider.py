@@ -5,7 +5,7 @@ from data_provider.sub_providers.base_provider import BaseProvider
 
 
 class SalesDataProvider(BaseProvider):
-    def __init__(self, source_directory = 'data/raw_sources/sales', item_selection = ["broetchen", "plunder"]):
+    def __init__(self, source_directory = 'data/raw_sources/sales', item_selection = ["pastry"], top_k=8):
         """
         Initialize SalesDataProvider instance.
 
@@ -13,6 +13,9 @@ class SalesDataProvider(BaseProvider):
         - source_directory (str): Directory path where sales data is located.
         - item_intervals (list of tuples): List containing intervals of items to consider.
                                            Each tuple represents a range (start, end).
+                                           If None, all items are used.
+        - top_k (int): number of columns to be used. the top k columns are selected (based on sales volume).
+                       if None, all are used.
         """
         super().__init__(source_directory)
         
@@ -20,10 +23,11 @@ class SalesDataProvider(BaseProvider):
             "broetchen": [(10, 13), (16), (20, 32), (34,35), (38, 39)],
             "plunder": [(80), (82, 86), (97, 99), (105, 107), (111, 112)],
             "suppe": [(250, 271)],
-            "test": [(10, 11), (83, 84)],
-            "normale": [(10)]
+            "pastry": [(10, 160)],
         }
-        self.item_intervals = [item_selection_dict[category] for category in item_selection]
+        
+        self.item_intervals = [item_selection_dict[category] for category in item_selection] if item_selection else None
+        self.top_k = top_k
         
     def _read_file(self, file_path):
         """
@@ -68,14 +72,19 @@ class SalesDataProvider(BaseProvider):
         df = df.sort_index()
         df = df.reindex(sorted(df.columns, key=int), axis=1)
         df = df.clip(lower=0)
-        df = df[sorted(list(self._filter_range(self.item_intervals) & set(df.columns)))]
+        if self.item_intervals:
+            df = df[sorted(list(self._filter_range(self.item_intervals) & set(df.columns)))]
+        if self.top_k:
+            col_sums = df.sum(axis=0)
+            top_k_cols = col_sums.nlargest(self.top_k).index
+            df = df[top_k_cols]
         df = self._clean_invalid_sales(df)
         df = self.remove_outlier_days(df)
         df = self._add_opening_times(df)
         return df
 
     
-    def _filter_range(self, item_intervals):
+    def _filter_range(self, interval):
         """
         Helper method to generate a set of selected column indices based on item intervals.
 
@@ -84,15 +93,15 @@ class SalesDataProvider(BaseProvider):
         """
         selected_cols = set()
         
-        if isinstance(item_intervals, int):
-            selected_cols.add(item_intervals)
-        elif isinstance(item_intervals, tuple):
-            selected_cols.update(set(int(col) for col in range(item_intervals[0], item_intervals[1] + 1)))
-        elif isinstance(item_intervals, list):
-            for sub_range in item_intervals:
+        if isinstance(interval, int):
+            selected_cols.add(interval)
+        elif isinstance(interval, tuple):
+            selected_cols.update(set(int(col) for col in range(interval[0], interval[1] + 1)))
+        elif isinstance(interval, list):
+            for sub_range in interval:
                 selected_cols.update(self._filter_range(sub_range))
         else:
-            raise ValueError(f'item_range {item_intervals} not of valid type: {type(item_intervals)}')
+            raise ValueError(f'item_range {interval} not of valid type: {type(interval)}')
         
         return selected_cols
 
@@ -156,7 +165,10 @@ class SalesDataProvider(BaseProvider):
         return df.loc[inverse_bools.index.intersection(df.index)][inverse_bools]
 
 if __name__ == "__main__":
-    processor = SalesDataProvider()
+    processor = SalesDataProvider(item_selection=["pastry"])
     df = processor.get_data()
     print(df)
+    
+
+    
  

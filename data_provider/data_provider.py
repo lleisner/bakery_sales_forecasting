@@ -18,10 +18,11 @@ class DataProvider:
                  start_date='2019-02-24',
                  end_date='2023-09-30',
                  source_directory='data/sub_datasets',
-                 item_selection = ["broetchen", "plunder"]):
+                 item_selection=["pastry"],
+                 top_k=16,):
         
         self.providers = {
-            'sales': SalesDataProvider(item_selection=item_selection),
+            'sales': SalesDataProvider(item_selection=item_selection, top_k=top_k),
             'ferien': FerienDataProvider(),
             'gaeste': GaestezahlenProvider(),
             'fahrten': FahrtenDataProvider(),
@@ -93,6 +94,9 @@ class DataProvider:
 
             
 if __name__ == "__main__":
+    provider = DataProvider(top_k=2)
+    provider.create_new_sub_databases(provider_list="sales")
+
     for period in ['8h', '16h', '24h', '1d', '1w']:
         provider = DataProvider(period=period)
         provider.save_combined_data("data/sales_forecasting")
