@@ -11,7 +11,7 @@ saved_models/
 logs/
 
 # Ignore Hyperparameter settings
-#hyperparameters/
+hyperparameters/
 
 # Ignore run_script
 run_script.sh
