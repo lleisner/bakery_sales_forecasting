@@ -1,7 +1,11 @@
-from models.iTransformer.data_loader import ITransformerData
+from models.iTransformer.new_data_loader import ITransformerData
 from models.iTransformer.i_transformer import ITransformer
+from models.iTransformer.model_tuner import build_itransformer
 from models.tide_google.tide_model import TiDE
+from models.tide_google.new_data_loader import TiDEData
+from models.tide_google.model_tuner import build_tide
 from models.training import CustomModel
+
 from utils.analyze_data import analyze_all_datasets
 from utils.plot_attention import plot_attention_weights
 from utils.plot_preds_and_actuals import plot_time_series
@@ -9,14 +13,14 @@ from utils.callbacks import get_callbacks
 import yaml
 import argparse
 import tensorflow as tf
-
+import keras_tuner as kt
 
 def load_config_from_yaml(filepath):
     with open(filepath, 'r') as file:
         config = yaml.safe_load(file)
         return config
 
-def create_model_config(args):
+def create_loader_config(args):
     def calculate_data_ranges(train_size, val_size, test_size):
         return ((0, train_size), 
                 (train_size, train_size + val_size), 
@@ -47,25 +51,17 @@ def create_model_config(args):
         "stride": 1, #data_config['suggested_forecast'],
         "sample_rate": 1,
         "batch_size": args.batch_size,
-        "epoch_len": None,
-        "val_len": None,
+        "steps_per_epoch": None,
+        "validation_steps": None,
         "normalize": False,
-    }, {"seq_len": data_config['suggested_window'],
-        "pred_len": data_config['suggested_forecast'],
-        "num_targets": data_config['ts_dim'],
-        "d_model": 64,
-        "n_heads": 8,
-        "d_ff": 256,
-        "e_layers": 2,
-        "dropout": 0.3,
-        "output_attention": True,
-     }
+    }
+    
 
 def parse_arguments(yaml_filepath):
     parser = argparse.ArgumentParser(description='Configure model parameters.')
 
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training the model.')
-    parser.add_argument('--learning_rate', type=float, default=0.0005, help='Learning rate for the optimizer.')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for the optimizer.')
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs for training.')
     parser.add_argument('--config_file', type=str, default=yaml_filepath, help='Path to the YAML configuration file.')
     parser.add_argument('--data_directory', type=str, default="data/sales_forecasting", help='Path to data directory')
@@ -73,43 +69,109 @@ def parse_arguments(yaml_filepath):
 
     args = parser.parse_args()
     return args
-    
-def train_and_evaluate_model(model, data_loader):
+
+
+
+def tune_model_on_dataset(name, model_builder, data_loader):
     yaml_filepath = "experiment/dataset_analysis.yaml"
     args = parse_arguments(yaml_filepath=yaml_filepath)
+    directory = f"experiment/hyperparameters/{args.dataset}"
     
-    loader_config, model_config = create_model_config(args)
-    data = data_loader(**loader_config)
+    loader_config = data_loader.create_loader_config(args)
+    data_loader = data_loader(**loader_config)
     
-    train, val, test = data.get_train_test_splits()
+    train, val, test = data_loader.get_train_test_splits()
     
-    model = model(**model_config)
+    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=name, dataset_name=args.dataset)
+
+    hypermodel = lambda hp: model_builder(hp=hp, 
+                                          learning_rate=args.learning_rate, 
+                                          seq_len=loader_config['hist_len'], 
+                                          pred_len=loader_config['pred_len'], 
+                                          num_ts=len(loader_config['timeseries_cols']))
     
-    loss = tf.keras.losses.MeanSquaredError()
-    optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
+    tuner = kt.Hyperband(hypermodel=hypermodel,
+                         objective='val_loss',
+                         max_epochs=max(10, args.num_epochs//2),
+                         factor=3,
+                         hyperband_iterations=2,
+                         directory=directory,
+                         project_name=name,
+                         executions_per_trial=2,
+                         )
+    tuner.search_space_summary()
+    tuner.search(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
+    tuner.results_summary()
+    best_hps = tuner.get_best_hyperparameters(3)
+    print(f"best hyperparameters for {directory}/{name}: {best_hps}")
+
     
-    model.compile(optimizer=optimizer, loss=loss, )
+def train_model_on_dataset(name, model, data_loader):
+    yaml_filepath = "experiment/dataset_analysis.yaml"
+    args = parse_arguments(yaml_filepath=yaml_filepath)
+    directory = f"experiment/hyperparameters/{args.dataset}"
     
+    loader_config = data_loader.create_loader_config(args)
+    data_loader = data_loader(**loader_config)
+    
+    train, val, test = data_loader.get_train_test_splits()
+    
+    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=name, dataset_name=args.dataset)
+
+    model = model(seq_len=loader_config['hist_len'], 
+                pred_len=loader_config['pred_len'], 
+                num_ts=len(loader_config['timeseries_cols']))
+    
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(args.learning_rate),
+        loss='mse',
+        metrics=['mae'],
+        weighted_metrics=[],
+    )
+    
+    model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
+    
+    model.evaluate(test)
+    model.summary()
     
 if __name__ == "__main__":
+    train_model_on_dataset("TiDE", TiDE, TiDEData)
+    train_model_on_dataset("iTransformer", ITransformer, ITransformerData)
+    #tune_model_on_dataset("TiDE", build_tide, TiDEData)
+    #tune_model_on_dataset("iTransformer", build_itransformer, ITransformerData)
+    
+    
+    """
     yaml_filepath = "experiment/dataset_analysis.yaml"
     args = parse_arguments(yaml_filepath)
     
     analyze_all_datasets(args.data_directory, infer_ts_cols=True, yaml_output_path=yaml_filepath)
     
-    loader_config, model_config = create_model_config(args)
-    transformer_data = ITransformerData(**loader_config)
-    df = transformer_data.get_data()
+    itransformer_data_config = ITransformerData.create_loader_config(args)
+    itransformer_data = ITransformerData(**itransformer_data_config)
+
+    df = itransformer_data.get_data()
     print(df)
     print(df.columns)
     
-    train, val, test = transformer_data.get_train_test_splits()
-    print(transformer_data.get_feature_names_out())
+    train, val, test = itransformer_data.get_train_test_splits()
+    print(itransformer_data.get_feature_names_out())
     
-    baseline = CustomModel(seq_len=loader_config['hist_len'], 
-                           pred_len=loader_config['pred_len'])
+    baseline = CustomModel(seq_len=itransformer_data_config['hist_len'], 
+                           pred_len=itransformer_data_config['pred_len'])
     
-    itransformer = ITransformer(**model_config)
+    
+    loss = tf.keras.losses.MeanSquaredError()
+    optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
+    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name="iTransformer", dataset_name=args.dataset)
+
+    
+    baseline.compile(optimizer=optimizer, loss=loss, weighted_metrics=[])
+    
+    tune_model_on_dataset("iTransformer", build_itransformer, itransformer_data, callbacks)
+    
+    
+    #itransformer = ITransformer(**model_config)
     
     #tide = TiDE(**model_config)
     
@@ -118,7 +180,7 @@ if __name__ == "__main__":
     
     baseline.compile(optimizer=optimizer, loss=loss, weighted_metrics=[])
     
-    itransformer.compile(optimizer=optimizer, loss=loss, metrics=['mae'],weighted_metrics=[])
+    #itransformer.compile(optimizer=optimizer, loss=loss, metrics=['mae'],weighted_metrics=[])
     
     #tide.compile(optimizer=optimizer, loss=loss, metrics=['mae'], weighted_metrics=[])
     
@@ -126,7 +188,7 @@ if __name__ == "__main__":
     
     baseline.fit(train, epochs=1, validation_data=val)
     
-    hist = itransformer.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
+    #hist = itransformer.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
     
     print(f"baseline evaluation on test data: {baseline.evaluate(test)}")
     print(f"itransformer evaluation on test data: {itransformer.evaluate(test)}")
@@ -154,3 +216,4 @@ if __name__ == "__main__":
     plot_attention_weights(labels, attn_heads)
     plot_time_series(actuals, b_preds, t_preds)
     plot_time_series(r, b, p)
+    """

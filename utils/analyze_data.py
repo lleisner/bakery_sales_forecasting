@@ -113,22 +113,27 @@ def analyze_all_datasets(folder_path, timestamp_col='date', train_split=0.496, v
     Raises:
     - Exception: Outputs an error message if no CSV files are found in the directory or if an error occurs during the analysis of any file.
     """
-    # List all files in the folder
-    all_files = os.listdir(folder_path)
-    # Filter to include only CSV files
-    csv_files = [file for file in all_files if file.endswith('.csv')]
     
+    # List to store all CSV files
+    csv_files = []
+
+    # Walk through all directories and subdirectories
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith('.csv'):
+                csv_files.append(os.path.join(root, file))
+
     # Check if no CSV files found
     if not csv_files:
         print("No CSV files found in the directory.")
         return
 
+
     # List to store all YAML outputs
     yaml_outputs = {}
 
     # Loop through all found CSV files and analyze them
-    for file_name in csv_files:
-        file_path = os.path.join(folder_path, file_name)
+    for file_path in csv_files:
         print(f"\nAnalyzing file: {file_path}")
         try:
             result = analyze_dataset(

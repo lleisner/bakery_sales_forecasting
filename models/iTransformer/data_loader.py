@@ -30,8 +30,8 @@ class ITransformerData(object):
         stride,
         sample_rate,
         batch_size,
-        epoch_len,
-        val_len,
+        steps_per_epoch,
+        validation_steps,
         freq='H',
         normalize=True,     
         drop_remainder=False,
@@ -51,8 +51,8 @@ class ITransformerData(object):
             hist_len (int): historical context length
             pred_len (int): prediction length
             batch_size (int): batch size
-            epoch_len (int): steps per epoch
-            val_len (int): steps per validation
+            steps_per_epoch (int): steps per epoch
+            validation_steps (int): steps per validation
             freq (str, optional): frequency of original data. Defaults to 'H'.
             normalize (bool, optional): normalize data or not. Defaults to True.
             drop_remainder (bool, optional): drop or pass through columns that are not specified in cols lists in the normalization process.
@@ -80,13 +80,15 @@ class ITransformerData(object):
         
         self.hist_len = hist_len
         self.pred_len = pred_len
+        self.batch_size = batch_size
+        
         self.stride = stride
         self.sampling_rate = sample_rate
-        self.batch_size = batch_size
         self.freq = freq
+        
         self.normalize = normalize
-        self.epoch_len = epoch_len
-        self.val_len = val_len
+        self.steps_per_epoch = steps_per_epoch
+        self.validation_steps = validation_steps
         
 
         # Create temporal features from index
@@ -270,7 +272,7 @@ class ITransformerData(object):
                 f"train_range={self.train_range}, val_range={self.val_range}, test_range={self.test_range}, "
                 f"hist_len={self.hist_len}, pred_len={self.pred_len}, stride={self.stride}, "
                 f"sample_rate={self.sample_rate}, batch_size={self.batch_size}, "
-                f"epoch_len={self.epoch_len}, val_len={self.val_len}, normalize={self.normalize})")
+                f"steps_per_epoch={self.steps_per_epoch}, validation_steps={self.validation_steps}, normalize={self.normalize})")
     
     """DEPRECEATED"""
     

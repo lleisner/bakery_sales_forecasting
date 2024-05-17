@@ -25,6 +25,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 from models.tide_google.time_features import TimeCovariates
+from models.data_loader import DataLoader
 
 
 class TimeSeriesdata(object):
@@ -45,8 +46,8 @@ class TimeSeriesdata(object):
       batch_size,
       freq='H',
       normalize=True,
-      epoch_len=None,
-      val_samples=None,
+      steps_per_epoch=None,
+      validation_steps=None,
       holiday=False,
       permute=True,
   ):
@@ -66,7 +67,7 @@ class TimeSeriesdata(object):
       batch_size: batch size (number of ts in a batch)
       freq: freq of original data
       normalize: std. normalize data or not
-      epoch_len: num iters in an epoch
+      steps_per_epoch: num iters in an epoch
       holiday: use holiday features or not
       permute: permute ts in train batches or not
 
@@ -80,6 +81,7 @@ class TimeSeriesdata(object):
     self.num_cov_cols = num_cov_cols
     self.cat_cov_cols = cat_cov_cols
     self.ts_cols = ts_cols
+    
     self.train_range = train_range
     self.val_range = val_range
     self.test_range = test_range
@@ -88,11 +90,16 @@ class TimeSeriesdata(object):
     self.pred_len = pred_len
     self.batch_size = batch_size
     self.freq = freq
+    
+    self.steps_per_epoch = steps_per_epoch
+    self.validation_steps = validation_steps
+    
     self.normalize = normalize
     
-    self.epoch_len = epoch_len
     self.permute = permute
-    self.val_samples = val_samples
+    
+    
+    
     
     self.normalize = normalize
     
@@ -103,6 +110,8 @@ class TimeSeriesdata(object):
     
     if self.normalize:
       self._normalize_data()
+      
+    self._create_lagged_features()
 
     
   def _add_missing_cols(self):
@@ -122,7 +131,7 @@ class TimeSeriesdata(object):
         freq=self.freq,
       )
     )
-    self.time_df = TimeCovariates(date_index, holiday=False).get_covariates()
+    self.time_df = TimeCovariates(date_index, normalized=self.normalize).get_covariates()
     
   def _create_lagged_features(self, include_mean_max_min=False):
     pass
@@ -161,10 +170,10 @@ class TimeSeriesdata(object):
     perm = np.random.permutation(perm)
     hist_len = self.hist_len
     logging.info('Hist len: %s', hist_len)
-    if not self.epoch_len:
-      self.epoch_len = len(perm)
+    if not self.steps_per_epoch:
+      self.steps_per_epoch = len(perm)
       
-    for idx in perm[0:self.epoch_len]:
+    for idx in perm[0:self.steps_per_epoch]:
       #for i in range(num_ts // self.batch_size + 1):
       for i in range(num_ts//self.batch_size):
         if self.permute:
@@ -206,10 +215,10 @@ class TimeSeriesdata(object):
     hist_len = self.hist_len
     logging.info('Hist len: %s', hist_len)
     perm = np.arange(start, end)
-    if not self.val_samples:
-      self.val_samples = len(perm)
+    if not self.validation_steps:
+      self.validation_steps = len(perm)
     
-    for idx in perm[0:self.val_samples]:
+    for idx in perm[0:self.validation_steps]:
       for batch_idx in range(0, num_ts, self.batch_size):
         tsidx = np.arange(batch_idx, min(batch_idx + self.batch_size, num_ts))
         dtimes = np.arange(idx - hist_len, idx + self.pred_len)

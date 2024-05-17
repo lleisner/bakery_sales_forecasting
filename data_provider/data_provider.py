@@ -32,6 +32,7 @@ class DataProvider:
         self.start_date = start_date
         self.end_date = end_date
         self.period = period
+        self.top_k = top_k
         
 
     def create_new_sub_databases(self, provider_list=None):
@@ -60,8 +61,9 @@ class DataProvider:
         return filtered_result
     
     def save_combined_data(self, directory='data/sales_forecasting'):
+        os.makedirs(directory, exist_ok=True)
         combined_data = self.load_and_concat_sub_databases()
-        filename = f"sales_forecasting_{self.period}.csv"
+        filename = f"sales_forecasting_{self.period}_top{self.top_k}.csv"
         file_path = os.path.join(directory, filename)
         combined_data.to_csv(file_path)
         print(f"Combined data saved to {file_path}")
@@ -94,14 +96,15 @@ class DataProvider:
 
             
 if __name__ == "__main__":
-    provider = DataProvider(top_k=2)
-    provider.create_new_sub_databases(provider_list="sales")
-
-    for period in ['8h', '16h', '24h', '1d', '1w']:
-        provider = DataProvider(period=period)
-        provider.save_combined_data("data/sales_forecasting")
+    if False:
+        for k in [2, 16, 32, 64]:
+            provider = DataProvider(top_k=k)
+            provider.create_new_sub_databases(provider_list="sales")
+            for period in ['8h', '16h', '24h', '1d', '1w']:
+                provider = DataProvider(period=period, top_k=k)
+                provider.save_combined_data(f"data/sales_forecasting/sales_forecasting_{period}")
+                
         
-    
     analyze_all_datasets("data/sales_forecasting", infer_ts_cols=True)
     
     plot_multiple_dataframes("data/sales_forecasting")

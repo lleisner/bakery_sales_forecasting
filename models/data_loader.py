@@ -1,8 +1,8 @@
 import pandas as pd
-
+import yaml
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, SplineTransformer, OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from models.iTransformer.cyclic_encoder import CyclicEncoder
+from utils.cyclic_encoder import CyclicEncoder
 
 class DataLoader(object):
     """Data loader parent class"""
@@ -50,11 +50,13 @@ class DataLoader(object):
         """
         self.data_df = pd.read_csv(open(data_path, 'r'))
         self.data_df.fillna(0, inplace=True)
-        self.data_df.set_index(pd.DatetimeIndex(self.data_df[datetime_col], inplace=True))
+        self.data_df.set_index(pd.DatetimeIndex(self.data_df[datetime_col]), inplace=True)
+        
+        self.data_df.drop(columns=[datetime_col], inplace=True)
         
         self.num_cov_cols = numerical_cov_cols
         self.cat_cov_cols = categorical_cov_cols
-        self.cyc_cov_cols = cyclic_cov_cols
+        self.cyc_cov_cols = cyclic_cov_cols if cyclic_cov_cols else []
         self.ts_cols = timeseries_cols if timeseries_cols else self.data_df.columns.tolist()
         
         self.train_range = train_range
@@ -67,9 +69,11 @@ class DataLoader(object):
         
         self.stride = stride
         self.sampling_rate = sample_rate
+        self.freq = freq
+        
         self.steps_per_epoch = steps_per_epoch
         self.validation_steps = validation_steps
-        self.freq = freq
+        
         
         self.normalize = normalize
         
@@ -83,6 +87,7 @@ class DataLoader(object):
             self._normalize_data()
             
         self._create_lagged_features()
+        
         
     def _add_missing_cols(self):
         pass
@@ -200,3 +205,51 @@ class DataLoader(object):
     
     def get_data(self):
         return self.data_df
+    
+    def __repr__(self):
+        return (f"DataLoader:(data_path={self.data_path!r}, datetime_col={self.datetime_col!r}, "
+                f"num_cov_cols={len(self.numerical_cov_cols) if self.numerical_cov_cols else 0}, "
+                f"cat_cov_cols={len(self.categorical_cov_cols) if self.categorical_cov_cols else 0}, "
+                f"cyc_cov_cols={len(self.cyclic_cov_cols) if self.cyclic_cov_cols else 0}, "
+                f"timeseries_cols={len(self.timeseries_cols) if self.timeseries_cols else 0}, "
+                f"train_range={self.train_range}, val_range={self.val_range}, test_range={self.test_range}, "
+                f"hist_len={self.hist_len}, pred_len={self.pred_len}, stride={self.stride}, "
+                f"sample_rate={self.sample_rate}, batch_size={self.batch_size}, "
+                f"steps_per_epoch={self.steps_per_epoch}, validation_steps={self.validation_steps}, normalize={self.normalize})")
+    
+    @staticmethod
+    def create_loader_config(args):
+        def calculate_data_ranges(train_size, val_size, test_size):
+            return ((0, train_size), 
+                    (train_size, train_size + val_size), 
+                    (train_size + val_size, train_size + val_size + test_size))
+
+        # Load configuration from YAML
+        with open(args.config_file, 'r') as file:
+            data_config = yaml.safe_load(file)
+
+        
+        dataset_name = args.dataset
+        data_config = data_config[dataset_name]
+        
+        train_range, val_range, test_range = calculate_data_ranges(data_config['train_size'], data_config['val_size'], data_config['test_size'])
+        
+        return {
+            "data_path": f"data/sales_forecasting/{data_config['file_name']}",
+            "datetime_col": 'date',
+            "numerical_cov_cols": data_config['cov_cols'],
+            "categorical_cov_cols": None,
+            "cyclic_cov_cols": None,
+            "timeseries_cols": data_config['ts_cols'], 
+            "train_range": train_range,
+            "val_range": val_range,
+            "test_range": test_range,
+            "hist_len": data_config['suggested_window'],
+            "pred_len": data_config['suggested_forecast'],
+            "stride": 1, #data_config['suggested_forecast'],
+            "sample_rate": 1,
+            "batch_size": args.batch_size,
+            "steps_per_epoch": None,
+            "validation_steps": None,
+            "normalize": False,
+        }

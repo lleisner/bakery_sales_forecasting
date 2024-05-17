@@ -9,34 +9,34 @@ from models.iTransformer.embedding import DataEmbeddingInverted
 
 from models.training import CustomModel
 
-class ITransformer(CustomModel):
+class ITransformer(keras.Model):
     """
     Paper link: https://arxiv.org/abs/2310.06625
     """
     def __init__(self, 
                  seq_len,
                  pred_len,
-                 num_targets,
-                 d_model,
-                 n_heads,
-                 d_ff,
-                 e_layers,
-                 dropout,
-                 output_attention,
+                 num_ts,
+                 d_model=32,
+                 n_heads=8,
+                 d_ff=128,
+                 e_layers=2,
+                 dropout=0.1,
+                 output_attention=True,
                  activation='gelu',
                  clip=None,
-                 use_amp=True,
                  use_norm=True,
                  ):
-        self.use_amp = use_amp
+        
+        super().__init__()
         self.use_norm = use_norm
+        self.output_attention = output_attention
+        self.pred_len = pred_len
+        self.seq_len = seq_len
+        self.clip = clip
+        self.attn_scores=None
         self.attns = None
         
-        super().__init__(seq_len=seq_len, 
-                         pred_len=pred_len, 
-                         output_attention=output_attention, 
-                         clip=clip,)
-        self.attns = None
         # Embedding
         self.enc_embedding = DataEmbeddingInverted(seq_len, d_model, dropout)
         # Encoder-only architecture
@@ -58,7 +58,7 @@ class ITransformer(CustomModel):
         )
         self.projector = keras.layers.Dense(pred_len)
         #self.tester = keras.layers.Dense(d_ff, activation="relu")
-        #self.out = keras.layers.Dense(num_targets)
+        #self.out = keras.layers.Dense(num_ts)
         
         
     @tf.function
@@ -117,8 +117,10 @@ class ITransformer(CustomModel):
         means_t = tf.tile(means_t, [1, self.pred_len, 1])  # Equivalent to repeat() in PyTorch
 
         dec_out = dec_out * stdev_t + means_t  # De-normalization computation
+        
         return dec_out
-     
+    
+
     @tf.function
     def train_step(self, data):
         batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]

@@ -4,6 +4,7 @@ from utils.plot_preds_and_actuals import plot_preds_actuals, plot_df_per_column
 
 import pandas as pd
 from models.tide_google.data_loader import TimeSeriesdata as tsd
+from models.tide_google.new_data_loader import TiDEData
 import tensorflow as tf
 
 from tensorflow.compat.v1 import ConfigProto
@@ -33,12 +34,13 @@ val_end = int((total_timestamps - train_end) * 0.5) + train_end
 
 
 
-ts_cols = ['10', '20']
-numerical_covariates = ['gaestezahlen', 'wind_direction', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed']
-categorical_covariates = ['is_open', 'holidays', 'arrival', 'departure']
+ts_cols = ['10', '20', '16', '24']
+numerical_covariates = ['gaestezahlen', 'wind_direction', 'temperature', 'precipitation', 'cloud_cover', 'wind_speed', 'is_open', 'holidays', 'arrival', 'departure']
+#categorical_covariates = ['is_open', 'holidays', 'arrival', 'departure']
+categorical_covariates = None
 
-pred_len = 96
-hist_len = 96
+pred_len = 224
+hist_len = 56
 num_ts = len(ts_cols)
 batch_size = num_ts
 batch_size = min(num_ts, batch_size)
@@ -57,43 +59,33 @@ val_samples=val_end-train_end-pred_len
 
 
 print("epoch and samples: ", epoch_len, val_samples)
+print("what the fuckkerydoo is going on here")
 
-time_series = TimeSeriesdata(
+time_series = TiDEData(
     data_path='data/sales_forecasting/sales_forecasting_8h.csv',
     datetime_col='date',
-    num_cov_cols=numerical_covariates,
-    cat_cov_cols=categorical_covariates,
-    ts_cols=ts_cols,
-    train_range=(0, 9015),
-    val_range=(9016, 10947),
-    test_range=(10948, 12623),
+    numerical_cov_cols=numerical_covariates,
+    categorical_cov_cols=categorical_covariates,
+    cyclic_cov_cols=None,
+    timeseries_cols=ts_cols,
+    train_range=(0, 6496),
+    val_range=(6498, 8516),
+    test_range=(8516, 10534),
     hist_len=hist_len,
     pred_len=pred_len,
     batch_size=batch_size,
     freq='h',
     normalize=False, 
-    epoch_len=epoch_len, 
-    val_samples=val_samples,
+    steps_per_epoch=None, 
+    validation_steps=None,
     permute=False,
     )
 
-model_config = {
-    'model_type': 'dnn',
-    'hidden_dims': [hidden_size] * num_layers,
-    'time_encoder_dims': [64, 4],
-    'decoder_output_dim': decoder_output_dim,
-    'final_decoder_hidden': final_decoder_hidden,
-    'batch_size': time_series.batch_size
-}
-
 tide_model = TiDE(
-    model_config=model_config,
+    seq_len=None,
     pred_len=pred_len,
+    cat_sizes=[],
     num_ts=num_ts,
-    cat_sizes=time_series.cat_sizes,
-    transform=False,
-    layer_norm=True,
-    dropout_rate=0.2,
 )
 
 lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
@@ -116,26 +108,26 @@ callbacks = [tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=patie
 
 train_ds, val_ds, test_ds = time_series.get_train_test_splits()
 
-train_samples = time_series.epoch_len
+train_samples = time_series.steps_per_epoch
 print("total train samples:", train_samples)
-test_val_samples = time_series.val_samples
+test_val_samples = time_series.validation_steps
 print("total validation samples: ", test_val_samples)
 
 (sample,) = val_ds.take(1)
-inputs, y_true = tsd.prepare_batch(*sample)
+inputs, y_true = TiDEData.prepare_batch(*sample)
 
 
 
 (sample2,) = train_ds.take(1)
-inputs2, y_true2 = tsd.prepare_batch(*sample2)
+inputs2, y_true2 = TiDEData.prepare_batch(*sample2)
 
 #plot_preds_actuals(y_true, y_true)
 
 tide_model.fit(train_ds, 
     validation_data=val_ds, 
     epochs=num_epochs, 
-    steps_per_epoch=train_samples, 
-    validation_steps=test_val_samples, 
+   # steps_per_epoch=train_samples, 
+    #validation_steps=test_val_samples, 
     callbacks=callbacks, 
     batch_size=batch_size, 
     use_multiprocessing=True, 

@@ -23,94 +23,43 @@ from tqdm import tqdm
 
 from models.tide_google.data_loader import TimeSeriesdata as tsd
 
-EPS = 1e-7
-
-train_loss = keras.losses.MeanSquaredError()
-
-
-class MLPResidual(keras.layers.Layer):
-  """Simple one hidden state residual network."""
-
-  def __init__(
-      self, hidden_dim, output_dim, layer_norm=False, dropout_rate=0.0
-  ):
-    super(MLPResidual, self).__init__()
-    self.lin_a = tf.keras.layers.Dense(
-        hidden_dim,
-        activation='relu',
-    )
-    self.lin_b = tf.keras.layers.Dense(
-        output_dim,
-        activation=None,
-    )
-    self.lin_res = tf.keras.layers.Dense(
-        output_dim,
-        activation=None,
-    )
-    if layer_norm:
-      self.lnorm = tf.keras.layers.LayerNormalization()
-    self.layer_norm = layer_norm
-    self.dropout = tf.keras.layers.Dropout(dropout_rate)
-
-  def call(self, inputs):
-    """Call method."""
-    h_state = self.lin_a(inputs)
-    out = self.lin_b(h_state)
-    out = self.dropout(out)
-    res = self.lin_res(inputs)
-    if self.layer_norm:
-      return self.lnorm(out + res)
-    return out + res
-
-
-def _make_dnn_residual(hidden_dims, layer_norm=False, dropout_rate=0.0):
-  """Multi-layer DNN residual model."""
-  if len(hidden_dims) < 2:
-    return keras.layers.Dense(
-        hidden_dims[-1],
-        activation=None,
-    )
-  layers = []
-  for i, hdim in enumerate(hidden_dims[:-1]):
-    layers.append(
-        MLPResidual(
-            hdim,
-            hidden_dims[i + 1],
-            layer_norm=layer_norm,
-            dropout_rate=dropout_rate,
-        )
-    )
-  return keras.Sequential(layers)
-
 
 class TiDE(keras.Model):
   """Main class for multi-scale DNN model."""
 
   def __init__(
       self,
-      model_config,
+      seq_len,
       pred_len,
-      cat_sizes,
       num_ts,
+      cat_sizes=[],
+      hidden_size=128,
+      decoder_output_dim=4,
+      final_decoder_hidden=64,
+      time_encoder_dims=[64, 4],
+      num_layers=2,
+      dropout=0.1,
+      activation='relu',
       transform=False,
       cat_emb_size=4,
       layer_norm=False,
-      dropout_rate=0.0,
   ):
     """Tide model.
 
     Args:
-      model_config: configurations specific to the model.
       pred_len: prediction horizon length.
       cat_sizes: number of categories in each categorical covariate.
       num_ts: number of time-series in the dataset
       transform: apply reversible transform or not.
       cat_emb_size: embedding size of categorical variables.
       layer_norm: use layer norm or not.
-      dropout_rate: level of dropout.
+      dropout: level of dropout.
     """
     super().__init__()
-    self.model_config = model_config
+    hidden_dims = [hidden_size] * num_layers
+    print("hidden_dims:", hidden_dims, len(hidden_dims))
+    
+    
     self.transform = transform
     self.loss_tracker = tf.keras.metrics.Mean(name="loss")
     self.mae_metric = tf.keras.metrics.MeanAbsoluteError(name="mae")
@@ -130,32 +79,36 @@ class TiDE(keras.Model):
       )
     self.pred_len = pred_len
     self.encoder = _make_dnn_residual(
-        model_config.get('hidden_dims'),
+        hidden_dims,
         layer_norm=layer_norm,
-        dropout_rate=dropout_rate,
+        dropout=dropout,
+        activation=activation
     )
     self.decoder = _make_dnn_residual(
-        model_config.get('hidden_dims')[:-1]
+        hidden_dims[:-1]
         + [
-            model_config.get('decoder_output_dim') * self.pred_len,
+            decoder_output_dim * self.pred_len,
         ],
         layer_norm=layer_norm,
-        dropout_rate=dropout_rate,
+        dropout=dropout,
+        activation=activation,
     )
     self.linear = tf.keras.layers.Dense(
         self.pred_len,
         activation=None,
     )
     self.time_encoder = _make_dnn_residual(
-        model_config.get('time_encoder_dims'),
+        time_encoder_dims,
         layer_norm=layer_norm,
-        dropout_rate=dropout_rate,
+        dropout=dropout,
+        activation=activation
     )
     self.final_decoder = MLPResidual(
-        hidden_dim=model_config.get('final_decoder_hidden'),
+        hidden_dim=final_decoder_hidden,
         output_dim=1,
         layer_norm=layer_norm,
-        dropout_rate=dropout_rate,
+        dropout=dropout,
+        activation=activation,
     )
     self.cat_embs = []
     for cat_size in cat_sizes:
@@ -222,16 +175,14 @@ class TiDE(keras.Model):
       out = out * batch_std[:, None] + batch_mean[:, None]
     return out
 
-
-
-
   
   @tf.function
   def train_step(self, data):
     inputs, y_true = tsd.prepare_batch(*data)
+    #inputs, y_true = data
     with tf.GradientTape() as tape:
       all_preds = self(inputs, training=True)
-      print(f"all preds: {all_preds}, y true: {y_true}")
+      #print(f"all preds: {all_preds}, y true: {y_true}")
       loss = tf.keras.losses.mean_squared_error(y_true, all_preds)
       #loss = self.compute_loss(y_true, all_preds)
     grads = tape.gradient(loss, self.trainable_variables)
@@ -255,6 +206,65 @@ class TiDE(keras.Model):
     self.mae_metric.update_state(y_true, all_preds)
     return {"loss": self.loss_tracker.result(), "mae": self.mae_metric.result()}
 
+
+  
+class MLPResidual(keras.layers.Layer):
+  """Simple one hidden state residual network."""
+
+  def __init__(
+      self, hidden_dim, output_dim, layer_norm=False, dropout=0.0, activation='relu',
+  ):
+    super(MLPResidual, self).__init__()
+    self.lin_a = tf.keras.layers.Dense(
+        hidden_dim,
+        activation=activation,
+    )
+    self.lin_b = tf.keras.layers.Dense(
+        output_dim,
+        activation=None,
+    )
+    self.lin_res = tf.keras.layers.Dense(
+        output_dim,
+        activation=None,
+    )
+    if layer_norm:
+      self.lnorm = tf.keras.layers.LayerNormalization()
+    self.layer_norm = layer_norm
+    self.dropout = tf.keras.layers.Dropout(dropout)
+
+  def call(self, inputs):
+    """Call method."""
+    h_state = self.lin_a(inputs)
+    out = self.lin_b(h_state)
+    out = self.dropout(out)
+    res = self.lin_res(inputs)
+    if self.layer_norm:
+      return self.lnorm(out + res)
+    return out + res
+
+
+def _make_dnn_residual(hidden_dims, layer_norm=False, dropout=0.0, activation='relu'):
+  """Multi-layer DNN residual model."""
+  print("hidden_dims:", hidden_dims)
+  print(len(hidden_dims))
+
+  if len(hidden_dims) < 2:
+    return keras.layers.Dense(
+        hidden_dims[-1],
+        activation=None,
+    )
+  layers = []
+  for i, hdim in enumerate(hidden_dims[:-1]):
+    layers.append(
+        MLPResidual(
+            hdim,
+            hidden_dims[i + 1],
+            layer_norm=layer_norm,
+            dropout=dropout,
+            activation=activation,
+        )
+    )
+  return keras.Sequential(layers)
   """
 
   @tf.function
