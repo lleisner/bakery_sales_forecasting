@@ -14,48 +14,8 @@ import yaml
 import argparse
 import tensorflow as tf
 import keras_tuner as kt
+import os
 
-def load_config_from_yaml(filepath):
-    with open(filepath, 'r') as file:
-        config = yaml.safe_load(file)
-        return config
-
-def create_loader_config(args):
-    def calculate_data_ranges(train_size, val_size, test_size):
-        return ((0, train_size), 
-                (train_size, train_size + val_size), 
-                (train_size + val_size, train_size + val_size + test_size))
-
-    # Load configuration from YAML
-    with open(args.config_file, 'r') as file:
-        data_config = yaml.safe_load(file)
-
-    
-    dataset_name = args.dataset
-    data_config = data_config[dataset_name]
-    
-    train_range, val_range, test_range = calculate_data_ranges(data_config['train_size'], data_config['val_size'], data_config['test_size'])
-    
-    return {
-        "data_path": f"data/sales_forecasting/{data_config['file_name']}",
-        "datetime_col": 'date',
-        "numerical_cov_cols": data_config['cov_cols'],
-        "categorical_cov_cols": None,
-        "cyclic_cov_cols": None,
-        "timeseries_cols": data_config['ts_cols'], 
-        "train_range": train_range,
-        "val_range": val_range,
-        "test_range": test_range,
-        "hist_len": data_config['suggested_window'],
-        "pred_len": data_config['suggested_forecast'],
-        "stride": 1, #data_config['suggested_forecast'],
-        "sample_rate": 1,
-        "batch_size": args.batch_size,
-        "steps_per_epoch": None,
-        "validation_steps": None,
-        "normalize": False,
-    }
-    
 
 def parse_arguments(yaml_filepath):
     parser = argparse.ArgumentParser(description='Configure model parameters.')
@@ -64,7 +24,7 @@ def parse_arguments(yaml_filepath):
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for the optimizer.')
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs for training.')
     parser.add_argument('--config_file', type=str, default=yaml_filepath, help='Path to the YAML configuration file.')
-    parser.add_argument('--data_directory', type=str, default="data/sales_forecasting", help='Path to data directory')
+    parser.add_argument('--data_directory', type=str, default="data/sales_forecasting/sales_forecasting_8h", help='Path to data directory')
     parser.add_argument('--dataset', type=str, required=True, help='Dataset to be used for experiment')
 
     args = parser.parse_args()
@@ -77,7 +37,12 @@ def tune_model_on_dataset(name, model_builder, data_loader):
     args = parse_arguments(yaml_filepath=yaml_filepath)
     directory = f"experiment/hyperparameters/{args.dataset}"
     
+
+    
     loader_config = data_loader.create_loader_config(args)
+    
+    print(f"data directory: {args.data_directory}, filename: {loader_config['data_path']}")
+
     data_loader = data_loader(**loader_config)
     
     train, val, test = data_loader.get_train_test_splits()
@@ -135,9 +100,9 @@ def train_model_on_dataset(name, model, data_loader):
     model.summary()
     
 if __name__ == "__main__":
-    train_model_on_dataset("TiDE", TiDE, TiDEData)
-    train_model_on_dataset("iTransformer", ITransformer, ITransformerData)
-    #tune_model_on_dataset("TiDE", build_tide, TiDEData)
+    #train_model_on_dataset("TiDE", TiDE, TiDEData)
+    #train_model_on_dataset("iTransformer", ITransformer, ITransformerData)
+    tune_model_on_dataset("TiDE", build_tide, TiDEData)
     #tune_model_on_dataset("iTransformer", build_itransformer, ITransformerData)
     
     

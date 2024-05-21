@@ -3,6 +3,7 @@ import yaml
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, SplineTransformer, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from utils.cyclic_encoder import CyclicEncoder
+import os
 
 class DataLoader(object):
     """Data loader parent class"""
@@ -231,11 +232,13 @@ class DataLoader(object):
         
         dataset_name = args.dataset
         data_config = data_config[dataset_name]
+        data_path = os.path.join(args.data_directory, data_config['file_name'])
+
         
         train_range, val_range, test_range = calculate_data_ranges(data_config['train_size'], data_config['val_size'], data_config['test_size'])
         
         return {
-            "data_path": f"data/sales_forecasting/{data_config['file_name']}",
+            "data_path": data_path,
             "datetime_col": 'date',
             "numerical_cov_cols": data_config['cov_cols'],
             "categorical_cov_cols": None,
