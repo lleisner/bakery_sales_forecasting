@@ -3,10 +3,10 @@ from tensorflow import keras
 
 
 def build_itransformer(hp, learning_rate, seq_len, pred_len, num_ts):
-    d_model = hp.Choice('d_model', values=[2**i for i in range(5, 10)])  # 32, 64, 128, 256, 512
-    n_heads = hp.Choice('n_heads', values=[2**i for i in range(1, 3)])  # 2, 4, 8
-    d_ff = hp.Choice('d_ff', values=[2**i for i in range(6, 11)])  # 64, 128, 256, 512, 1024
-    e_layers = hp.Choice('e_layers', values=[2**i for i in range(0, 2)]) # 1, 2, 4
+    d_model = hp.Choice('d_model', values=[2**i for i in range(3, 12)])  # 8, 16, 32, 64, 128, 256, 512, 1024, 2048
+    n_heads = hp.Choice('n_heads', values=[2**i for i in range(0, 3)])  # 1, 2, 4, 8
+    d_ff = hp.Choice('d_ff', values=[2**i for i in range(4, 13)])  # 16, 32, 64, 128, 256, 512, 1024, 2048, 4096
+    e_layers = hp.Choice('e_layers', values=[2**i for i in range(0, 3)]) # 1, 2, 4, 8
     
     dropout = hp.Float('dropout', min_value=0.0, max_value=0.5, step=0.1)
     
@@ -33,7 +33,8 @@ def build_itransformer(hp, learning_rate, seq_len, pred_len, num_ts):
     model.compile(
         optimizer=keras.optimizers.Adam(learning_rate),
         loss='mse',
-        metrics=['mae']
+        metrics=['mae'],
+        weighted_metrics=[],
     )
 
     return model

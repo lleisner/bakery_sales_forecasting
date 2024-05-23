@@ -1,3 +1,5 @@
+
+
 from models.iTransformer.new_data_loader import ITransformerData
 from models.iTransformer.i_transformer import ITransformer
 from models.iTransformer.model_tuner import build_itransformer
@@ -12,9 +14,18 @@ from utils.plot_preds_and_actuals import plot_time_series
 from utils.callbacks import get_callbacks
 import yaml
 import argparse
+import os
 import tensorflow as tf
 import keras_tuner as kt
-import os
+from tensorflow.keras import mixed_precision
+
+from tensorflow.keras import backend
+import gc
+from numba import cuda
+
+os.environ['TF_GPU_ALLOCATOR'] = 'cuda_malloc_async'
+#mixed_precision.set_global_policy('mixed_float16')
+
 
 
 def parse_arguments(yaml_filepath):
@@ -30,9 +41,39 @@ def parse_arguments(yaml_filepath):
     args = parser.parse_args()
     return args
 
+def clear_keras_session():
+    backend.clear_session()
+
+def free_gpu_mem():
+    device = cuda.get_current_device()
+    device.reset()
+
+class ClearSessionTuner(kt.Hyperband):
+    def run_trial(self, trial, *args, **kwargs):
+        try:
+            # Capture the result of the run_trial method
+            result = super(ClearSessionTuner, self).run_trial(trial, *args, **kwargs)
+        finally:
+            # Ensure the session is cleared after each trial
+            clear_keras_session()
+        return result
+
+
+def save_hyperparameters_to_yaml(hyperparameter_summary, dataset, filepath):
+    data = {
+        'dataset': hyperparameter_summary
+    }
+    with open(filepath, 'w') as file:
+        yaml.dump(data, file)
+
 
 
 def tune_model_on_dataset(name, model_builder, data_loader):
+
+    clear_keras_session()
+    #gc.collect()
+    #free_gpu_mem()
+    
     yaml_filepath = "experiment/dataset_analysis.yaml"
     args = parse_arguments(yaml_filepath=yaml_filepath)
     directory = f"experiment/hyperparameters/{args.dataset}"
@@ -47,7 +88,7 @@ def tune_model_on_dataset(name, model_builder, data_loader):
     
     train, val, test = data_loader.get_train_test_splits()
     
-    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=name, dataset_name=args.dataset)
+    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=name, dataset_name=args.dataset, mode='tuning')
 
     hypermodel = lambda hp: model_builder(hp=hp, 
                                           learning_rate=args.learning_rate, 
@@ -55,18 +96,22 @@ def tune_model_on_dataset(name, model_builder, data_loader):
                                           pred_len=loader_config['pred_len'], 
                                           num_ts=len(loader_config['timeseries_cols']))
     
-    tuner = kt.Hyperband(hypermodel=hypermodel,
+    tuner = ClearSessionTuner(hypermodel=hypermodel,
                          objective='val_loss',
-                         max_epochs=max(10, args.num_epochs//2),
-                         factor=3,
-                         hyperband_iterations=2,
+                         max_epochs=args.num_epochs,
+                         factor=5,
+                         hyperband_iterations=3,
                          directory=directory,
                          project_name=name,
-                         executions_per_trial=2,
+                         executions_per_trial=3,
+                         max_retries_per_trial=1,
                          )
+
+
     tuner.search_space_summary()
-    tuner.search(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
-    tuner.results_summary()
+    #tuner.search(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks, verbose=2)
+    tuner.reload()
+    tuner.results_summary(3)
     best_hps = tuner.get_best_hyperparameters(3)
     print(f"best hyperparameters for {directory}/{name}: {best_hps}")
 
@@ -81,7 +126,7 @@ def train_model_on_dataset(name, model, data_loader):
     
     train, val, test = data_loader.get_train_test_splits()
     
-    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=name, dataset_name=args.dataset)
+    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=name, dataset_name=args.dataset, mode='training')
 
     model = model(seq_len=loader_config['hist_len'], 
                 pred_len=loader_config['pred_len'], 
@@ -100,10 +145,25 @@ def train_model_on_dataset(name, model, data_loader):
     model.summary()
     
 if __name__ == "__main__":
+    #os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+    print("Is GPU available:", tf.test.is_gpu_available())
+    print("Built with CUDA:", tf.test.is_built_with_cuda())
+
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+        except RuntimeError as e:
+            print(e)
+
+    print("GPUs:", gpus)
+
     #train_model_on_dataset("TiDE", TiDE, TiDEData)
     #train_model_on_dataset("iTransformer", ITransformer, ITransformerData)
-    tune_model_on_dataset("TiDE", build_tide, TiDEData)
-    #tune_model_on_dataset("iTransformer", build_itransformer, ITransformerData)
+    #tune_model_on_dataset("TiDE", build_tide, TiDEData)
+    tune_model_on_dataset("iTransformer", build_itransformer, ITransformerData)
     
     
     """

@@ -36,7 +36,7 @@ def build_tide(hp, learning_rate, seq_len, pred_len, num_ts, cat_sizes=[]):
         optimizer=keras.optimizers.Adam(learning_rate),
         loss='mse',
         metrics=['mae'],
-        run_eagerly=True,
+        weighted_metrics=[],
     )
 
     return model

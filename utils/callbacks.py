@@ -1,10 +1,25 @@
 import os
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard, CSVLogger, TerminateOnNaN
+import time
 
-def get_callbacks(num_epochs, model_name, dataset_name):
-    # Set patience to 10% of total number of epochs
-    patience = max(1, num_epochs // 10)
+class HeartbeatCallback(tf.keras.callbacks.Callback):
+    def __init__(self, heartbeat_file, interval):
+        super().__init__()
+        self.heartbeat_file = heartbeat_file
+        self.interval = interval
+        self.last_update = time.time()
+
+    def on_train_bach_end(self, batch, logs=None):
+        current_time = time.time()
+        if current_time - self.last_update > self.interval:
+            with open(self.heartbeat_file, 'w') as f:
+                f.write('alive')
+            self.last_update = current_time
+
+def get_callbacks(num_epochs, model_name, dataset_name, mode='training', heartbeat_file="/tmp/heartbeat", heartbeat_interval=120):
+    # Set patience to 20% of total number of epochs
+    patience = max(1, num_epochs // 5)
 
     # Create necessary directories
     base_dir = f'logs/{dataset_name}/{model_name}'
@@ -15,6 +30,11 @@ def get_callbacks(num_epochs, model_name, dataset_name):
     os.makedirs(checkpoint_dir, exist_ok=True)
     os.makedirs(csv_log_dir, exist_ok=True)
     os.makedirs(tensorboard_log_dir, exist_ok=True)
+
+    heartbeat = HeartbeatCallback(
+        heartbeat_file=heartbeat_file,
+        interval=heartbeat_interval,
+    )
 
     early_stopping = EarlyStopping(
         monitor='val_loss',
@@ -28,7 +48,7 @@ def get_callbacks(num_epochs, model_name, dataset_name):
         monitor='val_loss',
         save_best_only=True,
         save_weights_only=True,
-        verbose=1
+        verbose=0
     )
 
     reduce_lr = ReduceLROnPlateau(
@@ -47,4 +67,8 @@ def get_callbacks(num_epochs, model_name, dataset_name):
 
     terminate_on_nan = TerminateOnNaN()
 
-    return [early_stopping, model_checkpoint, reduce_lr, tensorboard, csv_logger, terminate_on_nan]
+    if mode == 'tuning':
+        return [early_stopping, reduce_lr, terminate_on_nan]
+    else:
+        return [early_stopping, model_checkpoint, tensorboard, reduce_lr, csv_logger, terminate_on_nan]
+    

@@ -49,7 +49,7 @@ class DataLoader(object):
             normalize (bool, optional): normalize data or not. Defaults to True.
             freq (str, optional): _description_. Defaults to 'H'.
         """
-        self.data_df = pd.read_csv(open(data_path, 'r'))
+        self.data_df = pd.read_csv(open(data_path, 'r'), engine='python')
         self.data_df.fillna(0, inplace=True)
         self.data_df.set_index(pd.DatetimeIndex(self.data_df[datetime_col]), inplace=True)
         
