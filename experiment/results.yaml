@@ -1,0 +1,526 @@
+Results in experiment/hyperparameters/sales_forecasting_8h_top2/iTransformer
+Showing 3 best trials
+Objective(name="val_loss", direction="min")
+
+Trial 0024 summary
+Hyperparameters:
+d_model: 64
+n_heads: 4
+d_ff: 128
+e_layers: 1
+dropout: 0.1
+activation: relu
+use_norm: True
+tuner/epochs: 25
+tuner/initial_epoch: 9
+tuner/bracket: 1
+tuner/round: 1
+tuner/trial_id: 0021
+Score: 229.56675720214844
+
+Trial 0016 summary
+Hyperparameters:
+d_model: 32
+n_heads: 4
+d_ff: 256
+e_layers: 2
+dropout: 0.1
+activation: gelu
+use_norm: True
+tuner/epochs: 25
+tuner/initial_epoch: 9
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0013
+Score: 259.45729064941406
+
+Trial 0046 summary
+Hyperparameters:
+d_model: 128
+n_heads: 4
+d_ff: 128
+e_layers: 1
+dropout: 0.30000000000000004
+activation: relu
+use_norm: True
+tuner/epochs: 25
+tuner/initial_epoch: 9
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0043
+Score: 286.38343811035156
+
+
+Results in experiment/hyperparameters/sales_forecasting_8h_top16/iTransformer
+Showing 3 best trials
+Objective(name="val_loss", direction="min")
+
+Trial 0054 summary
+Hyperparameters:
+d_model: 16
+n_heads: 4
+d_ff: 32
+e_layers: 2
+dropout: 0.1
+activation: relu
+use_norm: True
+tuner/epochs: 10
+tuner/initial_epoch: 4
+tuner/bracket: 1
+tuner/round: 1
+tuner/trial_id: 0053
+Score: 96.79017130533855
+
+Trial 0016 summary
+Hyperparameters:
+d_model: 8
+n_heads: 4
+d_ff: 32
+e_layers: 2
+dropout: 0.1
+activation: relu
+use_norm: True
+tuner/epochs: 10
+tuner/initial_epoch: 4
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0012
+Score: 97.66647593180339
+
+Trial 0114 summary
+Hyperparameters:
+d_model: 16
+n_heads: 2
+d_ff: 64
+e_layers: 2
+dropout: 0.1
+activation: relu
+use_norm: True
+tuner/epochs: 10
+tuner/initial_epoch: 4
+tuner/bracket: 1
+tuner/round: 1
+tuner/trial_id: 0113
+Score: 100.64552561442058
+
+
+Results in experiment/hyperparameters/sales_forecasting_8h_top32/iTransformer
+Showing 3 best trials
+Objective(name="val_loss", direction="min")
+
+Trial 0016 summary
+Hyperparameters:
+d_model: 32
+n_heads: 2
+d_ff: 128
+e_layers: 1
+dropout: 0.4
+activation: gelu
+use_norm: True
+tuner/epochs: 10
+tuner/initial_epoch: 4
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0012
+Score: 58.87717056274414
+
+Trial 0012 summary
+Hyperparameters:
+d_model: 32
+n_heads: 2
+d_ff: 128
+e_layers: 1
+dropout: 0.4
+activation: gelu
+use_norm: True
+tuner/epochs: 4
+tuner/initial_epoch: 2
+tuner/bracket: 2
+tuner/round: 1
+tuner/trial_id: 0000
+Score: 59.56587219238281
+
+Trial 0046 summary
+Hyperparameters:
+d_model: 64
+n_heads: 2
+d_ff: 512
+e_layers: 1
+dropout: 0.30000000000000004
+activation: gelu
+use_norm: True
+tuner/epochs: 10
+tuner/initial_epoch: 4
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0043
+Score: 61.280433654785156
+
+
+Results in experiment/hyperparameters/sales_forecasting_8h_top64/iTransformer
+Showing 3 best trials
+Objective(name="val_loss", direction="min")
+
+Trial 0041 summary
+Hyperparameters:
+d_model: 32
+n_heads: 1
+d_ff: 1024
+e_layers: 2
+dropout: 0.0
+activation: relu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0035
+Score: 16.795661290486652
+
+Trial 0055 summary
+Hyperparameters:
+d_model: 64
+n_heads: 2
+d_ff: 32
+e_layers: 4
+dropout: 0.0
+activation: gelu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 0
+tuner/bracket: 0
+tuner/round: 0
+Score: 17.407549540201824
+
+Trial 0159 summary
+Hyperparameters:
+d_model: 32
+n_heads: 2
+d_ff: 128
+e_layers: 2
+dropout: 0.30000000000000004
+activation: relu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0154
+Score: 18.58979034423828
+
+
+Results in experiment/hyperparameters/sales_forecasting_24h_top2/iTransformer
+Showing 3 best trials
+Objective(name="val_loss", direction="min")
+
+Trial 0053 summary
+Hyperparameters:
+d_model: 16
+n_heads: 4
+d_ff: 128
+e_layers: 1
+dropout: 0.0
+activation: gelu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 0
+tuner/bracket: 0
+tuner/round: 0
+Score: 136.62262471516928
+
+Trial 0097 summary
+Hyperparameters:
+d_model: 16
+n_heads: 2
+d_ff: 32
+e_layers: 4
+dropout: 0.1
+activation: gelu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0092
+Score: 164.70765177408853
+
+Trial 0052 summary
+Hyperparameters:
+d_model: 32
+n_heads: 4
+d_ff: 256
+e_layers: 1
+dropout: 0.0
+activation: gelu
+use_norm: False
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 1
+tuner/round: 1
+tuner/trial_id: 0047
+Score: 195.5003204345703
+
+
+Results in experiment/hyperparameters/sales_forecasting_1w_top16/iTransformer
+Showing 3 best trials
+Objective(name="val_loss", direction="min")
+
+Trial 0041 summary
+Hyperparameters:
+d_model: 64
+n_heads: 1
+d_ff: 128
+e_layers: 2
+dropout: 0.1
+activation: relu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0034
+Score: 10529.96484375
+
+Trial 0100 summary
+Hyperparameters:
+d_model: 128
+n_heads: 1
+d_ff: 256
+e_layers: 2
+dropout: 0.2
+activation: gelu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0094
+Score: 10781.79296875
+
+Trial 0053 summary
+Hyperparameters:
+d_model: 128
+n_heads: 4
+d_ff: 64
+e_layers: 1
+dropout: 0.30000000000000004
+activation: gelu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 1
+tuner/round: 1
+tuner/trial_id: 0044
+Score: 10803.705403645834
+
+
+
+
+
+Results in experiment/hyperparameters/sales_forecasting_1d_top2/iTransformer
+Showing 3 best trials
+Objective(name="val_loss", direction="min")
+
+Trial 0171 summary
+Hyperparameters:
+d_model: 128
+n_heads: 4
+d_ff: 16
+e_layers: 4
+dropout: 0.2
+activation: gelu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 0
+tuner/bracket: 0
+tuner/round: 0
+Score: 3695.1643880208335
+
+Trial 0170 summary
+Hyperparameters:
+d_model: 256
+n_heads: 1
+d_ff: 4096
+e_layers: 1
+dropout: 0.30000000000000004
+activation: gelu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 0
+tuner/bracket: 0
+tuner/round: 0
+Score: 3754.569580078125
+
+Trial 0096 summary
+Hyperparameters:
+d_model: 64
+n_heads: 1
+d_ff: 2048
+e_layers: 2
+dropout: 0.30000000000000004
+activation: relu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0092
+Score: 3761.953125
+
+
+Results in experiment/hyperparameters/sales_forecasting_1d_top16/iTransformer
+Showing 3 best trials
+Objective(name="val_loss", direction="min")
+
+Trial 0112 summary
+Hyperparameters:
+d_model: 128
+n_heads: 4
+d_ff: 16
+e_layers: 1
+dropout: 0.30000000000000004
+activation: relu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 1
+tuner/round: 1
+tuner/trial_id: 0102
+Score: 900.2138264973959
+
+Trial 0100 summary
+Hyperparameters:
+d_model: 64
+n_heads: 2
+d_ff: 32
+e_layers: 1
+dropout: 0.30000000000000004
+activation: relu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0093
+Score: 917.7807210286459
+
+Trial 0042 summary
+Hyperparameters:
+d_model: 128
+n_heads: 2
+d_ff: 32
+e_layers: 2
+dropout: 0.1
+activation: gelu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0039
+Score: 928.5442097981771
+
+
+Results in experiment/hyperparameters/sales_forecasting_1d_top32/iTransformer
+Showing 3 best trials
+Objective(name="val_loss", direction="min")
+
+Trial 0112 summary
+Hyperparameters:
+d_model: 512
+n_heads: 4
+d_ff: 64
+e_layers: 1
+dropout: 0.30000000000000004
+activation: gelu
+use_norm: True
+tuner/epochs: 100
+tuner/initial_epoch: 20
+tuner/bracket: 1
+tuner/round: 1
+tuner/trial_id: 0106
+Score: 495.70351155598956
+
+Trial 0101 summary
+Hyperparameters:
+d_model: 32
+n_heads: 4
+d_ff: 16
+e_layers: 2
+dropout: 0.1
+activation: relu
+use_norm: True
+tuner/epochs: 100
+tuner/initial_epoch: 20
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0094
+Score: 497.77671305338544
+
+Trial 0165 summary
+Hyperparameters:
+d_model: 512
+n_heads: 4
+d_ff: 512
+e_layers: 1
+dropout: 0.1
+activation: relu
+use_norm: True
+tuner/epochs: 100
+tuner/initial_epoch: 0
+tuner/bracket: 0
+tuner/round: 0
+Score: 500.11602783203125
+
+
+Results in experiment/hyperparameters/sales_forecasting_1d_top64/iTransformer
+Showing 3 best trials
+Objective(name="val_loss", direction="min")
+
+Trial 0160 summary
+Hyperparameters:
+d_model: 128
+n_heads: 2
+d_ff: 32
+e_layers: 1
+dropout: 0.30000000000000004
+activation: gelu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0152
+Score: 255.1451670328776
+
+Trial 0101 summary
+Hyperparameters:
+d_model: 64
+n_heads: 1
+d_ff: 64
+e_layers: 1
+dropout: 0.0
+activation: relu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 2
+tuner/round: 2
+tuner/trial_id: 0093
+Score: 257.06296793619794
+
+Trial 0054 summary
+Hyperparameters:
+d_model: 32
+n_heads: 2
+d_ff: 32
+e_layers: 2
+dropout: 0.1
+activation: relu
+use_norm: True
+tuner/epochs: 50
+tuner/initial_epoch: 10
+tuner/bracket: 1
+tuner/round: 1
+tuner/trial_id: 0045
+Score: 259.42022705078125

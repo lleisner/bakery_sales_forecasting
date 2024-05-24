@@ -122,16 +122,16 @@ if __name__ == "__main__":
 
     for dataset_path in datasets:
         data_directory, dataset = os.path.split(dataset_path)
-        get_best_hyperparameters(args, data_directory, dataset)
+      #  get_best_hyperparameters(args, data_directory, dataset)
 
 
-  #      print(f"\033[1;32mStarting training for dataset: {dataset} in directory: {data_directory}\033[0m")
-   #     while True:
-    #        if not run_training(args, data_directory, dataset):
-     #           print("\033[1;31mRestarting training after crash...\033[0m")
-      #          time.sleep(5)  # Wait a bit before restarting
-       #     else:
-        #        print(f"\033[1;32mTraining completed successfully for dataset: {dataset}\033[0m")
-         #       break
+        print(f"\033[1;32mStarting training for dataset: {dataset} in directory: {data_directory}\033[0m")
+        while True:
+            if not run_training(args, data_directory, dataset):
+                print("\033[1;31mRestarting training after crash...\033[0m")
+                time.sleep(5)  # Wait a bit before restarting
+            else:
+                print(f"\033[1;32mTraining completed successfully for dataset: {dataset}\033[0m")
+                break
     
 

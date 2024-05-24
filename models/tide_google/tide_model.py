@@ -171,7 +171,7 @@ class TiDE(keras.Model):
     out = tf.squeeze(out, axis=-1)
     out += residual_out
     if self.transform:
-      out = (out - affine_bias[:, None]) / (affine_weight[:, None] + EPS)
+      out = (out - affine_bias[:, None]) / (affine_weight[:, None] + 1e-7)
       out = out * batch_std[:, None] + batch_mean[:, None]
     return out
 

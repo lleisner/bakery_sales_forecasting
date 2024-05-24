@@ -6,7 +6,7 @@ PROJECT_PATH="$HOME/my_programs/bakery_sales_forecasting"              # navigat
 MODULE_PATH="experiment.run_training"                                  # The Python module to run
 
 # Optional: specify args to pass to run_training wrapper
-ARGS="--batch_size 32 --learning_rate 0.001 --num_epochs 50 --config_file experiment/dataset_analysis.yaml --data_directory data/sales_forecasting/sales_forecasting_1w --heartbeat_file /tmp/heartbeat --heartbeat_interval 120"
+ARGS="--batch_size 32 --learning_rate 0.001 --num_epochs 50 --config_file experiment/dataset_analysis.yaml --data_directory data/sales_forecasting/sales_forecasting_8h --heartbeat_file /tmp/heartbeat --heartbeat_interval 120"
 HEARTBEAT_FILE="/tmp/heartbeat"
 HEARTBEAT_INTERVAL=120  # Interval in seconds for checking heartbeat
 BUFFER_TIME=10  # Buffer time in seconds

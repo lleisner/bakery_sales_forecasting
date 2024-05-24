@@ -99,7 +99,7 @@ def tune_model_on_dataset(name, model_builder, data_loader):
     tuner = ClearSessionTuner(hypermodel=hypermodel,
                          objective='val_loss',
                          max_epochs=args.num_epochs,
-                         factor=5,
+                         factor=3,
                          hyperband_iterations=3,
                          directory=directory,
                          project_name=name,
@@ -109,9 +109,11 @@ def tune_model_on_dataset(name, model_builder, data_loader):
 
 
     tuner.search_space_summary()
-    #tuner.search(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks, verbose=2)
-    tuner.reload()
-    tuner.results_summary(3)
+    tuner.search(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks, verbose=2)
+    #tuner.reload()
+    summary = tuner.results_summary(3)
+
+    #save_hyperparameters_to_yaml()
     best_hps = tuner.get_best_hyperparameters(3)
     print(f"best hyperparameters for {directory}/{name}: {best_hps}")
 
@@ -162,8 +164,8 @@ if __name__ == "__main__":
 
     #train_model_on_dataset("TiDE", TiDE, TiDEData)
     #train_model_on_dataset("iTransformer", ITransformer, ITransformerData)
-    #tune_model_on_dataset("TiDE", build_tide, TiDEData)
-    tune_model_on_dataset("iTransformer", build_itransformer, ITransformerData)
+    tune_model_on_dataset("TiDE", build_tide, TiDEData)
+    #tune_model_on_dataset("iTransformer", build_itransformer, ITransformerData)
     
     
     """
