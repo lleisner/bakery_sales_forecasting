@@ -2,13 +2,12 @@ import pandas as pd
 import yaml
 import os
 
-def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_split=0.166, test_split=0.166, lookback_days=28, forecast_days=7, number_of_days_included=1680, window_size=None, forecast_size=None, infer_ts_cols=False):
+def analyze_dataset(file_path, train_split, val_split, test_split, lookback_days, forecast_days, number_of_days_included, window_size, forecast_size, infer_ts_cols):
     """
     Analyzes a time series dataset from a CSV file, providing detailed dataset information and parameters for potential data analysis. Outputs the data in YAML format.
 
     Parameters:
     - file_path (str): Path to the CSV file containing the dataset.
-    - timestamp_col (str): Column name in the CSV file that contains timestamp data. Default is 'date'.
     - train_split (float): Proportion suggested for training data analysis. Default is 0.496.
     - val_split (float): Proportion suggested for validation data analysis. Default is 0.166.
     - test_split (float): Proportion suggested for testing data analysis. Default is 0.166.
@@ -22,51 +21,39 @@ def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_spli
     Raises:
     - Exception: If there is an error in reading the file, parsing dates, or inferring the time series frequency.
     """
+    # Check if the sum of split ratios exceeds 1
+    if train_split + val_split + test_split > 1:
+        raise ValueError("The sum of train, validation, and test split ratios must not exceed 1.")
+    
     # Load the dataset
     data = pd.read_csv(file_path, header=0)
     # Adjust this parameter based on the size of the daily dataset
     file_name = file_path.split("/")[-1]
-    dataset_name = file_name.split('.')[0] 
-    # Try to parse the timestamp column and determine frequency
-    try:
-        data[timestamp_col] = pd.to_datetime(data[timestamp_col])
-        data.set_index(timestamp_col, inplace=True)
-        freq = pd.infer_freq(data.index)
-        print(f"Time series frequency inferred as: {freq}")
-    except Exception as e:
-        print(f"Could not infer frequency from column '{timestamp_col}': {e}")
-    
+    dataset_name = file_name.split('.')[0]
     
     # Display basic info about the dataset
     print(f"Total number of entries: {len(data)}")   
     # Calculate total entries that are multiples of the window size
     total_entries = len(data)
-    time_points_per_day = total_entries / number_of_days_included
+    time_points_per_day = int(total_entries / number_of_days_included)
+    print(time_points_per_day)
     
     if not window_size:
         window_size = int(time_points_per_day * lookback_days)
     if not forecast_size:
         forecast_size = max(1, int(time_points_per_day * forecast_days))
     
-    max_full_windows = total_entries // window_size * window_size
+    # Calculate the maximum number of full windows that can fit into the dataset
+    max_full_windows = ((total_entries - forecast_size) // window_size) * window_size
     
-    # Calculate raw split sizes
-    raw_train_size = int(max_full_windows * train_split)
-    raw_val_size = int(max_full_windows * val_split)
-    raw_test_size = int(max_full_windows * test_split)
+    # Lambda function to calculate and adjust split sizes based on window size
+    adjust_size = lambda split: (int(max_full_windows * split) // window_size) * window_size
+    
+    # Calculate and adjust split sizes
+    train_size, val_size, test_size = map(adjust_size, [train_split, val_split, test_split])
 
-    # Adjust sizes to be multiples of window_size
-    train_size = raw_train_size // window_size * window_size 
-    val_size = raw_val_size // window_size * window_size
-    test_size = raw_test_size // window_size * window_size
-
-    # Ensure total used entries does not exceed max_full_windows
-    total_used = train_size + val_size + test_size
-    if total_used > max_full_windows:
-        # Reduce test_size to fit the window size multiple constraint
-        test_size -= (total_used - max_full_windows)
         
-    train_size, val_size, test_size = train_size + 1, val_size + 1, test_size + 1
+    #train_size, val_size, test_size = train_size + 1, val_size + 1, test_size + 1
     if infer_ts_cols:
         ts_cols = [col for col in data.columns if str(col).isnumeric()]
         cov_cols = [x for x in  data.columns if x not in set(ts_cols)]
@@ -94,13 +81,12 @@ def analyze_dataset(file_path, timestamp_col='date', train_split=0.496, val_spli
     
 
 
-def analyze_all_datasets(folder_path, timestamp_col='date', train_split=0.496, val_split=0.166, test_split=0.166, infer_ts_cols=False, yaml_output_path='experiment/dataset_analysis.yaml'):
+def analyze_all_datasets(folder_path, train_split=0.496, val_split=0.166, test_split=0.166, lookback_days=28, forecast_days=7, number_of_days_included=1687, window_size=None, forecast_size=None,infer_ts_cols=True, yaml_output_path='experiment/dataset_analysis.yaml'):
     """
     Analyzes all CSV files in a specified directory for time series data, leveraging the `analyze_dataset` function to extract and print dataset parameters and metadata for each file in YAML format.
 
     Parameters:
     - folder_path (str): Path to the directory containing CSV files.
-    - timestamp_col (str): Default column name for dates in the CSV files, passed to `analyze_dataset`.
     - train_split (float): Default proportion suggested for the training data analysis, passed to `analyze_dataset`.
     - val_split (float): Default proportion suggested for the validation data analysis, passed to `analyze_dataset`.
     - test_split (float): Default proportion suggested for the testing data analysis, passed to `analyze_dataset`.
@@ -138,10 +124,14 @@ def analyze_all_datasets(folder_path, timestamp_col='date', train_split=0.496, v
         try:
             result = analyze_dataset(
                 file_path, 
-                timestamp_col=timestamp_col, 
                 train_split=train_split, 
                 val_split=val_split, 
                 test_split=test_split,
+                lookback_days=lookback_days,
+                forecast_days=forecast_days,
+                number_of_days_included=number_of_days_included,
+                window_size=window_size,
+                forecast_size=forecast_size,
                 infer_ts_cols=infer_ts_cols,
             )
             print(yaml.dump(result, sort_keys=False, default_flow_style=False, allow_unicode=True))
@@ -159,5 +149,5 @@ def analyze_all_datasets(folder_path, timestamp_col='date', train_split=0.496, v
     print(f"All entries have been written to '{yaml_output_path}'.")
 
 if __name__ == "__main__":
-    analyze_all_datasets("data/sales_forecasting", infer_ts_cols=True)
+    analyze_all_datasets("data/sales_forecasting", lookback_days=28, forecast_days=1, yaml_output_path="experiment/one_day_forecast_settings.yaml")
 

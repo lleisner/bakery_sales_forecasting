@@ -15,7 +15,7 @@ from data_provider.sub_providers import (
 class DataProvider:
     def __init__(self, 
                  period='8h',
-                 start_date='2019-02-24',
+                 start_date='2019-02-17',
                  end_date='2023-09-30',
                  source_directory='data/sub_datasets',
                  item_selection=["pastry"],
@@ -96,7 +96,7 @@ class DataProvider:
 
             
 if __name__ == "__main__":
-    if False:
+    if True:
         for k in [2, 16, 32, 64]:
             provider = DataProvider(top_k=k)
             provider.create_new_sub_databases(provider_list="sales")

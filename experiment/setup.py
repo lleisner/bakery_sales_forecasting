@@ -15,32 +15,18 @@ from utils.callbacks import get_callbacks
 import yaml
 import argparse
 import os
+import pandas as pd
+import numpy as np
 import tensorflow as tf
 import keras_tuner as kt
 from tensorflow.keras import mixed_precision
 
 from tensorflow.keras import backend
 import gc
-from numba import cuda
+#from numba import cuda
 
-os.environ['TF_GPU_ALLOCATOR'] = 'cuda_malloc_async'
+#os.environ['TF_GPU_ALLOCATOR'] = 'cuda_malloc_async'
 #mixed_precision.set_global_policy('mixed_float16')
-
-
-
-def parse_arguments(yaml_filepath):
-    parser = argparse.ArgumentParser(description='Configure model parameters.')
-
-    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training the model.')
-    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for the optimizer.')
-    parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs for training.')
-    parser.add_argument('--config_file', type=str, default=yaml_filepath, help='Path to the YAML configuration file.')
-    parser.add_argument('--data_directory', type=str, default="data/sales_forecasting/sales_forecasting_8h", help='Path to data directory')
-    parser.add_argument('--dataset', type=str, required=True, help='Dataset to be used for experiment')
-
-    args = parser.parse_args()
-    return args
-
 def clear_keras_session():
     backend.clear_session()
 
@@ -59,13 +45,20 @@ class ClearSessionTuner(kt.Hyperband):
         return result
 
 
-def save_hyperparameters_to_yaml(hyperparameter_summary, dataset, filepath):
-    data = {
-        'dataset': hyperparameter_summary
-    }
-    with open(filepath, 'w') as file:
-        yaml.dump(data, file)
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Configure model parameters.')
 
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training the model.')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for the optimizer.')
+    parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs for training.')
+    parser.add_argument('--config_file', type=str, default="experiment/dataset_analysis.yaml", help='Path to the YAML configuration file.')
+    parser.add_argument('--data_directory', type=str, default="data/sales_forecasting/sales_forecasting_8h", help='Path to data directory')
+    parser.add_argument('--dataset', type=str, required=True, help='Dataset to be used for experiment')
+    parser.add_argument('--model', type=str, default='Baseline', help='Model to be used for experiment')
+    parser.add_argument('--tune_hps', type=bool, default=False, help='Tune hyperparameters for dataset')
+
+    args = parser.parse_args()
+    return args
 
 
 def tune_model_on_dataset(name, model_builder, data_loader):
@@ -74,8 +67,7 @@ def tune_model_on_dataset(name, model_builder, data_loader):
     #gc.collect()
     #free_gpu_mem()
     
-    yaml_filepath = "experiment/dataset_analysis.yaml"
-    args = parse_arguments(yaml_filepath=yaml_filepath)
+    args = parse_arguments()
     directory = f"experiment/hyperparameters/{args.dataset}"
     
 
@@ -113,14 +105,12 @@ def tune_model_on_dataset(name, model_builder, data_loader):
     #tuner.reload()
     summary = tuner.results_summary(3)
 
-    #save_hyperparameters_to_yaml()
     best_hps = tuner.get_best_hyperparameters(3)
     print(f"best hyperparameters for {directory}/{name}: {best_hps}")
 
     
 def train_model_on_dataset(name, model, data_loader):
-    yaml_filepath = "experiment/dataset_analysis.yaml"
-    args = parse_arguments(yaml_filepath=yaml_filepath)
+    args = parse_arguments()
     directory = f"experiment/hyperparameters/{args.dataset}"
     
     loader_config = data_loader.create_loader_config(args)
@@ -143,30 +133,73 @@ def train_model_on_dataset(name, model, data_loader):
     
     model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
     
-    model.evaluate(test)
+    result = model.evaluate(test)
+    
+    update_results(dataset=args.dataset, 
+                   model=name, 
+                   metrics=result, 
+                   file_path="experiment/one_day_forecast_results.csv",
+                   )
+    
     model.summary()
     
+
+def update_results(dataset, model, metrics, file_path="model_evaluation_results.csv"):
+    """
+    Updates the results for a given dataset and model with new metrics and saves the updated DataFrame to a CSV file.
+    
+    Parameters:
+    - dataset (str): The name of the dataset.
+    - model (str): The name of the model.
+    - metrics (tuple): A tuple containing the metrics (mse, mae, rmse).
+    - file_path (str): The path to the CSV file. Default is "model_evaluation_results.csv".
+    """
+    # Read the existing CSV file
+    df = pd.read_csv(file_path, header=[0, 1], index_col=0)
+    
+    # Ensure the DataFrame has the necessary columns and index
+    if dataset not in df.index:
+        # Add the dataset row if it doesn't exist
+        print("name does not fit")
+        df.loc[dataset] = pd.Series(dtype='float64')
+    
+    # Update the DataFrame with new results
+    try:
+        mse, mae, rmse = metrics
+        df.loc[dataset, (model, 'mse')] = mse
+        df.loc[dataset, (model, 'mae')] = mae
+        df.loc[dataset, (model, 'rmse')] = rmse
+    except:
+        df.loc[dataset, (model, 'mse')] = metrics
+    # Save the updated DataFrame to the CSV file
+    df.to_csv(file_path)
+    
 if __name__ == "__main__":
+    
+    
     #os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-    print("Is GPU available:", tf.test.is_gpu_available())
-    print("Built with CUDA:", tf.test.is_built_with_cuda())
+ #   print("Is GPU available:", tf.test.is_gpu_available())
+#    print("Built with CUDA:", tf.test.is_built_with_cuda())
 
-    gpus = tf.config.list_physical_devices('GPU')
-    if gpus:
-        try:
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-        except RuntimeError as e:
-            print(e)
+  #  gpus = tf.config.list_physical_devices('GPU')
+ #   if gpus:
+ #       try:
+  #          for gpu in gpus:
+   #             tf.config.experimental.set_memory_growth(gpu, True)
+    #    except RuntimeError as e:
+     #       print(e)
 
-    print("GPUs:", gpus)
+   # print("GPUs:", gpus)
 
     #train_model_on_dataset("TiDE", TiDE, TiDEData)
     #train_model_on_dataset("iTransformer", ITransformer, ITransformerData)
-    tune_model_on_dataset("TiDE", build_tide, TiDEData)
-    #tune_model_on_dataset("iTransformer", build_itransformer, ITransformerData)
+    train_model_on_dataset("Baseline", CustomModel, ITransformerData)
     
+
+    #tune_model_on_dataset("TiDE", build_tide, TiDEData)
+    #tune_model_on_dataset("iTransformer", build_itransformer, ITransformerData)
+    #return result
     
     """
     yaml_filepath = "experiment/dataset_analysis.yaml"

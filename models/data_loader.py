@@ -179,6 +179,7 @@ class DataLoader(object):
         targets = self.data_df[self.ts_cols]
         feature_frames = []   
         lag = self.pred_len * self.sampling_rate
+        
         if include_mean_max_min:
             operations = {
                 'rolling_mean': 'mean',

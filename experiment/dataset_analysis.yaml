@@ -1,16 +1,17 @@
 sales_forecasting_1d_top2:
   file_name: sales_forecasting_1d_top2.csv
   ts_dim: 2
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 28
   suggested_forecast: 7
-  train_size: 813
-  val_size: 253
-  test_size: 253
+  train_size: 812
+  val_size: 252
+  test_size: 252
   ts_cols:
   - '10'
   - '20'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -24,12 +25,12 @@ sales_forecasting_1d_top2:
 sales_forecasting_1d_top32:
   file_name: sales_forecasting_1d_top32.csv
   ts_dim: 32
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 28
   suggested_forecast: 7
-  train_size: 813
-  val_size: 253
-  test_size: 253
+  train_size: 812
+  val_size: 252
+  test_size: 252
   ts_cols:
   - '10'
   - '20'
@@ -64,6 +65,7 @@ sales_forecasting_1d_top32:
   - '57'
   - '132'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -77,12 +79,12 @@ sales_forecasting_1d_top32:
 sales_forecasting_1d_top16:
   file_name: sales_forecasting_1d_top16.csv
   ts_dim: 16
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 28
   suggested_forecast: 7
-  train_size: 813
-  val_size: 253
-  test_size: 253
+  train_size: 812
+  val_size: 252
+  test_size: 252
   ts_cols:
   - '10'
   - '20'
@@ -101,6 +103,7 @@ sales_forecasting_1d_top16:
   - '85'
   - '22'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -114,12 +117,12 @@ sales_forecasting_1d_top16:
 sales_forecasting_1d_top64:
   file_name: sales_forecasting_1d_top64.csv
   ts_dim: 64
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 28
   suggested_forecast: 7
-  train_size: 813
-  val_size: 253
-  test_size: 253
+  train_size: 812
+  val_size: 252
+  test_size: 252
   ts_cols:
   - '10'
   - '20'
@@ -186,204 +189,7 @@ sales_forecasting_1d_top64:
   - '103'
   - '116'
   cov_cols:
-  - is_open
-  - holidays
-  - gaestezahlen
-  - arrival
-  - departure
-  - temperature
-  - precipitation
-  - cloud_cover
-  - wind_speed
-  - wind_direction
-sales_forecasting_1w_top2:
-  file_name: sales_forecasting_1w_top2.csv
-  ts_dim: 2
-  cov_dim: 10
-  suggested_window: 4
-  suggested_forecast: 1
-  train_size: 117
-  val_size: 37
-  test_size: 37
-  ts_cols:
-  - '10'
-  - '20'
-  cov_cols:
-  - is_open
-  - holidays
-  - gaestezahlen
-  - arrival
-  - departure
-  - temperature
-  - precipitation
-  - cloud_cover
-  - wind_speed
-  - wind_direction
-sales_forecasting_1w_top32:
-  file_name: sales_forecasting_1w_top32.csv
-  ts_dim: 32
-  cov_dim: 10
-  suggested_window: 4
-  suggested_forecast: 1
-  train_size: 117
-  val_size: 37
-  test_size: 37
-  ts_cols:
-  - '10'
-  - '20'
-  - '16'
-  - '24'
-  - '39'
-  - '80'
-  - '131'
-  - '84'
-  - '138'
-  - '35'
-  - '21'
-  - '83'
-  - '13'
-  - '38'
-  - '85'
-  - '22'
-  - '82'
-  - '86'
-  - '112'
-  - '11'
-  - '31'
-  - '111'
-  - '27'
-  - '28'
-  - '32'
-  - '23'
-  - '134'
-  - '12'
-  - '107'
-  - '29'
-  - '57'
-  - '132'
-  cov_cols:
-  - is_open
-  - holidays
-  - gaestezahlen
-  - arrival
-  - departure
-  - temperature
-  - precipitation
-  - cloud_cover
-  - wind_speed
-  - wind_direction
-sales_forecasting_1w_top16:
-  file_name: sales_forecasting_1w_top16.csv
-  ts_dim: 16
-  cov_dim: 10
-  suggested_window: 4
-  suggested_forecast: 1
-  train_size: 117
-  val_size: 37
-  test_size: 37
-  ts_cols:
-  - '10'
-  - '20'
-  - '16'
-  - '24'
-  - '39'
-  - '80'
-  - '131'
-  - '84'
-  - '138'
-  - '35'
-  - '21'
-  - '83'
-  - '13'
-  - '38'
-  - '85'
-  - '22'
-  cov_cols:
-  - is_open
-  - holidays
-  - gaestezahlen
-  - arrival
-  - departure
-  - temperature
-  - precipitation
-  - cloud_cover
-  - wind_speed
-  - wind_direction
-sales_forecasting_1w_top64:
-  file_name: sales_forecasting_1w_top64.csv
-  ts_dim: 64
-  cov_dim: 10
-  suggested_window: 4
-  suggested_forecast: 1
-  train_size: 117
-  val_size: 37
-  test_size: 37
-  ts_cols:
-  - '10'
-  - '20'
-  - '16'
-  - '24'
-  - '39'
-  - '80'
-  - '131'
-  - '84'
-  - '138'
-  - '35'
-  - '21'
-  - '83'
-  - '13'
-  - '38'
-  - '85'
-  - '22'
-  - '82'
-  - '86'
-  - '112'
-  - '11'
-  - '31'
-  - '111'
-  - '27'
-  - '28'
-  - '32'
-  - '23'
-  - '134'
-  - '12'
-  - '107'
-  - '29'
-  - '57'
-  - '132'
-  - '135'
-  - '101'
-  - '100'
-  - '141'
-  - '97'
-  - '56'
-  - '60'
-  - '130'
-  - '139'
-  - '136'
-  - '34'
-  - '52'
-  - '53'
-  - '126'
-  - '98'
-  - '19'
-  - '18'
-  - '62'
-  - '105'
-  - '99'
-  - '81'
-  - '58'
-  - '109'
-  - '55'
-  - '145'
-  - '133'
-  - '104'
-  - '51'
-  - '95'
-  - '54'
-  - '103'
-  - '116'
-  cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -397,12 +203,12 @@ sales_forecasting_1w_top64:
 sales_forecasting_24h_top16:
   file_name: sales_forecasting_24h_top16.csv
   ts_dim: 16
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 672
   suggested_forecast: 168
-  train_size: 19489
-  val_size: 6049
-  test_size: 6049
+  train_size: 19488
+  val_size: 6048
+  test_size: 6048
   ts_cols:
   - '10'
   - '20'
@@ -421,6 +227,7 @@ sales_forecasting_24h_top16:
   - '85'
   - '22'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -434,16 +241,17 @@ sales_forecasting_24h_top16:
 sales_forecasting_24h_top2:
   file_name: sales_forecasting_24h_top2.csv
   ts_dim: 2
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 672
   suggested_forecast: 168
-  train_size: 19489
-  val_size: 6049
-  test_size: 6049
+  train_size: 19488
+  val_size: 6048
+  test_size: 6048
   ts_cols:
   - '10'
   - '20'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -457,12 +265,12 @@ sales_forecasting_24h_top2:
 sales_forecasting_24h_top64:
   file_name: sales_forecasting_24h_top64.csv
   ts_dim: 64
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 672
   suggested_forecast: 168
-  train_size: 19489
-  val_size: 6049
-  test_size: 6049
+  train_size: 19488
+  val_size: 6048
+  test_size: 6048
   ts_cols:
   - '10'
   - '20'
@@ -529,6 +337,7 @@ sales_forecasting_24h_top64:
   - '103'
   - '116'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -542,12 +351,12 @@ sales_forecasting_24h_top64:
 sales_forecasting_24h_top32:
   file_name: sales_forecasting_24h_top32.csv
   ts_dim: 32
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 672
   suggested_forecast: 168
-  train_size: 19489
-  val_size: 6049
-  test_size: 6049
+  train_size: 19488
+  val_size: 6048
+  test_size: 6048
   ts_cols:
   - '10'
   - '20'
@@ -582,6 +391,7 @@ sales_forecasting_24h_top32:
   - '57'
   - '132'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -595,12 +405,12 @@ sales_forecasting_24h_top32:
 sales_forecasting_8h_top64:
   file_name: sales_forecasting_8h_top64.csv
   ts_dim: 64
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 224
   suggested_forecast: 56
-  train_size: 6497
-  val_size: 2017
-  test_size: 2017
+  train_size: 6496
+  val_size: 2016
+  test_size: 2016
   ts_cols:
   - '10'
   - '20'
@@ -667,6 +477,7 @@ sales_forecasting_8h_top64:
   - '103'
   - '116'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -680,12 +491,12 @@ sales_forecasting_8h_top64:
 sales_forecasting_8h_top16:
   file_name: sales_forecasting_8h_top16.csv
   ts_dim: 16
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 224
   suggested_forecast: 56
-  train_size: 6497
-  val_size: 2017
-  test_size: 2017
+  train_size: 6496
+  val_size: 2016
+  test_size: 2016
   ts_cols:
   - '10'
   - '20'
@@ -704,6 +515,7 @@ sales_forecasting_8h_top16:
   - '85'
   - '22'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -717,16 +529,17 @@ sales_forecasting_8h_top16:
 sales_forecasting_8h_top2:
   file_name: sales_forecasting_8h_top2.csv
   ts_dim: 2
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 224
   suggested_forecast: 56
-  train_size: 6497
-  val_size: 2017
-  test_size: 2017
+  train_size: 6496
+  val_size: 2016
+  test_size: 2016
   ts_cols:
   - '10'
   - '20'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -740,12 +553,12 @@ sales_forecasting_8h_top2:
 sales_forecasting_8h_top32:
   file_name: sales_forecasting_8h_top32.csv
   ts_dim: 32
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 224
   suggested_forecast: 56
-  train_size: 6497
-  val_size: 2017
-  test_size: 2017
+  train_size: 6496
+  val_size: 2016
+  test_size: 2016
   ts_cols:
   - '10'
   - '20'
@@ -780,6 +593,7 @@ sales_forecasting_8h_top32:
   - '57'
   - '132'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -793,12 +607,12 @@ sales_forecasting_8h_top32:
 sales_forecasting_16h_top16:
   file_name: sales_forecasting_16h_top16.csv
   ts_dim: 16
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 448
   suggested_forecast: 112
-  train_size: 12993
-  val_size: 4033
-  test_size: 4033
+  train_size: 12992
+  val_size: 4032
+  test_size: 4032
   ts_cols:
   - '10'
   - '20'
@@ -817,6 +631,7 @@ sales_forecasting_16h_top16:
   - '85'
   - '22'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -830,16 +645,17 @@ sales_forecasting_16h_top16:
 sales_forecasting_16h_top2:
   file_name: sales_forecasting_16h_top2.csv
   ts_dim: 2
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 448
   suggested_forecast: 112
-  train_size: 12993
-  val_size: 4033
-  test_size: 4033
+  train_size: 12992
+  val_size: 4032
+  test_size: 4032
   ts_cols:
   - '10'
   - '20'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -853,12 +669,12 @@ sales_forecasting_16h_top2:
 sales_forecasting_16h_top64:
   file_name: sales_forecasting_16h_top64.csv
   ts_dim: 64
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 448
   suggested_forecast: 112
-  train_size: 12993
-  val_size: 4033
-  test_size: 4033
+  train_size: 12992
+  val_size: 4032
+  test_size: 4032
   ts_cols:
   - '10'
   - '20'
@@ -925,6 +741,7 @@ sales_forecasting_16h_top64:
   - '103'
   - '116'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen
@@ -938,12 +755,12 @@ sales_forecasting_16h_top64:
 sales_forecasting_16h_top32:
   file_name: sales_forecasting_16h_top32.csv
   ts_dim: 32
-  cov_dim: 10
+  cov_dim: 11
   suggested_window: 448
   suggested_forecast: 112
-  train_size: 12993
-  val_size: 4033
-  test_size: 4033
+  train_size: 12992
+  val_size: 4032
+  test_size: 4032
   ts_cols:
   - '10'
   - '20'
@@ -978,6 +795,7 @@ sales_forecasting_16h_top32:
   - '57'
   - '132'
   cov_cols:
+  - date
   - is_open
   - holidays
   - gaestezahlen

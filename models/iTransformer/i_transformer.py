@@ -57,9 +57,7 @@ class ITransformer(keras.Model):
             norm_layer=keras.layers.LayerNormalization()
         )
         self.projector = keras.layers.Dense(pred_len)
-        #self.tester = keras.layers.Dense(d_ff, activation="relu")
-        #self.out = keras.layers.Dense(num_ts)
-        
+  
         
     @tf.function
     def call(self, x, training):
@@ -93,10 +91,6 @@ class ITransformer(keras.Model):
         dec_out = tf.transpose(dec_out, perm=[0, 2, 1])[:, :, :N]  # filter the covariates 
         
         
-        #dec_out = self.tester(tf.concat([dec_out, x_mark_enc[:, -self.pred_len:, :]], axis=-1))
-        #dec_out = self.out(dec_out)
-
-        
         if self.use_norm:
             # De-Normalization from Non-stationary Transformer
             dec_out = self.norm(dec_out, means, stdev)   
@@ -106,18 +100,13 @@ class ITransformer(keras.Model):
         
         return dec_out
     
+    
     def norm(self, dec_out, means, stdev):
-        # De-Normalization in TensorFlow
-        stdev_t = stdev[:, 0, :]  # Selecting standard deviations for each sample in the batch
-        stdev_t = tf.expand_dims(stdev_t, axis=1)  # Equivalent to unsqueeze(1) in PyTorch
-        stdev_t = tf.tile(stdev_t, [1, self.pred_len, 1])  # Equivalent to repeat() in PyTorch
-        
-        means_t = means[:, 0, :]  # Selecting means for each sample in the batch
-        means_t = tf.expand_dims(means_t, axis=1)  # Equivalent to unsqueeze(1) in PyTorch
-        means_t = tf.tile(means_t, [1, self.pred_len, 1])  # Equivalent to repeat() in PyTorch
+        # De-normalization
+        stdev_exp = tf.tile(tf.expand_dims(stdev[:,0,:], axis=1), [1, self.pred_len, 1])
+        means_exp = tf.tile(tf.expand_dims(means[:,0,:], axis=1), [1, self.pred_len, 1])
 
-        dec_out = dec_out * stdev_t + means_t  # De-normalization computation
-        
+        dec_out = dec_out * stdev_exp + means_exp
         return dec_out
     
 
@@ -151,6 +140,7 @@ class ITransformer(keras.Model):
             else:
                 metric.update_state(batch_y, outputs)
         return {m.name: m.result() for m in self.metrics}
+
 
     @tf.function
     def test_step(self, data):
