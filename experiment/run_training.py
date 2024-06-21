@@ -21,8 +21,6 @@ def parse_wrapper_args():
     parser.add_argument('--dataset', type=str, default=None, help='Dataset to be used for experiment')
     parser.add_argument('--model', type=str, default='Baseline', help='Model to be used for experiment')
     parser.add_argument('--tune_hps', type=bool, default=False, help='Boolean indicating whether to perform a hyperparameter search or not')
-    #parser.add_argument('--heartbeat_file', type=str, default="/tmp/heartbeat", help='Path to the heartbeat file')
-    #parser.add_argument('--heartbeat_interval', type=int, default=300, help='Interval in seconds for sending heartbeat signals')
     return parser.parse_args()
 
 def find_all_datasets(data_directory):
@@ -46,7 +44,7 @@ def run_training(args, data_directory, dataset):
 
     # Build the command with the parsed arguments
     command = [
-        "python", "-m", "experiment.setup",
+        "python", "-m", "experiment.setup2",
         "--batch_size", str(args.batch_size),
         "--learning_rate", str(args.learning_rate),
         "--num_epochs", str(args.num_epochs),
@@ -56,13 +54,17 @@ def run_training(args, data_directory, dataset):
         "--model", str(args.model),
         "--tune_hps", str(args.tune_hps),
     ]
-    subprocess.run(command, check=True, env=env)
-    
+    try:
+        result = subprocess.run(command, check=True, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print(f"Command '{e.cmd}' returned non-zero exit status {e.returncode}.")
+        print(f"Error output:\n{e.stderr}")
 
 
 if __name__ == "__main__":
     args = parse_wrapper_args()
-
+    
     datasets = []
     if args.dataset:
         datasets = [os.path.join(args.data_directory, args.dataset)]

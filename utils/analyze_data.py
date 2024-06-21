@@ -26,7 +26,7 @@ def analyze_dataset(file_path, train_split, val_split, test_split, lookback_days
         raise ValueError("The sum of train, validation, and test split ratios must not exceed 1.")
     
     # Load the dataset
-    data = pd.read_csv(file_path, header=0)
+    data = pd.read_csv(file_path, header=0, index_col=0)
     # Adjust this parameter based on the size of the daily dataset
     file_name = file_path.split("/")[-1]
     dataset_name = file_name.split('.')[0]
@@ -72,8 +72,8 @@ def analyze_dataset(file_path, train_split, val_split, test_split, lookback_days
             "train_size": train_size,
             "val_size": val_size,
             "test_size": test_size,
-            "ts_cols": ts_cols,
-            "cov_cols": cov_cols,
+            #"ts_cols": ts_cols,
+            #"cov_cols": cov_cols,
         }
     }
     return output
@@ -149,5 +149,5 @@ def analyze_all_datasets(folder_path, train_split=0.496, val_split=0.166, test_s
     print(f"All entries have been written to '{yaml_output_path}'.")
 
 if __name__ == "__main__":
-    analyze_all_datasets("data/sales_forecasting", lookback_days=28, forecast_days=1, yaml_output_path="experiment/one_day_forecast_settings.yaml")
+    analyze_all_datasets("data/sales_forecasting", lookback_days=7, forecast_days=7, yaml_output_path="experiment/dataset_analysis.yaml")
 

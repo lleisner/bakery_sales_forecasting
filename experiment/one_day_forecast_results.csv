@@ -1,6 +1,6 @@
 Model,Baseline,Baseline,Baseline,ITransformer,ITransformer,ITransformer,TiDE,TiDE,TiDE
 Metric,mse,mae,rmse,mse,mae,rmse,mse,mae,rmse
-sales_forecasting_8h_top2,419.8613586425781,10.226887702941896,20.49051856994629,,,,,,
+sales_forecasting_8h_top2,328.1203308105469,9.42985725402832,18.114093780517578,,,,,,
 sales_forecasting_8h_top16,101.3866729736328,4.437644481658936,10.06909465789795,,,,,,
 sales_forecasting_8h_top32,56.0604133605957,2.99833345413208,7.487349987030029,,,,,,
 sales_forecasting_8h_top64,28.58375740051269,1.692207098007202,5.346377849578857,,,,,,

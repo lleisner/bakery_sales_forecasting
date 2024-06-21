@@ -1,7 +1,7 @@
 
-def calculate_windows(time_points_per_day, lookback_days, forecast_days):
-    window_size = int(time_points_per_day * lookback_days)
-    forecast_size = max(1, int(time_points_per_day * forecast_days))
+def calculate_windows(entries_per_day, lookback_days, forecast_days):
+    window_size = int(entries_per_day * lookback_days)
+    forecast_size = max(1, int(entries_per_day * forecast_days))
     return window_size, forecast_size
 
 def calculate_splits(total_entries, window_size, forecast_size, train_split, val_split, test_split):
@@ -15,17 +15,15 @@ def calculate_splits(total_entries, window_size, forecast_size, train_split, val
     train_size, val_size, test_size = map(adjust_size, [train_split, val_split, test_split])
     return train_size, val_size, test_size
 
-def print_results(total_days, frequencies, ranges, lookback_days, forecast_days, train_split, val_split, test_split, total_entries=None, window_size=None, forecast_size=None):
+def print_results(total_days, frequencies, ranges, lookback_days, forecast_days, train_split, val_split, test_split):
     for freq, range_hours in zip(frequencies, ranges):
-        time_points_per_day = freq
-        if not total_entries:
-            total_entries = total_days * time_points_per_day
+        entries_per_day = freq
+        total_entries = total_days * entries_per_day
 
         print(f"\nFrequency: {freq}h, Range: {range_hours}h, Total Entries: {total_entries}")
         
         for lookback in lookback_days:
-            if not (window_size & forecast_size):
-                window_size, forecast_size = calculate_windows(time_points_per_day, lookback, forecast_days)
+            window_size, forecast_size = calculate_windows(entries_per_day, lookback, forecast_days)
             train_size, val_size, test_size = calculate_splits(total_entries, window_size, forecast_size, train_split, val_split, test_split)
 
             print(f"Window Size: {window_size}, Forecast Size: {forecast_size}, Dataset Size (Train, Val, Test): ({train_size}, {val_size}, {test_size})")

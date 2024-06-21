@@ -66,16 +66,6 @@ class ITransformerData(DataLoader):
         return train_data, val_data, test_data
     
 
-    def get_data(self):
-        return self.data_df
-    
-    def get_feature_names_out(self):
-        return self.data_df.columns
-    
-    def use_num_columns_as_ts_list(self):
-        return [col for col in self.data_df.columns if str(col).isnumeric()]
-
-
     """DEPRECEATED"""
     
     """

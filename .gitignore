@@ -16,3 +16,6 @@ hyperparameters/
 # Ignore run_script
 run_script.sh
 
+# Ignore google drive upload
+.tmp.driveupload/
+.tmp.drivedownload/

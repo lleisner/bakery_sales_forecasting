@@ -50,9 +50,9 @@ def parse_arguments():
 
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training the model.')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for the optimizer.')
-    parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs for training.')
+    parser.add_argument('--num_epochs', type=int, default=50, help='Number of epochs for training.')
     parser.add_argument('--config_file', type=str, default="experiment/dataset_analysis.yaml", help='Path to the YAML configuration file.')
-    parser.add_argument('--data_directory', type=str, default="data/sales_forecasting/sales_forecasting_8h", help='Path to data directory')
+    parser.add_argument('--data_directory', type=str, required=True, help='Path to data directory')
     parser.add_argument('--dataset', type=str, required=True, help='Dataset to be used for experiment')
     parser.add_argument('--model', type=str, default='Baseline', help='Model to be used for experiment')
     parser.add_argument('--tune_hps', type=bool, default=False, help='Tune hyperparameters for dataset')
@@ -143,6 +143,107 @@ def train_model_on_dataset(name, model, data_loader):
     
     model.summary()
     
+def common_setup(data_loader):
+    """
+    Common setup function to parse arguments, create data loader configuration, 
+    and obtain train, validation, and test splits.
+
+    Parameters:
+    - data_loader (function): The function to create and load the data.
+
+    Returns:
+    - args: Parsed arguments.
+    - loader_config: Configuration for the data loader.
+    - train: Training data split.
+    - val: Validation data split.
+    - test: Test data split.
+    """
+    args = parse_arguments()
+    
+    loader_config = data_loader.create_loader_config(args)
+    data_loader = data_loader(**loader_config)
+    
+    train, val, test = data_loader.get_train_test_splits()
+    
+    clear_keras_session()
+    
+    return args, loader_config, train, val, test
+
+def tune_model_on_dataset(name, model_builder, data_loader):
+    """
+    Tunes the model on a given dataset using Hyperband for hyperparameter optimization.
+
+    Parameters:
+    - name (str): Name of the model.
+    - model_builder (function): Function to build the model.
+    - data_loader (function): Function to create and load the data.
+    """
+    
+    args, loader_config, train, val, _ = common_setup(data_loader)
+    
+    directory = f"experiment/hyperparameters/{args.dataset}"
+    
+    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=name, dataset_name=args.dataset, mode='tuning')
+
+    hypermodel = lambda hp: model_builder(hp=hp, 
+                                          learning_rate=args.learning_rate, 
+                                          seq_len=loader_config['hist_len'], 
+                                          pred_len=loader_config['pred_len'], 
+                                          num_ts=len(loader_config['timeseries_cols']))
+    
+    tuner = ClearSessionTuner(hypermodel=hypermodel,
+                         objective='val_loss',
+                         max_epochs=args.num_epochs,
+                         factor=3,
+                         hyperband_iterations=3,
+                         directory=directory,
+                         project_name=name,
+                         executions_per_trial=3,
+                         max_retries_per_trial=1,
+                         )
+
+    tuner.search_space_summary()
+    tuner.search(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks, verbose=2)
+    tuner.results_summary(3)
+
+    best_hps = tuner.get_best_hyperparameters(3)
+    print(f"best hyperparameters for {directory}/{name}: {best_hps}")
+
+def train_model_on_dataset(name, model, data_loader):
+    """
+    Trains the model on a given dataset with the provided configuration and saves the evaluation results.
+
+    Parameters:
+    - name (str): Name of the model.
+    - model (tf.keras.Model): The model to be trained.
+    - data_loader (function): Function to create and load the data.
+    """
+    args, loader_config, train, val, test = common_setup(data_loader)
+    
+    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=name, dataset_name=args.dataset, mode='training')
+
+    model = model(seq_len=loader_config['hist_len'], 
+                pred_len=loader_config['pred_len'], 
+                num_ts=len(loader_config['timeseries_cols']))
+    
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(args.learning_rate),
+        loss='mse',
+        metrics=['mae'],
+        weighted_metrics=[],
+    )
+    
+    model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
+    
+    result = model.evaluate(test)
+    
+    update_results(dataset=args.dataset, 
+                   model=name, 
+                   metrics=result, 
+                   file_path="experiment/one_day_forecast_results.csv",
+                   )
+    
+    model.summary()
 
 def update_results(dataset, model, metrics, file_path="model_evaluation_results.csv"):
     """
@@ -193,8 +294,8 @@ if __name__ == "__main__":
    # print("GPUs:", gpus)
 
     #train_model_on_dataset("TiDE", TiDE, TiDEData)
-    #train_model_on_dataset("iTransformer", ITransformer, ITransformerData)
-    train_model_on_dataset("Baseline", CustomModel, ITransformerData)
+    train_model_on_dataset("iTransformer", ITransformer, ITransformerData)
+    #train_model_on_dataset("Baseline", CustomModel, ITransformerData)
     
 
     #tune_model_on_dataset("TiDE", build_tide, TiDEData)
