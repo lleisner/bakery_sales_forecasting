@@ -67,6 +67,7 @@ def calculate_entries_per_day(time_col):
     
     """    
 
+
     # Calculate time differences
     time_diffs = pd.to_datetime(time_col).diff().dropna()    
     time_diff_counts = time_diffs.value_counts()
@@ -83,9 +84,9 @@ def calculate_entries_per_day(time_col):
     # Calculate entries per day
     if second_most_common_diff:
         gap_hours = second_most_common_diff.components.hours - 1
-        entries_per_day = 24 - gap_hours
+        entries_per_day = 24 - gap_hours        
     else:
-        entries_per_day = 1 / most_common_diff.components.days
+        entries_per_day = 1 / (most_common_diff.components.days + most_common_diff.components.hours / 24)
     
     return entries_per_day
 
@@ -175,7 +176,6 @@ def analyze_data(file_path, train_split, val_split, test_split, lookback_days, f
                                                        test_split=test_split)
     
     train_range, val_range, test_range = calculate_data_ranges(train_size, val_size, test_size)
-    
     ts_cols, cov_cols, cat_cov_cols, cyc_cov_cols = get_var_covar_specs(data.drop(columns=[datetime_col]), sep_func=infer_ts_cols_by_int_name if numeric_ts_cols else lambda x: (x.columns, []))
 
     return {

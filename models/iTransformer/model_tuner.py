@@ -3,7 +3,7 @@ from tensorflow import keras
 
 
 def build_itransformer(hp, learning_rate, seq_len, pred_len, num_ts):
-    d_model = hp.Choice('d_model', values=[2**i for i in range(3, 10, 2)])  # 8, 32, 128, 512
+    d_model = hp.Choice('d_model', values=[2**i for i in range(3, 11, 2)])  # 8, 32, 128, 512
     n_heads = hp.Choice('n_heads', values=[2**i for i in range(1, 4)])  # 2, 4, 8
     d_ff = hp.Choice('d_ff', values=[2**i for i in range(4, 11, 2)])  # 16, 64, 256, 1024
     e_layers = hp.Choice('e_layers', values=[i for i in range(1, 4)]) # 1, 2, 3
