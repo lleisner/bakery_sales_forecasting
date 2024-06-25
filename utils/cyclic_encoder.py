@@ -43,4 +43,5 @@ class CyclicEncoder(BaseEstimator, TransformerMixin):
     
     def get_feature_names_out(self, input_features=None):
         return self.feature_names
-
+    
+    

@@ -44,6 +44,8 @@ def calculate_splits(total_entries, window_size, forecast_size, train_split, val
     adjust_size = lambda split: (int(max_full_windows * split) // window_size) * window_size
     
     train_size, val_size, test_size = map(adjust_size, [train_split, val_split, test_split])
+    
+    print("split sizes used for this dataset", (total_entries, train_size, val_size, test_size))
     return train_size, val_size, test_size
 
 

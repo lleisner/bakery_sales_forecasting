@@ -1,8 +1,15 @@
 import pandas as pd
 import yaml
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, SplineTransformer, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, SplineTransformer, OneHotEncoder, PowerTransformer
 from sklearn.compose import ColumnTransformer
 from utils.cyclic_encoder import CyclicEncoder
+from utils.global_min_max_scaler import GlobalMinMaxScalerWithGlobalShift as GlobMinMax
+from utils.global_min_max_scaler import LogQuantileStandardScaler as LogScaler
+from utils.global_min_max_scaler import GlobalLogQuantileStandardScaler as GlobLogScaler
+from utils.global_min_max_scaler import LogQuantileTransformer as LogQuantile
+from utils.global_min_max_scaler import EpsilonPowerTransformer as PowerBox
+from utils.global_min_max_scaler import PassthroughScaler as Passthrough
+from utils.global_min_max_scaler import GlobalLogTransformer, GlobalLogStandardScaler
 import os
 
 class DataLoader(object):
@@ -75,7 +82,7 @@ class DataLoader(object):
         self.steps_per_epoch = steps_per_epoch
         self.validation_steps = validation_steps
         
-        
+        print("lenght before anything happens: ", len(self.data_df))
         self.normalize = normalize
         
         self._add_missing_cols()
@@ -86,9 +93,11 @@ class DataLoader(object):
         
         if self.normalize: 
             self._normalize_data()
-            
+        print("lenght after we do some shit:", len(self.data_df))
+        
         self._create_lagged_features()
         
+        print("lenght after we do some shit:", len(self.data_df))
         
     def _add_missing_cols(self):
         pass
@@ -134,7 +143,16 @@ class DataLoader(object):
         
         # Dictionary mapping column types to their transformers and prefixes
         cols_dict = {
-            'ts_cols': (StandardScaler(), "target"), 
+            #'ts_cols': (GlobMinMax(), "target"), 
+            #'ts_cols': (LogTransform(), "target"), 
+            #'ts_cols': (LogScaler(), "target"), 
+            #'ts_cols': (LogQuantile(), "target"),
+            #'ts_cols': (GlobLogScaler(), "target"), 
+            'ts_cols': (PowerTransformer(method="yeo-johnson"), "target"),
+            #'ts_cols': (GlobalLogTransformer(), "target"),
+            #'ts_cols': (GlobalLogStandardScaler(), "target"),
+            #'ts_cols': (Passthrough(), "target"), 
+            #'ts_cols': (StandardScaler(), "target"), 
             'num_cov_cols': (StandardScaler(), "numerical"),
             'cat_cov_cols': (OneHotEncoder(), "categorical"),
             'cyc_cov_cols': (StandardScaler(), "cyclic"),
@@ -147,21 +165,22 @@ class DataLoader(object):
                 transformers_list.append((prefix, transformer, cols))
 
         # Create a ColumnTransformer with the configured transformers. Not specified columns are left as is.
-        transformer = ColumnTransformer(
+        self.transformer = ColumnTransformer(
             transformers=transformers_list,
             remainder=remainder,
         )
 
         # Apply the ColumnTransformer to the dataframe
-        transformed_df = transformer.fit_transform(self.data_df)
+        transformed_df = self.transformer.fit_transform(self.data_df)
         # Retrieve the new column names after transformation
-        column_names = transformer.get_feature_names_out()
+        column_names = self.transformer.get_feature_names_out()
         # Update the dataframe with transformed data and new column names
         self.data_df = pd.DataFrame(transformed_df, columns=column_names, index=self.data_df.index)
         
         # Update class attributes with new column names
         for attr, prefix in cols_dict.items():
             setattr(self, attr, [col for col in column_names if col.startswith(prefix[1])])
+            
             
     def _create_lagged_features(self, include_mean_max_min=False):
         """Creates lagged and rolling statistical features (mean, max, min) for target variables
@@ -207,6 +226,9 @@ class DataLoader(object):
     
     def get_data(self):
         return self.data_df
+    
+    def get_target_transformer(self):
+        return self.transformer.named_transformers_['target']
     
     def __repr__(self):
         return (f"DataLoader:(data_path={self.data_path!r}, datetime_col={self.datetime_col!r}, "

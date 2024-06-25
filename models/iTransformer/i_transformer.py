@@ -19,11 +19,11 @@ class ITransformer(keras.Model):
                  num_ts,
                  d_model=32,
                  n_heads=8,
-                 d_ff=128,
+                 d_ff=256,
                  e_layers=2,
                  dropout=0.1,
-                 output_attention=True,
-                 activation='gelu',
+                 output_attention=False,
+                 activation='relu',
                  clip=None,
                  use_norm=True,
                  ):
@@ -36,6 +36,9 @@ class ITransformer(keras.Model):
         self.clip = clip
         self.attn_scores=None
         self.attns = None
+        self.mae_tracker = tf.keras.metrics.MeanAbsoluteError(name="mae")
+        self.rmse_tracker = tf.keras.metrics.RootMeanSquaredError(name="rmse")
+        
         
         # Embedding
         self.enc_embedding = DataEmbeddingInverted(seq_len, d_model, dropout)
@@ -167,4 +170,4 @@ class ITransformer(keras.Model):
         batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]
         if self.output_attention:
             return self((batch_x, batch_x_mark), training=False)
-        return self((batch_x, batch_x_mark), training=False)
+        return self((batch_x, batch_x_mark), training=False), batch_y

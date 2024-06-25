@@ -18,6 +18,7 @@ from models.tide_google.model_tuner import build_tide
 from models.training import CustomModel
 from utils.callbacks import get_callbacks
 from scrabble import analyze_data
+from utils.plot_dist import visualize_overall_data_distribution
 
 
 def clear_keras_session():
@@ -44,6 +45,7 @@ def parse_arguments():
     parser.add_argument('--dataset', type=str, required=True, help='Dataset to be used for experiment')
     parser.add_argument('--model', type=str, default='Baseline', help='Model to be used for experiment')
     parser.add_argument('--tune_hps', type=bool, default=False, help='Tune hyperparameters for dataset')
+    parser.add_argument('--normalize', type=bool, default=False, help='Normalize the data')
 
     args = parser.parse_args()
     return args
@@ -68,7 +70,7 @@ def tune_model_on_dataset(args, hypermodel, data_loader):
     tuner = ClearSessionTuner(hypermodel=hypermodel, 
                               objective='val_loss', 
                               max_epochs=args.num_epochs, 
-                              factor=5, 
+                              factor=3, 
                               hyperband_iterations=1, 
                               directory=directory, 
                               project_name=args.model, 
@@ -98,8 +100,11 @@ def train_model_on_dataset(args, model, data_loader):
         model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
 
     result = model.evaluate(test)
+    print(f"Training finished with {result} on test data")
 
-    update_results(dataset=args.dataset, model=args.model, metrics=result, file_path="experiment/one_day_forecast_results.csv")
+    save_results = False
+    if save_results:
+        update_results(dataset=args.dataset, model=args.model, metrics=result, file_path="experiment/one_day_forecast_results.csv")
     model.summary()
 
 def update_results(dataset, model, metrics, file_path="model_evaluation_results.csv"):
@@ -132,7 +137,7 @@ def init_comps(args):
                           forecast_days=7,
                           )
     config['batch_size'] = args.batch_size
-    config['normalize'] = False
+    config['normalize'] = args.normalize
     
     data_loader_instance = data_loader_class(**config)
     
@@ -153,18 +158,49 @@ def init_comps(args):
         return model_instance, data_loader_instance
     
 
+
 def main():
     args = parse_arguments()
-
+    print("tune arg is turned to ", args.tune_hps)
     model_instance, data_loader_instance = init_comps(args)
     
     if args.tune_hps:
         tune_model_on_dataset(args, model_instance, data_loader_instance)
     else:
         train_model_on_dataset(args, model_instance, data_loader_instance)
+        
+    data = data_loader_instance.get_data()    
+    print(data)
+    
 
-
+    to_predict, index = data_loader_instance.get_prediction_set()
+    predictions, actuals = model_instance.predict(to_predict)
+    
+    ### ATTENTION: reshape() still needs to be set to num_targets for now!!
+    predictions, actuals = predictions.reshape(-1, 2).tolist(), actuals.reshape(-1, 2).tolist()
+    visualize_overall_data_distribution(actuals)
+    
+    if args.normalize:
+        target_transformer = data_loader_instance.get_target_transformer()
+        predictions = target_transformer.inverse_transform(predictions)
+        actuals = target_transformer.inverse_transform(actuals)
+        visualize_overall_data_distribution(actuals)
+        #targets = target_transformer.inverse_transform(targets)
+    else:
+        predictions, actuals = np.asarray(predictions), np.asarray(actuals)
+    
+    print("shapes:")
+    print(predictions.shape)
+    print(actuals.shape)
+    assert predictions.shape == actuals.shape
+    combined = np.hstack((predictions, actuals))
+    
+    df = pd.DataFrame(combined, index=index)
+    df = df.astype(int)
+    df.to_csv('experiment/preds_and_actuals.csv')
+    
 if __name__ == "__main__":
     main()
+    
 
 

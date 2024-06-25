@@ -29,6 +29,7 @@ class ITransformerData(DataLoader):
 
     
     def make_dataset(self, start_index, end_index):
+        print(f"creating a dataset with seq_len {self.hist_len}, stride {self.stride}, sampling rate {self.sampling_rate} and indicies {(start_index, end_index)}")
         dataset = tf.keras.utils.timeseries_dataset_from_array(
             data=self.data_df,
             targets=None,
@@ -40,7 +41,7 @@ class ITransformerData(DataLoader):
             start_index=start_index,
             end_index=end_index,
         )
-        dataset = dataset.batch(self.batch_size, drop_remainder=True)
+        dataset = dataset.batch(self.batch_size)#, drop_remainder=True)
         dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
         dataset = dataset.map(self.split_batch)
         return dataset
@@ -65,6 +66,18 @@ class ITransformerData(DataLoader):
         test_data = self.make_dataset(self.test_range[0], self.test_range[1])
         return train_data, val_data, test_data
     
+    def get_prediction_set(self):
+        """
+        work in progress:
+        return the test split with self.stride = self.pred_len, 
+        such that we can make predicitons on whole days without overlap.
+        """
+        self.stride = self.pred_len
+        index = self.data_df.index[self.test_range[0]:self.test_range[1]]
+        pred_set = self.make_dataset(self.test_range[0], self.test_range[1])
+        print("using test range: ", self.test_range)
+        self.stride = 1
+        return pred_set, index
 
     """DEPRECEATED"""
     
