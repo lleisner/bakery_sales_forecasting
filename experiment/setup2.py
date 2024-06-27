@@ -133,8 +133,8 @@ def init_comps(args):
                           train_split=0.5,
                           val_split=0.1667,
                           test_split=0.1667,
-                          lookback_days=7,
-                          forecast_days=7,
+                          lookback_days=14,
+                          forecast_days=2,
                           )
     config['batch_size'] = args.batch_size
     config['normalize'] = args.normalize
@@ -172,20 +172,23 @@ def main():
     data = data_loader_instance.get_data()    
     print(data)
     
+    data_loader_instance.stride = 2
+    train, val, test = data_loader_instance.get_train_test_splits()
 
     to_predict, index = data_loader_instance.get_prediction_set()
     predictions, actuals = model_instance.predict(to_predict)
     
     ### ATTENTION: reshape() still needs to be set to num_targets for now!!
     predictions, actuals = predictions.reshape(-1, 2).tolist(), actuals.reshape(-1, 2).tolist()
-    visualize_overall_data_distribution(actuals)
+    #visualize_overall_data_distribution(actuals)
+    
+    predictions, actuals = np.asarray(predictions), np.asarray(actuals)
     
     if args.normalize:
         target_transformer = data_loader_instance.get_target_transformer()
         predictions = target_transformer.inverse_transform(predictions)
         actuals = target_transformer.inverse_transform(actuals)
-        visualize_overall_data_distribution(actuals)
-        #targets = target_transformer.inverse_transform(targets)
+        #visualize_overall_data_distribution(actuals)
     else:
         predictions, actuals = np.asarray(predictions), np.asarray(actuals)
     

@@ -30,6 +30,7 @@ class ITransformerData(DataLoader):
     
     def make_dataset(self, start_index, end_index):
         print(f"creating a dataset with seq_len {self.hist_len}, stride {self.stride}, sampling rate {self.sampling_rate} and indicies {(start_index, end_index)}")
+        #end_index = end_index + self.hist_len
         dataset = tf.keras.utils.timeseries_dataset_from_array(
             data=self.data_df,
             targets=None,
@@ -71,12 +72,17 @@ class ITransformerData(DataLoader):
         work in progress:
         return the test split with self.stride = self.pred_len, 
         such that we can make predicitons on whole days without overlap.
+        Note:
+            messy, really only works when pred_len <= hist_len
         """
         self.stride = self.pred_len
-        index = self.data_df.index[self.test_range[0]:self.test_range[1]]
         pred_set = self.make_dataset(self.test_range[0], self.test_range[1])
         print("using test range: ", self.test_range)
         self.stride = 1
+        
+        buffer_offset = self.hist_len - self.pred_len
+        index = self.data_df.index[self.test_range[0] + buffer_offset : self.test_range[1]]
+
         return pred_set, index
 
     """DEPRECEATED"""

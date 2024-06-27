@@ -15,8 +15,8 @@ from data_provider.sub_providers import (
 class DataProvider:
     def __init__(self, 
                  period='8h',
-                 start_date='2019-02-17',
-                 end_date='2023-09-30',
+                 start_date='2019-02-20',
+                 end_date='2023-10-31',
                  source_directory='data/sub_datasets',
                  item_selection=["pastry"],
                  top_k=16,):

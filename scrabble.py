@@ -1,4 +1,4 @@
-
+import numpy as np
 import pandas as pd
 
 def calculate_windows(entries_per_day, lookback_days, forecast_days):
@@ -21,32 +21,7 @@ def calculate_windows(entries_per_day, lookback_days, forecast_days):
 
 
 
-def calculate_splits(total_entries, window_size, forecast_size, train_split, val_split, test_split):
-    """
-    Calculates the train, validation, and test split sizes based on total entries, window size,
-    forecast size, and the specified split ratios.
-
-    Parameters:
-    - total_entries: Total number of entries in the dataset.
-    - window_size: Size of each window.
-    - forecast_size: Size of the forecast period.
-    - train_split: Proportion of data for training.
-    - val_split: Proportion of data for validation.
-    - test_split: Proportion of data for testing.
-
-    Returns:
-    - train_size: Calculated training set size.
-    - val_size: Calculated validation set size.
-    - test_size: Calculated test set size.
-    """
-    max_full_windows = ((total_entries - forecast_size) // window_size) * window_size
     
-    adjust_size = lambda split: (int(max_full_windows * split) // window_size) * window_size
-    
-    train_size, val_size, test_size = map(adjust_size, [train_split, val_split, test_split])
-    
-    print("split sizes used for this dataset", (total_entries, train_size, val_size, test_size))
-    return train_size, val_size, test_size
 
 
 def calculate_entries_per_day(time_col):
@@ -141,7 +116,94 @@ def calculate_data_ranges(train_size, val_size, test_size):
     return ((0, train_size), 
             (train_size, train_size + val_size), 
             (train_size + val_size, train_size + val_size + test_size))
+    
+    
+def calculate_splits(total_entries, window_size, train_split, val_split, test_split):
+    """
+    Calculates the train, validation, and test split sizes based on total entries, window size,
+    forecast size, and the specified split ratios.
 
+    Parameters:
+    - total_entries: Total number of entries in the dataset.
+    - window_size: Size of each window.
+    - forecast_size: Size of the forecast period.
+    - train_split: Proportion of data for training.
+    - val_split: Proportion of data for validation.
+    - test_split: Proportion of data for testing.
+
+    Returns:
+    - train_size: Calculated training set size.
+    - val_size: Calculated validation set size.
+    - test_size: Calculated test set size.
+    """
+
+    
+    # Calculate number of windows that can be created from the data
+    max_full_windows = total_entries  - window_size 
+    
+    adjust_split_size = lambda split: (int(max_full_windows * split) // window_size) * window_size
+    
+    max_full_windows = ((total_entries) // window_size) * window_size - window_size
+    
+    adjust_size = lambda split: (int(max_full_windows * split) // window_size) * window_size
+    
+    train_size, val_size, test_size = map(adjust_size, [train_split, val_split, test_split])
+    
+    print("split sizes used for this dataset", (total_entries, train_size, val_size, test_size))
+    return train_size, val_size, test_size
+
+
+def calculate_splits(num_windows, train_ratio, val_ratio, test_ratio, window_size):
+    #total_entries = 1680 + 28
+    
+    #num_windows = total_entries
+    
+    # Calculate initial split sizes
+    train_size = int(train_ratio * num_windows)
+    val_size = int(val_ratio * num_windows)
+    test_size = int(test_ratio * num_windows)
+    
+    print((train_size, val_size, test_size))
+    
+    # Adjust split sizes to be multiples of the window_size
+    train_size = (train_size // window_size) * window_size
+    val_size = (val_size // window_size) * window_size
+    test_size = (test_size // window_size) * window_size
+    
+    print("WINDOW SIZE USED: ", window_size)
+    
+    print("split sizes used for this dataset", (num_windows, train_size, val_size, test_size))
+
+    return train_size, val_size, test_size
+
+
+def check_data_for_size_condition(data, forecast_size, window_size):
+    """
+    Checks if the dataset fullfills the condition (length_of_data == forecast_size + window_size * k
+
+    Args:
+        data (pd.DataFrame): Dataset to be checked
+        forecast_size (int): size of the forecast 
+        window_size (int): size of the lookback
+
+    Returns:
+        pd.DataFrame: Dataset with the required size adjustments
+    """
+    data_size = len(data)
+    
+    if (data_size - forecast_size) % window_size == 0:
+        return data
+    
+    nearest_size = ((data_size - forecast_size) // window_size + 1) * window_size + forecast_size
+    
+    if nearest_size > data_size:
+        nearest_size = ((data_size - forecast_size) // window_size) * window_size + forecast_size
+    
+    print(f"Current size of the dataset does not fit the desired lookback and forecast settings, adjusting size from {data_size} to {nearest_size}")
+    return data[-int(nearest_size):]
+
+
+LARGEST_NUMBER_OF_LOOKBACK_DAYS = 28
 
 def analyze_data(file_path, train_split, val_split, test_split, lookback_days, forecast_days, numeric_ts_cols=True, datetime_col='date'):
     """
@@ -162,20 +224,42 @@ def analyze_data(file_path, train_split, val_split, test_split, lookback_days, f
             numerical and categorical covariate columns, timeseries columns, train/val/test ranges, 
             history length (lookback window size), prediction length (forecast horizon), and other settings.
     """
+    
+    
     data = pd.read_csv(file_path, header=0)
     
     entries_per_day = calculate_entries_per_day(data[datetime_col])
+    
+    ## TASK: Crop the data to dates that should actually be used (multiple of lookback_days +)
+    
+    total_days = len(data) / entries_per_day
+    
     
     window_size, forecast_size = calculate_windows(entries_per_day=entries_per_day, 
                                                    lookback_days=lookback_days, 
                                                    forecast_days=forecast_days)
     
-    train_size, val_size, test_size = calculate_splits(total_entries=len(data), 
-                                                       window_size=window_size, 
-                                                       forecast_size=forecast_size, 
-                                                       train_split=train_split, 
-                                                       val_split=val_split, 
-                                                       test_split=test_split)
+    print("entries per day", entries_per_day, "window_size: ", window_size, "forecast", forecast_size)
+    
+
+    
+    # Use a split that can accomodate full windows for the largest window size used
+    largest_window = LARGEST_NUMBER_OF_LOOKBACK_DAYS * entries_per_day
+    
+    # Crop the data to a size that fits all windows and the forecast
+    data = check_data_for_size_condition(data, forecast_size=forecast_size, window_size=largest_window)
+    
+    # Account for the dropped timestamps after the lag is applied
+    total_entries = len(data) - forecast_size
+    num_windows = total_entries - largest_window
+    
+
+    
+    train_size, val_size, test_size = calculate_splits(num_windows=num_windows, 
+                                                       train_ratio=train_split, 
+                                                       val_ratio=val_split, 
+                                                       test_ratio=test_split, 
+                                                       window_size=window_size)
     
     train_range, val_range, test_range = calculate_data_ranges(train_size, val_size, test_size)
     ts_cols, cov_cols, cat_cov_cols, cyc_cov_cols = get_var_covar_specs(data.drop(columns=[datetime_col]), sep_func=infer_ts_cols_by_int_name if numeric_ts_cols else lambda x: (x.columns, []))
@@ -210,6 +294,6 @@ if __name__ == "__main__":
     results = {}
     for file_path in [file_path_8h, file_path_1w, file_path_1d, file_path_16h]:
         dataset = file_path.split("/")[-1].split('.')[0]
-        results[dataset] = analyze_data(file_path, 0.5, 0.1667, 0.1667, 7, 7)
+        results[dataset] = analyze_data(file_path, 0.5, 0.1667, 0.1667, 28, 7)
         print(results[dataset])
 

@@ -143,7 +143,8 @@ class ITransformer(keras.Model):
             else:
                 metric.update_state(batch_y, outputs)
         return {m.name: m.result() for m in self.metrics}
-
+    
+    
 
     @tf.function
     def test_step(self, data):
@@ -171,3 +172,9 @@ class ITransformer(keras.Model):
         if self.output_attention:
             return self((batch_x, batch_x_mark), training=False)
         return self((batch_x, batch_x_mark), training=False), batch_y
+
+
+
+    def process_input_data(self, data):
+        batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]
+        batch_y = batch_y[self.pred_len]

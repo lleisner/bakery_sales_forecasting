@@ -2,143 +2,143 @@ sales_forecasting_1d_top2:
   file_name: sales_forecasting_1d_top2.csv
   ts_dim: 2
   cov_dim: 10
-  suggested_window: 7
+  suggested_window: 28
   suggested_forecast: 7
-  train_size: 833
-  val_size: 273
-  test_size: 273
+  train_size: 840
+  val_size: 280
+  test_size: 280
 sales_forecasting_1d_top32:
   file_name: sales_forecasting_1d_top32.csv
   ts_dim: 32
   cov_dim: 10
-  suggested_window: 7
+  suggested_window: 28
   suggested_forecast: 7
-  train_size: 833
-  val_size: 273
-  test_size: 273
+  train_size: 840
+  val_size: 280
+  test_size: 280
 sales_forecasting_1d_top16:
   file_name: sales_forecasting_1d_top16.csv
   ts_dim: 16
   cov_dim: 10
-  suggested_window: 7
+  suggested_window: 28
   suggested_forecast: 7
-  train_size: 833
-  val_size: 273
-  test_size: 273
+  train_size: 840
+  val_size: 280
+  test_size: 280
 sales_forecasting_1d_top64:
   file_name: sales_forecasting_1d_top64.csv
   ts_dim: 64
   cov_dim: 10
-  suggested_window: 7
+  suggested_window: 28
   suggested_forecast: 7
-  train_size: 833
-  val_size: 273
-  test_size: 273
+  train_size: 840
+  val_size: 280
+  test_size: 280
 sales_forecasting_24h_top16:
   file_name: sales_forecasting_24h_top16.csv
   ts_dim: 16
   cov_dim: 10
-  suggested_window: 168
+  suggested_window: 672
   suggested_forecast: 168
-  train_size: 19992
-  val_size: 6552
-  test_size: 6552
+  train_size: 20160
+  val_size: 6720
+  test_size: 6720
 sales_forecasting_24h_top2:
   file_name: sales_forecasting_24h_top2.csv
   ts_dim: 2
   cov_dim: 10
-  suggested_window: 168
+  suggested_window: 672
   suggested_forecast: 168
-  train_size: 19992
-  val_size: 6552
-  test_size: 6552
+  train_size: 20160
+  val_size: 6720
+  test_size: 6720
 sales_forecasting_24h_top64:
   file_name: sales_forecasting_24h_top64.csv
   ts_dim: 64
   cov_dim: 10
-  suggested_window: 168
+  suggested_window: 672
   suggested_forecast: 168
-  train_size: 19992
-  val_size: 6552
-  test_size: 6552
+  train_size: 20160
+  val_size: 6720
+  test_size: 6720
 sales_forecasting_24h_top32:
   file_name: sales_forecasting_24h_top32.csv
   ts_dim: 32
   cov_dim: 10
-  suggested_window: 168
+  suggested_window: 672
   suggested_forecast: 168
-  train_size: 19992
-  val_size: 6552
-  test_size: 6552
+  train_size: 20160
+  val_size: 6720
+  test_size: 6720
 sales_forecasting_8h_top64:
   file_name: sales_forecasting_8h_top64.csv
   ts_dim: 64
   cov_dim: 10
-  suggested_window: 56
+  suggested_window: 224
   suggested_forecast: 56
-  train_size: 6664
-  val_size: 2184
-  test_size: 2184
+  train_size: 6720
+  val_size: 2240
+  test_size: 2240
 sales_forecasting_8h_top16:
   file_name: sales_forecasting_8h_top16.csv
   ts_dim: 16
   cov_dim: 10
-  suggested_window: 56
+  suggested_window: 224
   suggested_forecast: 56
-  train_size: 6664
-  val_size: 2184
-  test_size: 2184
+  train_size: 6720
+  val_size: 2240
+  test_size: 2240
 sales_forecasting_8h_top2:
   file_name: sales_forecasting_8h_top2.csv
   ts_dim: 2
   cov_dim: 10
-  suggested_window: 56
+  suggested_window: 224
   suggested_forecast: 56
-  train_size: 6664
-  val_size: 2184
-  test_size: 2184
+  train_size: 6720
+  val_size: 2240
+  test_size: 2240
 sales_forecasting_8h_top32:
   file_name: sales_forecasting_8h_top32.csv
   ts_dim: 32
   cov_dim: 10
-  suggested_window: 56
+  suggested_window: 224
   suggested_forecast: 56
-  train_size: 6664
-  val_size: 2184
-  test_size: 2184
+  train_size: 6720
+  val_size: 2240
+  test_size: 2240
 sales_forecasting_16h_top16:
   file_name: sales_forecasting_16h_top16.csv
   ts_dim: 16
   cov_dim: 10
-  suggested_window: 112
+  suggested_window: 448
   suggested_forecast: 112
-  train_size: 13328
-  val_size: 4368
-  test_size: 4368
+  train_size: 13440
+  val_size: 4480
+  test_size: 4480
 sales_forecasting_16h_top2:
   file_name: sales_forecasting_16h_top2.csv
   ts_dim: 2
   cov_dim: 10
-  suggested_window: 112
+  suggested_window: 448
   suggested_forecast: 112
-  train_size: 13328
-  val_size: 4368
-  test_size: 4368
+  train_size: 13440
+  val_size: 4480
+  test_size: 4480
 sales_forecasting_16h_top64:
   file_name: sales_forecasting_16h_top64.csv
   ts_dim: 64
   cov_dim: 10
-  suggested_window: 112
+  suggested_window: 448
   suggested_forecast: 112
-  train_size: 13328
-  val_size: 4368
-  test_size: 4368
+  train_size: 13440
+  val_size: 4480
+  test_size: 4480
 sales_forecasting_16h_top32:
   file_name: sales_forecasting_16h_top32.csv
   ts_dim: 32
   cov_dim: 10
-  suggested_window: 112
+  suggested_window: 448
   suggested_forecast: 112
-  train_size: 13328
-  val_size: 4368
-  test_size: 4368
+  train_size: 13440
+  val_size: 4480
+  test_size: 4480

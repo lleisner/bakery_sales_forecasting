@@ -10,6 +10,7 @@ from utils.global_min_max_scaler import LogQuantileTransformer as LogQuantile
 from utils.global_min_max_scaler import EpsilonPowerTransformer as PowerBox
 from utils.global_min_max_scaler import PassthroughScaler as Passthrough
 from utils.global_min_max_scaler import GlobalLogTransformer, GlobalLogStandardScaler
+from scrabble import check_data_for_size_condition
 import os
 
 class DataLoader(object):
@@ -57,6 +58,7 @@ class DataLoader(object):
             freq (str, optional): _description_. Defaults to 'H'.
         """
         self.data_df = pd.read_csv(open(data_path, 'r'), engine='python')
+        
         self.data_df.fillna(0, inplace=True)
         self.data_df.set_index(pd.DatetimeIndex(self.data_df[datetime_col]), inplace=True)
         
@@ -84,6 +86,8 @@ class DataLoader(object):
         
         print("lenght before anything happens: ", len(self.data_df))
         self.normalize = normalize
+        
+        self.data_df = check_data_for_size_condition(data=self.data_df, forecast_size=self.pred_len, window_size=self.hist_len)
         
         self._add_missing_cols()
         
@@ -117,7 +121,7 @@ class DataLoader(object):
         }
         time_df = pd.DataFrame(features, index=index)
         self.cyc_cov_cols.extend(time_df.columns.tolist())
-        self.data_df = pd.concat([time_df, self.data_df], axis=1)
+        self.data_df = pd.concat([self.data_df, time_df], axis=1)
         
     def _normalize_data(self, remainder="passthrough"):
         """Normalize and encode the data
@@ -148,10 +152,10 @@ class DataLoader(object):
             #'ts_cols': (LogScaler(), "target"), 
             #'ts_cols': (LogQuantile(), "target"),
             #'ts_cols': (GlobLogScaler(), "target"), 
-            'ts_cols': (PowerTransformer(method="yeo-johnson"), "target"),
+            #'ts_cols': (PowerTransformer(method="yeo-johnson"), "target"),
             #'ts_cols': (GlobalLogTransformer(), "target"),
             #'ts_cols': (GlobalLogStandardScaler(), "target"),
-            #'ts_cols': (Passthrough(), "target"), 
+            'ts_cols': (Passthrough(), "target"), 
             #'ts_cols': (StandardScaler(), "target"), 
             'num_cov_cols': (StandardScaler(), "numerical"),
             'cat_cov_cols': (OneHotEncoder(), "categorical"),
