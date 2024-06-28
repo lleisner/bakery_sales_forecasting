@@ -156,8 +156,9 @@ class DataLoader(object):
             #'ts_cols': (GlobalLogTransformer(), "target"),
             #'ts_cols': (GlobalLogStandardScaler(), "target"),
             'ts_cols': (Passthrough(), "target"), 
-            #'ts_cols': (StandardScaler(), "target"), 
-            'num_cov_cols': (StandardScaler(), "numerical"),
+            #'ts_cols': (StandardScaler(), "target"),
+            'num_cov_cols': (MinMaxScaler(), "numerical"),
+            #'num_cov_cols': (StandardScaler(), "numerical"),
             'cat_cov_cols': (OneHotEncoder(), "categorical"),
             'cyc_cov_cols': (StandardScaler(), "cyclic"),
         }

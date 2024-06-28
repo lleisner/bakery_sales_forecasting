@@ -26,6 +26,7 @@ class ITransformer(keras.Model):
                  activation='relu',
                  clip=None,
                  use_norm=True,
+                 mask=True,
                  ):
         
         super().__init__()
@@ -34,6 +35,7 @@ class ITransformer(keras.Model):
         self.pred_len = pred_len
         self.seq_len = seq_len
         self.clip = clip
+        self.mask = mask
         self.attn_scores=None
         self.attns = None
         self.mae_tracker = tf.keras.metrics.MeanAbsoluteError(name="mae")
@@ -112,31 +114,44 @@ class ITransformer(keras.Model):
         dec_out = dec_out * stdev_exp + means_exp
         return dec_out
     
-
-    @tf.function
-    def train_step(self, data):
-        batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]
+    
+    
+    def process_data(self, data):
+        return [tf.cast(tensor, dtype=tf.float32) for tensor in data]
+    
+    def adjust_size(self, tensor):
+        return tensor[:, -self.pred_len:, :]
+    
+    def forward_pass(self, batch_x, batch_x_mark, training):
+        if self.output_attention:
+            outputs, attns = self((batch_x, batch_x_mark), training=training)
+            return outputs, attns
+        else:
+            outputs = self((batch_x, batch_x_mark), training=training)
+            return outputs, None
         
-        with tf.GradientTape() as tape:
-            if self.output_attention:
-                outputs, attns = self((batch_x, batch_x_mark), training=True)
-                self.attn_scores = attns
-            else:
-                outputs = self((batch_x, batch_x_mark), training=True)
-            print(outputs.shape)
+    def apply_mask(self, outputs, batch_y, batch_x_mark):
+        mask_tensor = tf.not_equal(batch_x_mark[:, :, 0], 0)
+        
+        outputs_masked = tf.boolean_mask(outputs, mask_tensor)
+        batch_y_masked = tf.boolean_mask(batch_y, mask_tensor)
             
-            outputs = outputs[:, -self.pred_len:, :]
-            batch_y = batch_y[:, -self.pred_len:, :]
-            
-            loss = self.compute_loss(y=batch_y, y_pred=outputs)
-            
+        return outputs_masked, batch_y_masked
+    
+    def set_masked_values_to_zero(self, outputs, batch_x_mark):
+        mask_tensor = tf.not_equal(batch_x_mark[:, :, 0], 0)
+        outputs = tf.where(mask_tensor[:, :, tf.newaxis], outputs, tf.zeros_like(outputs))
+        return outputs
+    
+    def compute_and_apply_gradients(self, tape, loss):
         gradients = tape.gradient(loss, self.trainable_variables)
         
         if self.clip:
             gradients = [tf.clip_by_value(grad, -self.clip, self.clip) for grad in gradients]
-        
+
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
         
+    def update_metrics(self, loss, batch_y, outputs):
         for metric in self.metrics:
             if metric.name == "loss":
                 metric.update_state(loss)
@@ -144,37 +159,59 @@ class ITransformer(keras.Model):
                 metric.update_state(batch_y, outputs)
         return {m.name: m.result() for m in self.metrics}
     
-    
 
+    
+    
+    @tf.function
+    def train_step(self, data):
+        batch_x, batch_y, batch_x_mark = self.process_data(data)
+        
+        with tf.GradientTape() as tape:
+            outputs, _ = self.forward_pass(batch_x, batch_x_mark, training=True)
+
+            # Get the correct number of prediction steps for loss calculation
+            outputs, batch_y, batch_x_mark = map(self.adjust_size, [outputs, batch_y, batch_x_mark])
+            
+            if self.mask:
+                outputs, batch_y = self.apply_mask(outputs, batch_y, batch_x_mark)
+                
+            loss = self.compute_loss(y=batch_y, y_pred=outputs)
+        
+        self.compute_and_apply_gradients(tape, loss)
+        
+        return self.update_metrics(loss, batch_y, outputs)
+        
+         
     @tf.function
     def test_step(self, data):
-        batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]
+        batch_x, batch_y, batch_x_mark = self.process_data(data)
+        outputs, attns = self.forward_pass(batch_x, batch_x_mark, training=False)
         
-        if self.output_attention:
-            outputs, attns = self((batch_x, batch_x_mark), training=False)
-            self.attn_scores = attns
-        else:
-            outputs = self((batch_x, batch_x_mark), training=False)
+        outputs, batch_y, batch_x_mark = map(self.adjust_size, [outputs, batch_y, batch_x_mark])
         
-        outputs = outputs[:, -self.pred_len:, :]
-        batch_y = batch_y[:, -self.pred_len:, :]
-        
+        if self.mask:
+            outputs, batch_y = self.apply_mask(outputs, batch_y, batch_x_mark)
+            
         self.compute_loss(y=batch_y, y_pred=outputs)
         
         for metric in self.metrics:
             if metric.name != "loss":
                 metric.update_state(batch_y, outputs)
         return {m.name: m.result() for m in self.metrics}
-    
+
     @tf.function
     def predict_step(self, data):
-        batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]
+        batch_x, batch_y, batch_x_mark = self.process_data(data)
+        
+        outputs, attns = self.forward_pass(batch_x, batch_x_mark, training=False)
+        
+        outputs, batch_y, batch_x_mark = map(self.adjust_size, [outputs, batch_y, batch_x_mark])
+
+        if self.mask:
+            outputs = self.set_masked_values_to_zero(outputs, batch_x_mark)
+            
         if self.output_attention:
-            return self((batch_x, batch_x_mark), training=False)
-        return self((batch_x, batch_x_mark), training=False), batch_y
-
-
-
-    def process_input_data(self, data):
-        batch_x, batch_y, batch_x_mark = [tf.cast(tensor, dtype=tf.float32) for tensor in data]
-        batch_y = batch_y[self.pred_len]
+            return outputs, attns
+        
+        return outputs, batch_y
+    

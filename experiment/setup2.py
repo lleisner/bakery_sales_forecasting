@@ -134,7 +134,7 @@ def init_comps(args):
                           val_split=0.1667,
                           test_split=0.1667,
                           lookback_days=14,
-                          forecast_days=2,
+                          forecast_days=7,
                           )
     config['batch_size'] = args.batch_size
     config['normalize'] = args.normalize
@@ -172,7 +172,7 @@ def main():
     data = data_loader_instance.get_data()    
     print(data)
     
-    data_loader_instance.stride = 2
+    data_loader_instance.stride = 7
     train, val, test = data_loader_instance.get_train_test_splits()
 
     to_predict, index = data_loader_instance.get_prediction_set()
