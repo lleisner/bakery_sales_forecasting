@@ -20,19 +20,11 @@ def parse_wrapper_args():
     parser.add_argument('--data_directory', type=str, default="data/sales_forecasting", help='Path to data directory')
     parser.add_argument('--dataset', type=str, default=None, help='Dataset to be used for experiment')
     parser.add_argument('--model', type=str, default='Baseline', help='Model to be used for experiment')
-    parser.add_argument('--tune_hps', type=bool, default=False, help='Boolean indicating whether to perform a hyperparameter search or not')
+    parser.add_argument('--tune_hps', type=bool, default=False, help='Perform hyperparameter search')
+    parser.add_argument('--normalize', type=bool, default=True, help="Normalize data")
     return parser.parse_args()
 
-def find_all_datasets(data_directory):
-    csv_files = []
-    for root, dirs, files in os.walk(data_directory):
-        for file in files:
-            if file.endswith('.csv'):
-                csv_files.append(os.path.join(root, file))
-    if not csv_files:
-        print(f"No CSV files found in {data_directory} or any of its subdirectories")
-    print(f"Found a total of {len(csv_files)} in {data_directory} and its subdirectories")
-    return csv_files
+
 
 def run_training(args, data_directory, dataset):
     # Set the PYTHONPATH to ensure the script can find the modules
@@ -52,8 +44,14 @@ def run_training(args, data_directory, dataset):
         "--data_directory", data_directory,
         "--dataset", dataset_name,
         "--model", str(args.model),
-        "--tune_hps", str(args.tune_hps),
     ]
+    
+    # Add boolean arguments if True
+    if args.tune_hps:
+        command.append("--tune_hps")
+    if args.normalize:
+        command.append("--normalize")
+        
     try:
         result = subprocess.run(command, check=True, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         print(result.stdout)
@@ -61,6 +59,17 @@ def run_training(args, data_directory, dataset):
         print(f"Command '{e.cmd}' returned non-zero exit status {e.returncode}.")
         print(f"Error output:\n{e.stderr}")
 
+
+def find_all_datasets(data_directory):
+    csv_files = []
+    for root, dirs, files in os.walk(data_directory):
+        for file in files:
+            if file.endswith('.csv'):
+                csv_files.append(os.path.join(root, file))
+    if not csv_files:
+        print(f"No CSV files found in {data_directory} or any of its subdirectories")
+    print(f"Found a total of {len(csv_files)} in {data_directory} and its subdirectories")
+    return csv_files
 
 if __name__ == "__main__":
     args = parse_wrapper_args()

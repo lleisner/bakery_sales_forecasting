@@ -99,12 +99,12 @@ def train_model_on_dataset(args, model, data_loader):
     else:
         model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
 
-    result = model.evaluate(test)
+    result = model.evaluate(test, return_dict=True)
     print(f"Training finished with {result} on test data")
 
-    save_results = False
+    save_results = True
     if save_results:
-        update_results(dataset=args.dataset, model=args.model, metrics=result, file_path="experiment/one_day_forecast_results.csv")
+        update_results(dataset=args.dataset, model=args.model, metrics=result, file_path="experiment/masked_results_one_day_baseline.csv")
     model.summary()
 
 def update_results(dataset, model, metrics, file_path="model_evaluation_results.csv"):
@@ -117,16 +117,20 @@ def update_results(dataset, model, metrics, file_path="model_evaluation_results.
     - metrics (tuple): A tuple containing the metrics (mse, mae, rmse).
     - file_path (str): The path to the CSV file. Default is "model_evaluation_results.csv".
     """
-    df = pd.read_csv(file_path, header=[0, 1], index_col=0)
-    
-    mse, mae, rmse = metrics
-    
-    df.loc[dataset, (model, 'mse')] = mse
-    df.loc[dataset, (model, 'mae')] = mae
-    df.loc[dataset, (model, 'rmse')] = rmse
-
+    if os.path.exists(file_path):
+        df = pd.read_csv(file_path, header=[0, 1], index_col=0)
+    else:
+        df = pd.DataFrame(columns=pd.MultiIndex.from_tuples([], names=["Model", "Metric"]))
+        df.index.name = "Dataset"
+        
+    for metric, value in metrics.items():
+        if (model, metric) not in df.columns:
+            df[(model, metric)] = None
+        df.loc[dataset, (model, metric)] = value
+        
     df.to_csv(file_path)
     
+      
 def init_comps(args):
     model_class, data_loader_class, hypermodel_func = get_model_components(args.model)
     config = analyze_data(file_path = os.path.join(args.data_directory, f"{args.dataset}.csv"),
