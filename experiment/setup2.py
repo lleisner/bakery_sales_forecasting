@@ -19,6 +19,7 @@ from models.training import CustomModel
 from utils.callbacks import get_callbacks
 from scrabble import analyze_data
 from utils.plot_dist import visualize_overall_data_distribution
+from utils.plot_metrics import plot_metrics
 
 
 def clear_keras_session():
@@ -97,7 +98,7 @@ def train_model_on_dataset(args, model, data_loader):
     if args.model == 'Baseline':
         model.fit(train, epochs=1, validation_data=val, callbacks=callbacks)
     else:
-        model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
+        hist = model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
 
     result = model.evaluate(test, return_dict=True)
     print(f"Training finished with {result} on test data")
@@ -105,6 +106,10 @@ def train_model_on_dataset(args, model, data_loader):
     save_results = True
     if save_results:
         update_results(dataset=args.dataset, model=args.model, metrics=result, file_path="experiment/masked_results_one_day_baseline.csv")
+        
+    
+    plot_metrics(hist)
+        
     model.summary()
 
 def update_results(dataset, model, metrics, file_path="model_evaluation_results.csv"):
@@ -137,8 +142,8 @@ def init_comps(args):
                           train_split=0.5,
                           val_split=0.1667,
                           test_split=0.1667,
-                          lookback_days=14,
-                          forecast_days=7,
+                          lookback_days=28,
+                          forecast_days=1,
                           )
     config['batch_size'] = args.batch_size
     config['normalize'] = args.normalize
@@ -161,6 +166,28 @@ def init_comps(args):
         
         return model_instance, data_loader_instance
     
+def calculate_metrics(y_true, y_pred):
+    """
+    Calculate and print MSE, MAE, and RMSE metrics.
+
+    Parameters:
+    - y_true: The ground truth values.
+    - y_pred: The predicted values.
+    """
+    metrics = {
+        'Mean Squared Error (MSE)': tf.keras.metrics.MeanSquaredError(),
+        'Mean Absolute Error (MAE)': tf.keras.metrics.MeanAbsoluteError(),
+        'Root Mean Squared Error (RMSE)': tf.keras.metrics.RootMeanSquaredError()
+    }
+    
+    results = {}
+    for name, metric in metrics.items():
+        metric.update_state(y_true, y_pred)
+        results[name] = metric.result().numpy()
+    
+    # Print the results
+    for name, result in results.items():
+        print(f'{name}: {result}')
 
 
 def main():
@@ -176,26 +203,24 @@ def main():
     data = data_loader_instance.get_data()    
     print(data)
     
-    data_loader_instance.stride = 7
-    train, val, test = data_loader_instance.get_train_test_splits()
+    #data_loader_instance.stride = 1
+    #train, val, test = data_loader_instance.get_train_test_splits()
 
     to_predict, index = data_loader_instance.get_prediction_set()
     predictions, actuals = model_instance.predict(to_predict)
     
-    ### ATTENTION: reshape() still needs to be set to num_targets for now!!
-    predictions, actuals = predictions.reshape(-1, 2).tolist(), actuals.reshape(-1, 2).tolist()
+    # Reshape to correct (pred_len, num_variates) and convert to numpy array
+    predictions, actuals = [np.asarray(arr.reshape(-1, arr.shape[-1]).tolist()) for arr in (predictions, actuals)]
+
     #visualize_overall_data_distribution(actuals)
-    
-    predictions, actuals = np.asarray(predictions), np.asarray(actuals)
-    
     if args.normalize:
         target_transformer = data_loader_instance.get_target_transformer()
         predictions = target_transformer.inverse_transform(predictions)
         actuals = target_transformer.inverse_transform(actuals)
         #visualize_overall_data_distribution(actuals)
-    else:
-        predictions, actuals = np.asarray(predictions), np.asarray(actuals)
-    
+        
+    calculate_metrics(y_true=predictions, y_pred=actuals)
+
     print("shapes:")
     print(predictions.shape)
     print(actuals.shape)

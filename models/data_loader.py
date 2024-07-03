@@ -10,6 +10,7 @@ from utils.global_min_max_scaler import LogQuantileTransformer as LogQuantile
 from utils.global_min_max_scaler import EpsilonPowerTransformer as PowerBox
 from utils.global_min_max_scaler import PassthroughScaler as Passthrough
 from utils.global_min_max_scaler import GlobalLogTransformer, GlobalLogStandardScaler
+from utils.global_min_max_scaler import GlobalRobustScaler
 from scrabble import check_data_for_size_condition
 import os
 
@@ -68,6 +69,7 @@ class DataLoader(object):
         self.cat_cov_cols = categorical_cov_cols
         self.cyc_cov_cols = cyclic_cov_cols if cyclic_cov_cols else []
         self.ts_cols = timeseries_cols if timeseries_cols else self.data_df.columns.tolist()
+        self.lagged_cols = None
         
         self.train_range = train_range
         self.val_range = val_range
@@ -95,11 +97,13 @@ class DataLoader(object):
         
         self._arrange_data()
         
+        self._create_lagged_features()
+        
         if self.normalize: 
             self._normalize_data()
         print("lenght after we do some shit:", len(self.data_df))
         
-        self._create_lagged_features()
+        
         
         print("lenght after we do some shit:", len(self.data_df))
         
@@ -145,22 +149,17 @@ class DataLoader(object):
         # List to store transformer configurations
         transformers_list = []
         
+        sales_tf = Passthrough()
+        #sales_tf = GlobalRobustScaler()
+        
         # Dictionary mapping column types to their transformers and prefixes
         cols_dict = {
-            #'ts_cols': (GlobMinMax(), "target"), 
-            #'ts_cols': (LogTransform(), "target"), 
-            #'ts_cols': (LogScaler(), "target"), 
-            #'ts_cols': (LogQuantile(), "target"),
-            #'ts_cols': (GlobLogScaler(), "target"), 
-            #'ts_cols': (PowerTransformer(method="yeo-johnson"), "target"),
-            #'ts_cols': (GlobalLogTransformer(), "target"),
-            #'ts_cols': (GlobalLogStandardScaler(), "target"),
-            'ts_cols': (Passthrough(), "target"), 
-            #'ts_cols': (StandardScaler(), "target"),
+            'ts_cols': (sales_tf, "target"), 
             'num_cov_cols': (MinMaxScaler(), "numerical"),
-            #'num_cov_cols': (StandardScaler(), "numerical"),
             'cat_cov_cols': (OneHotEncoder(), "categorical"),
             'cyc_cov_cols': (StandardScaler(), "cyclic"),
+            #'cyc_cov_cols': (CyclicEncoder(), "cyclic"),
+            'lagged_cols': (sales_tf, "lagged"),
         }
         
         # Append appropriate transformers to the list if columns are available
@@ -220,7 +219,9 @@ class DataLoader(object):
         feature_frames.append(lagged)
         
         lagged_features =  pd.concat(feature_frames, axis=1)
+        self.lagged_cols = lagged_features.columns.tolist()
         self.data_df = pd.concat([self.data_df, lagged_features], axis=1).dropna()
+        
             
             
     def get_train_test_splits(self):

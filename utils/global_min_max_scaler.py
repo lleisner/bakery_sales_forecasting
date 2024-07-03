@@ -3,6 +3,29 @@ from sklearn.preprocessing import QuantileTransformer, StandardScaler, MinMaxSca
 import numpy as np
 import pandas as pd
 
+class GlobalRobustScaler(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        if isinstance(X, pd.DataFrame):
+            X = X.values
+        flattened_X = X.flatten()
+        self.global_median_ = np.median(flattened_X)
+        self.global_iqr_ = np.percentile(flattened_X, 75) - np.percentile(flattened_X, 25)
+        return self
+
+    def transform(self, X, y=None):
+        if isinstance(X, pd.DataFrame):
+            X = X.values
+        return (X - self.global_median_) / self.global_iqr_
+
+    def inverse_transform(self, X, y=None):
+        if isinstance(X, pd.DataFrame):
+            X = X.values
+        return (X * self.global_iqr_) + self.global_median_
+
+    def get_feature_names_out(self, input_features=None):
+        return input_features if input_features is not None else np.arange(X.shape[1])
+
+
 class GlobalLogTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, epsilon=1e-1):
         self.epsilon = epsilon
