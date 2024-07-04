@@ -8,6 +8,7 @@ import keras_tuner as kt
 from tensorflow.keras import mixed_precision
 from tensorflow.keras import backend
 import gc
+from sklearn.inspection import permutation_importance
 
 from models.iTransformer.new_data_loader import ITransformerData
 from models.iTransformer.i_transformer import ITransformer
@@ -83,6 +84,11 @@ def tune_model_on_dataset(args, hypermodel, data_loader):
     summary = tuner.results_summary(3)
     best_hps = tuner.get_best_hyperparameters(3)
     print(f"best hyperparameters for {directory}/{args.model}: {best_hps}")
+    
+    #model = tuner.get_best_models(num_models=1)[0]
+    #result = model.evaluate(test, return_dict=True)
+    #print(f"Tuning finished with {result} on test data")
+    #return model 
 
 
 def train_model_on_dataset(args, model, data_loader):
@@ -99,7 +105,8 @@ def train_model_on_dataset(args, model, data_loader):
         model.fit(train, epochs=1, validation_data=val, callbacks=callbacks)
     else:
         hist = model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
-
+        plot_metrics(hist)
+        
     result = model.evaluate(test, return_dict=True)
     print(f"Training finished with {result} on test data")
 
@@ -108,9 +115,10 @@ def train_model_on_dataset(args, model, data_loader):
         update_results(dataset=args.dataset, model=args.model, metrics=result, file_path="experiment/masked_results_one_day_baseline.csv")
         
     
-    plot_metrics(hist)
+    
         
     model.summary()
+   # return model
 
 def update_results(dataset, model, metrics, file_path="model_evaluation_results.csv"):
     """
@@ -143,7 +151,7 @@ def init_comps(args):
                           val_split=0.1667,
                           test_split=0.1667,
                           lookback_days=28,
-                          forecast_days=1,
+                          forecast_days=7,
                           )
     config['batch_size'] = args.batch_size
     config['normalize'] = args.normalize
@@ -201,13 +209,16 @@ def main():
         train_model_on_dataset(args, model_instance, data_loader_instance)
         
     data = data_loader_instance.get_data()    
+    col_names = data.columns.tolist()
     print(data)
+    feature_names = col_names
     
     #data_loader_instance.stride = 1
     #train, val, test = data_loader_instance.get_train_test_splits()
 
     to_predict, index = data_loader_instance.get_prediction_set()
     predictions, actuals = model_instance.predict(to_predict)
+    
     
     # Reshape to correct (pred_len, num_variates) and convert to numpy array
     predictions, actuals = [np.asarray(arr.reshape(-1, arr.shape[-1]).tolist()) for arr in (predictions, actuals)]

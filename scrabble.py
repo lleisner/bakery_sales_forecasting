@@ -154,10 +154,6 @@ def calculate_splits(total_entries, window_size, train_split, val_split, test_sp
 
 
 def calculate_splits(num_windows, train_ratio, val_ratio, test_ratio, window_size):
-    #total_entries = 1680 + 28
-    
-    #num_windows = total_entries
-    
     # Calculate initial split sizes
     train_size = int(train_ratio * num_windows)
     val_size = int(val_ratio * num_windows)
