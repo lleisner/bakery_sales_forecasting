@@ -38,6 +38,7 @@ class ITransformer(keras.Model):
         self.mask = mask
         self.attn_scores=None
         self.attns = None
+        self.mse_tracker = tf.keras.metrics.MeanSquaredError(name="mse")
         self.mae_tracker = tf.keras.metrics.MeanAbsoluteError(name="mae")
         self.rmse_tracker = tf.keras.metrics.RootMeanSquaredError(name="rmse")
         
@@ -113,9 +114,7 @@ class ITransformer(keras.Model):
 
         dec_out = dec_out * stdev_exp + means_exp
         return dec_out
-    
-    
-    
+      
     def process_data(self, data):
         return [tf.cast(tensor, dtype=tf.float32) for tensor in data]
     
@@ -158,8 +157,6 @@ class ITransformer(keras.Model):
             else:
                 metric.update_state(batch_y, outputs)
         return {m.name: m.result() for m in self.metrics}
-    
-
     
     
     @tf.function

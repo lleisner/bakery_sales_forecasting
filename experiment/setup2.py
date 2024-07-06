@@ -21,8 +21,8 @@ from utils.callbacks import get_callbacks
 from scrabble import analyze_data
 from utils.plot_dist import visualize_overall_data_distribution
 from utils.plot_metrics import plot_metrics
-
-
+from utils.loss import AsymmetricMSELoss, MSEReplacement
+from utils.plot_multi_series import plot_multivariate_time_series_predictions
 def clear_keras_session():
     backend.clear_session()
 
@@ -97,7 +97,7 @@ def train_model_on_dataset(args, model, data_loader):
     callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=args.model, dataset_name=args.dataset, mode='training')
 
     model.compile(optimizer=tf.keras.optimizers.Adam(args.learning_rate), 
-                  loss='mse', 
+                  loss=AsymmetricMSELoss(), 
                   metrics=['mae'],
                   weighted_metrics=[])
 
@@ -211,7 +211,7 @@ def main():
     data = data_loader_instance.get_data()    
     col_names = data.columns.tolist()
     print(data)
-    feature_names = col_names
+
     
     #data_loader_instance.stride = 1
     #train, val, test = data_loader_instance.get_train_test_splits()
@@ -230,7 +230,11 @@ def main():
         actuals = target_transformer.inverse_transform(actuals)
         #visualize_overall_data_distribution(actuals)
         
+    feature_names = col_names[:predictions.shape[-1]]
+    print(feature_names)
+        
     calculate_metrics(y_true=predictions, y_pred=actuals)
+    plot_multivariate_time_series_predictions(y_true=actuals, y_preds=[predictions], model_names=["iTransformer"], variate_names=feature_names, max_variates=8, n_values=64)
 
     print("shapes:")
     print(predictions.shape)

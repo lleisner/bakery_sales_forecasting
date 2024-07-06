@@ -43,6 +43,7 @@ class TiDE(keras.Model):
       transform=False,
       cat_emb_size=4,
       layer_norm=False,
+      mask=True,
   ):
     """Tide model.
 
@@ -59,7 +60,7 @@ class TiDE(keras.Model):
     hidden_dims = [hidden_size] * num_layers
     print("hidden_dims:", hidden_dims, len(hidden_dims))
     
-    
+    self.mask = mask
     self.transform = transform
     self.loss_tracker = tf.keras.metrics.Mean(name="loss")
     self.mae_metric = tf.keras.metrics.MeanAbsoluteError(name="mae")
@@ -179,6 +180,8 @@ class TiDE(keras.Model):
   @tf.function
   def train_step(self, data):
     inputs, y_true = tsd.prepare_batch(*data)
+    _, future_features, _ = inputs
+    
     #inputs, y_true = data
     with tf.GradientTape() as tape:
       all_preds = self(inputs, training=True)

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import os
 
-def plot_metrics(history, save_dir='experiment/plots'):
+def plot_metrics(history, save_dir='experiment/plots/metrics'):
     """
     Plots the training and validation metrics and saves the plots to a directory.
 
