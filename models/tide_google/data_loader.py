@@ -88,7 +88,7 @@ class TimeSeriesdata(object):
     
     self.hist_len = hist_len
     self.pred_len = pred_len
-    self.batch_size = batch_size
+    self.batch_size = 32
     self.freq = freq
     
     self.steps_per_epoch = steps_per_epoch

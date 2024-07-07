@@ -22,7 +22,7 @@ class TiDEData(DataLoader):
         
         super().__init__(*args, **kwargs)
         self.permute = permute
-        self.batch_size = min(self.batch_size, len(self.ts_cols))
+        self.batch_size = len(self.ts_cols)
         
     def _add_missing_cols(self):
         if not self.num_cov_cols:
@@ -88,6 +88,8 @@ class TiDEData(DataLoader):
             bnf = np.hstack([bnf, rem_rep.reshape(bnf.shape[0], -1)])
             bcf = np.hstack([bcf, rem_rep_cat.reshape(bcf.shape[0], -1)])
         bfeats = np.vstack([btf, bnf])
+        #print(bfeats[7,:])
+        #bfeats = np.vstack([bnf, btf])
         bts_train = bts[:, 0:hist_len]
         bts_pred = bts[:, hist_len:]
         bfeats_train = bfeats[:, 0:hist_len]

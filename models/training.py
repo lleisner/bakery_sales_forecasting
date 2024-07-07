@@ -6,6 +6,7 @@ class CustomModel(tf.keras.Model):
         self.pred_len = pred_len
         self.seq_len = seq_len
         self.mask = mask
+        self.mse_tracker = tf.keras.metrics.MeanSquaredError(name="mse")
         self.mae_tracker = tf.keras.metrics.MeanAbsoluteError(name="mae")
         self.rmse_tracker = tf.keras.metrics.RootMeanSquaredError(name="rmse")
         
