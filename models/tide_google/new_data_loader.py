@@ -7,6 +7,7 @@ from sklearn.pipeline import Pipeline
 import logging
 from models.data_loader import DataLoader
 from models.tide_google.time_features import TimeCovariates
+from utils.global_min_max_scaler import PassthroughScaler
 
 class TiDEData(DataLoader):
     def __init__(self, permute=False, *args, **kwargs):
@@ -65,6 +66,7 @@ class TiDEData(DataLoader):
 
     def _normalize_data(self):
         self.scaler = StandardScaler()
+        self.scaler = PassthroughScaler()
         train_mat = self.data_mat[:, self.train_range[0] : self.train_range[1]]
         self.scaler = self.scaler.fit(train_mat.transpose())
         self.data_mat = self.scaler.transform(self.data_mat.transpose()).transpose()
@@ -104,13 +106,14 @@ class TiDEData(DataLoader):
         perm = np.random.permutation(perm)
         hist_len = self.hist_len
         logging.info('Hist len: %s', hist_len)
+        print(f"splits for the data: {self.train_range, self.val_range, self.test_range}")
         if not self.steps_per_epoch:
             self.steps_per_epoch = len(perm)
         print("steps per epoch: ", self.steps_per_epoch)
         
         for idx in perm[0:self.steps_per_epoch]:
             #for i in range(num_ts // self.batch_size + 1):
-            for i in range(num_ts//self.batch_size+1):
+            for i in range(num_ts//self.batch_size):
                 if self.permute:
                     tsidx = np.random.choice(num_ts, size=self.batch_size, replace=False)
                 else:
@@ -136,7 +139,7 @@ class TiDEData(DataLoader):
                 ]
                 yield tuple(all_data)
 
-    def test_val_gen(self, mode='val'):
+    def test_val_gen(self, mode='val', stride=1):
         if mode == 'val':
             start = self.val_range[0]
             end = self.val_range[1] - self.pred_len + 1
@@ -145,12 +148,18 @@ class TiDEData(DataLoader):
             end = self.test_range[1] - self.pred_len + 1
         else:
             raise NotImplementedError('Eval mode not implemented')
+        
         num_ts = len(self.ts_cols)
         hist_len = self.hist_len
         logging.info('Hist len: %s', hist_len)
-        perm = np.arange(start, end)
-        if not self.validation_steps:
-            self.validation_steps = len(perm)
+        perm = np.arange(start, end, stride)
+        
+        # Calculate the maximum number of steps based on the stride
+        max_steps = len(perm)
+        if not self.validation_steps or self.validation_steps > max_steps:
+            print(f"self.valiations_steps set too large for stride {stride}, reducing validation steps to {max_steps}")
+            self.validation_steps = max_steps
+            
         print("validation steps: ", self.validation_steps)
         
         for idx in perm[0:self.validation_steps]:
@@ -177,11 +186,11 @@ class TiDEData(DataLoader):
                 yield tuple(all_data)
 
 
-    def tf_dataset(self, mode='train'):
+    def tf_dataset(self, mode='train', stride=1):
         if mode == 'train':
             gen_fn = self.train_gen
         else:
-            gen_fn = lambda: self.test_val_gen(mode)
+            gen_fn = lambda: self.test_val_gen(mode, stride)
         output_types = tuple(
             [tf.float32] * 2 + [tf.int32] + [tf.float32] * 2 + [tf.int32] * 2
         )
@@ -200,10 +209,18 @@ class TiDEData(DataLoader):
     
 
     def get_train_test_splits(self):
-        train = self.tf_dataset(mode='train')#.repeat(5)
-        val = self.tf_dataset(mode='val')#.repeat(5)
-        test = self.tf_dataset(mode='test')#.repeat(5)
+        train = self.tf_dataset(mode='train').repeat()
+        val = self.tf_dataset(mode='val').repeat()
+        test = self.tf_dataset(mode='test')
         return train, val, test
+    
+    def get_prediction_set(self):
+        pred_set = self.tf_dataset(mode='test', stride=self.pred_len)
+
+        index = self.data_df.index[self.test_range[0]: self.test_range[1]]
+        
+        return pred_set, index
+    
     
     @staticmethod
     def prepare_batch(bts_train, bfeats_train, bcfeats_train, bts_pred, bfeats_pred, bcfeats_pred, tsidx):

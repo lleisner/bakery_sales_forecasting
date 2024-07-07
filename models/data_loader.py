@@ -83,8 +83,10 @@ class DataLoader(object):
         self.sampling_rate = sample_rate
         self.freq = freq
         
-        self.steps_per_epoch = steps_per_epoch
-        self.validation_steps = validation_steps
+        self.split_sizes = [(split_range[1] - split_range[0] - self.hist_len - self.pred_len) for split_range in [self.train_range, self.val_range, self.test_range]]
+        self.steps_per_epoch = steps_per_epoch if steps_per_epoch else self.split_sizes[0]
+        self.validation_steps = validation_steps if validation_steps else self.split_sizes[1]
+        
         
         print("lenght before anything happens: ", len(self.data_df))
         self.normalize = normalize

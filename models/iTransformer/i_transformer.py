@@ -104,6 +104,8 @@ class ITransformer(keras.Model):
         if self.output_attention:
             return dec_out, attns
         
+        print(f"This is the output of a call function: {dec_out}")
+        
         return dec_out
     
     
@@ -130,7 +132,8 @@ class ITransformer(keras.Model):
             return outputs, None
         
     def apply_mask(self, outputs, batch_y, batch_x_mark):
-        mask_tensor = tf.not_equal(batch_x_mark[:, :, 0], 0)
+        is_open = batch_x_mark[:, :, 0]
+        mask_tensor = tf.not_equal(is_open, 0)
         
         outputs_masked = tf.boolean_mask(outputs, mask_tensor)
         batch_y_masked = tf.boolean_mask(batch_y, mask_tensor)
@@ -138,7 +141,8 @@ class ITransformer(keras.Model):
         return outputs_masked, batch_y_masked
     
     def set_masked_values_to_zero(self, outputs, batch_x_mark):
-        mask_tensor = tf.not_equal(batch_x_mark[:, :, 0], 0)
+        is_open = batch_x_mark[:, :, 0]
+        mask_tensor = tf.not_equal(is_open, 0)
         outputs = tf.where(mask_tensor[:, :, tf.newaxis], outputs, tf.zeros_like(outputs))
         return outputs
     

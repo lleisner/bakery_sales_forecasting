@@ -23,6 +23,64 @@ from tqdm import tqdm
 
 from models.tide_google.data_loader import TimeSeriesdata as tsd
 
+class MLPResidual(keras.layers.Layer):
+  """Simple one hidden state residual network."""
+
+  def __init__(
+      self, hidden_dim, output_dim, layer_norm=False, dropout=0.0, activation='relu',
+  ):
+    super(MLPResidual, self).__init__()
+    self.lin_a = tf.keras.layers.Dense(
+        hidden_dim,
+        activation=activation,
+    )
+    self.lin_b = tf.keras.layers.Dense(
+        output_dim,
+        activation=None,
+    )
+    self.lin_res = tf.keras.layers.Dense(
+        output_dim,
+        activation=None,
+    )
+    if layer_norm:
+      self.lnorm = tf.keras.layers.LayerNormalization()
+    self.layer_norm = layer_norm
+    self.dropout = tf.keras.layers.Dropout(dropout)
+
+  def call(self, inputs):
+    """Call method."""
+    h_state = self.lin_a(inputs)
+    out = self.lin_b(h_state)
+    out = self.dropout(out)
+    res = self.lin_res(inputs)
+    if self.layer_norm:
+      return self.lnorm(out + res)
+    return out + res
+
+
+def _make_dnn_residual(hidden_dims, layer_norm=False, dropout=0.0, activation='relu'):
+  """Multi-layer DNN residual model."""
+  print("hidden_dims:", hidden_dims)
+  print(len(hidden_dims))
+
+  if len(hidden_dims) < 2:
+    return keras.layers.Dense(
+        hidden_dims[-1],
+        activation=None,
+    )
+  layers = []
+  for i, hdim in enumerate(hidden_dims[:-1]):
+    layers.append(
+        MLPResidual(
+            hdim,
+            hidden_dims[i + 1],
+            layer_norm=layer_norm,
+            dropout=dropout,
+            activation=activation,
+        )
+    )
+  return keras.Sequential(layers)
+  
 
 class TiDE(keras.Model):
   """Main class for multi-scale DNN model."""
@@ -174,277 +232,90 @@ class TiDE(keras.Model):
     if self.transform:
       out = (out - affine_bias[:, None]) / (affine_weight[:, None] + 1e-7)
       out = out * batch_std[:, None] + batch_mean[:, None]
+      
+    print("this is the output of the call function", out.shape)
     return out
+  
+  def get_mask(self, inputs):
+    past_data, future_features, _ = inputs
+    bsize = past_data[0].shape[0]
+    bfeats_pred, _ = future_features
+    is_open = bfeats_pred[0, :]
+    
+    mask_tensor = tf.not_equal(is_open, 0)
+    mask_tensor = tf.expand_dims(mask_tensor, axis=0)
+    mask_tensor = tf.tile(mask_tensor, [bsize, 1])
+    
+    return mask_tensor
 
+  
+  def apply_mask(self, inputs, y_pred, y_true):
+    
+    mask_tensor = self.get_mask(inputs)
+    
+    y_pred_masked = tf.boolean_mask(y_pred, mask_tensor)
+    y_true_masked = tf.boolean_mask(y_true, mask_tensor)
+    
+    return y_pred_masked, y_true_masked
+  
+  def set_masked_values_to_zero(self, inputs, y_pred):
+    
+    mask_tensor = self.get_mask(inputs)
+    
+    y_pred = tf.where(mask_tensor, y_pred, tf.zeros_like(y_pred))
+    
+    return y_pred
   
   @tf.function
   def train_step(self, data):
-    inputs, y_true = tsd.prepare_batch(*data)
-    _, future_features, _ = inputs
+    inputs, y_true = tsd.prepare_batch(*data) 
     
     #inputs, y_true = data
     with tf.GradientTape() as tape:
-      all_preds = self(inputs, training=True)
-      #print(f"all preds: {all_preds}, y true: {y_true}")
-      loss = tf.keras.losses.mean_squared_error(y_true, all_preds)
+      y_pred = self(inputs, training=True)
+      
+      if self.mask:
+        y_pred, y_true = self.apply_mask(inputs, y_pred, y_true)
+
+      loss = tf.keras.losses.mean_squared_error(y_true, y_pred)
       #loss = self.compute_loss(y_true, all_preds)
     grads = tape.gradient(loss, self.trainable_variables)
     self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
     
     # Compute our own metrics
     self.loss_tracker.update_state(loss)
-    self.mae_metric.update_state(y_true, all_preds)
+    self.mae_metric.update_state(y_true, y_pred)
     return {"loss": self.loss_tracker.result(), "mae": self.mae_metric.result()}
 
   
   @tf.function
   def test_step(self, data):
     inputs, y_true = tsd.prepare_batch(*data)
-    all_preds = self(inputs, training=False)
-    loss = tf.keras.losses.mean_squared_error(y_true, all_preds)
+    y_pred = self(inputs, training=False)
+    
+    if self.mask:
+      y_pred, y_true = self.apply_mask(inputs, y_pred, y_true)
+      
+    loss = tf.keras.losses.mean_squared_error(y_true, y_pred)
 
     #self.compute_loss(y_true, all_preds)
     # Compute our own metrics
     self.loss_tracker.update_state(loss)
-    self.mae_metric.update_state(y_true, all_preds)
+    self.mae_metric.update_state(y_true, y_pred)
     return {"loss": self.loss_tracker.result(), "mae": self.mae_metric.result()}
 
-
-  
-class MLPResidual(keras.layers.Layer):
-  """Simple one hidden state residual network."""
-
-  def __init__(
-      self, hidden_dim, output_dim, layer_norm=False, dropout=0.0, activation='relu',
-  ):
-    super(MLPResidual, self).__init__()
-    self.lin_a = tf.keras.layers.Dense(
-        hidden_dim,
-        activation=activation,
-    )
-    self.lin_b = tf.keras.layers.Dense(
-        output_dim,
-        activation=None,
-    )
-    self.lin_res = tf.keras.layers.Dense(
-        output_dim,
-        activation=None,
-    )
-    if layer_norm:
-      self.lnorm = tf.keras.layers.LayerNormalization()
-    self.layer_norm = layer_norm
-    self.dropout = tf.keras.layers.Dropout(dropout)
-
-  def call(self, inputs):
-    """Call method."""
-    h_state = self.lin_a(inputs)
-    out = self.lin_b(h_state)
-    out = self.dropout(out)
-    res = self.lin_res(inputs)
-    if self.layer_norm:
-      return self.lnorm(out + res)
-    return out + res
-
-
-def _make_dnn_residual(hidden_dims, layer_norm=False, dropout=0.0, activation='relu'):
-  """Multi-layer DNN residual model."""
-  print("hidden_dims:", hidden_dims)
-  print(len(hidden_dims))
-
-  if len(hidden_dims) < 2:
-    return keras.layers.Dense(
-        hidden_dims[-1],
-        activation=None,
-    )
-  layers = []
-  for i, hdim in enumerate(hidden_dims[:-1]):
-    layers.append(
-        MLPResidual(
-            hdim,
-            hidden_dims[i + 1],
-            layer_norm=layer_norm,
-            dropout=dropout,
-            activation=activation,
-        )
-    )
-  return keras.Sequential(layers)
-  """
-
   @tf.function
-  def train_step(self, data):
-    inputs, y_true = data
-    with tf.GradientTape() as tape:
-      all_preds = self(inputs, training=True)
-      #loss = tf.keras.losses.mean_squared_error(y_true, all_preds)
-
-      loss = self.compute_loss(y_true, all_preds)
-      
-    grads = tape.gradient(loss, self.trainable_variables)
-    self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
+  def predict_step(self, data):
+    inputs, y_true = tsd.prepare_batch(*data)
+    y_pred = self(inputs, training=False)
+    print(f"shape of y_pred before : {y_pred.shape}")
     
-    for metric in self.metrics:
-      if metric.name == "loss":
-        metric.update_state(loss)
-      else:
-        metric.update_state(y_true, all_preds)
-    return {m.name: m.result() for m in self.metrics}
-  
-  @tf.function
-  def test_step(self, data):
-    inputs, y_true = data
-    all_preds = self(inputs, training=False)
-    tf.keras.losses.mean_squared_error(y_true, all_preds)
-
-    #self.compute_loss(y_true, all_preds)
-    for metric in self.metrics:
-      if metric.name != "loss":
-        metric.update_state(y_true, all_preds)
-    return {m.name: m.result() for m in self.metrics}
-  
-  
-  @tf.function
-  def train_step(self, past_data, future_features, ytrue, tsidx, optimizer):
-    with tf.GradientTape() as tape:
-      all_preds = self((past_data, future_features, tsidx), training=True)
-      print(f"all preds: {all_preds}, y true: {ytrue}")
-      loss = train_loss(ytrue, all_preds)
-
-    grads = tape.gradient(loss, self.trainable_variables)
-    optimizer.apply_gradients(zip(grads, self.trainable_variables))
-    return loss
-  
-
-  def get_all_eval_data(self, data, mode, num_split=1):
-    y_preds = []
-    y_trues = []
-    all_test_loss = 0
-    all_test_num = 0
-    idxs = np.arange(0, self.pred_len, self.pred_len // num_split).tolist() + [
-        self.pred_len
-    ]
-    for i in range(len(idxs) - 1):
-      indices = (idxs[i], idxs[i + 1])
-      logging.info('Getting data for indices: %s', indices)
-      all_y_true, all_y_pred, test_loss, test_num = (
-          self.get_eval_data_for_split(data, mode, indices)
-      )
-      y_preds.append(all_y_pred)
-      y_trues.append(all_y_true)
-      all_test_loss += test_loss
-      all_test_num += test_num
-    return np.hstack(y_preds), np.hstack(y_trues), all_test_loss / all_test_num
-
-  def get_eval_data_for_split(self, data, mode, indices):
-    iterator = data.tf_dataset(mode=mode)
-
-    all_y_true = None
-    all_y_pred = None
-
-    def set_or_concat(a, b):
-      if a is None:
-        return b
-      return tf.concat((a, b), axis=1)
-
-    all_test_loss = 0
-    all_test_num = 0
-    ts_count = 0
-    ypreds = []
-    ytrues = []
-    for all_data in tqdm(iterator):
-      past_data = all_data[:3]
-      future_features = all_data[4:6]
-      y_true = all_data[3]
-      tsidx = all_data[-1]
-      all_preds = self((past_data, future_features, tsidx), training=False)
-      y_pred = all_preds
-      y_pred = y_pred[:, 0 : y_true.shape[1]]
-      id1 = indices[0]
-      id2 = min(indices[1], y_true.shape[1])
-      y_pred = y_pred[:, id1:id2]
-      y_true = y_true[:, id1:id2]
-      loss = train_loss(y_true, y_pred)
-      all_test_loss += loss
-      all_test_num += 1
-      ts_count += y_true.shape[0]
-      ypreds.append(y_pred)
-      ytrues.append(y_true)
-      if ts_count >= len(data.ts_cols):
-        ts_count = 0
-        ypreds = tf.concat(ypreds, axis=0)
-        ytrues = tf.concat(ytrues, axis=0)
-        all_y_true = set_or_concat(all_y_true, ytrues)
-        all_y_pred = set_or_concat(all_y_pred, ypreds)
-        ypreds = []
-        ytrues = []
-    return (
-        all_y_true.numpy(),
-        all_y_pred.numpy(),
-        all_test_loss.numpy(),
-        all_test_num,
-    )
-
-  def eval(self, data, mode, num_split=1):
-    all_y_pred, all_y_true, test_loss = self.get_all_eval_data(
-        data, mode, num_split
-    )
-
-    result_dict = {}
-    for metric in METRICS:
-      eval_fn = METRICS[metric]
-      result_dict[metric] = np.float64(eval_fn(all_y_pred, all_y_true))
-
-    logging.info(result_dict)
-    logging.info('Loss: %f', test_loss)
-
-    return (
-        result_dict,
-        (all_y_pred, all_y_true),
-        test_loss,
-    )
-
-
-def mape(y_pred, y_true):
-  abs_diff = np.abs(y_pred - y_true).flatten()
-  abs_val = np.abs(y_true).flatten()
-  idx = np.where(abs_val > EPS)
-  mpe = np.mean(abs_diff[idx] / abs_val[idx])
-  return mpe
-
-
-def mae_loss(y_pred, y_true):
-  return np.abs(y_pred - y_true).mean()
-
-
-def wape(y_pred, y_true):
-  abs_diff = np.abs(y_pred - y_true)
-  abs_val = np.abs(y_true)
-  wpe = np.sum(abs_diff) / (np.sum(abs_val) + EPS)
-  return wpe
-
-
-def smape(y_pred, y_true):
-  abs_diff = np.abs(y_pred - y_true)
-  abs_mean = (np.abs(y_true) + np.abs(y_pred)) / 2
-  smpe = np.mean(abs_diff / (abs_mean + EPS))
-  return smpe
-
-
-def rmse(y_pred, y_true):
-  return np.sqrt(np.square(y_pred - y_true).mean())
-
-
-def nrmse(y_pred, y_true):
-  mse = np.square(y_pred - y_true)
-  return np.sqrt(mse.mean()) / np.abs(y_true).mean()
-
-
-METRICS = {
-    'mape': mape,
-    'wape': wape,
-    'smape': smape,
-    'nrmse': nrmse,
-    'rmse': rmse,
-    'mae': mae_loss,
-}
-
-"""
+    if self.mask:
+      y_pred = self.set_masked_values_to_zero(inputs, y_pred)
+    
+    # The resulting tensor has shape (n_variates, pred_len), so transpose to (pred_len, n_variates) to get the required output dims.
+    y_pred_transposed = tf.transpose(y_pred, perm=[1, 0])
+    y_true_transposed = tf.transpose(y_true, perm=[1, 0])
+    print(f"shape of y_pred after : {y_pred_transposed.shape}")
+    
+    return y_pred_transposed, y_true_transposed

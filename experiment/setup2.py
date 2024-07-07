@@ -103,11 +103,18 @@ def train_model_on_dataset(args, model, data_loader):
 
     if args.model == 'Baseline':
         model.fit(train, epochs=1, validation_data=val, callbacks=callbacks)
+        result = model.evaluate(test, return_dict=True)
+    elif args.model == 'TiDE':
+        steps_per_epoch, validation_steps, test_steps = data_loader.split_sizes
+        hist = model.fit(train, epochs=args.num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=callbacks)
+        result = model.evaluate(test, steps=test_steps, return_dict=True)
     else:
         hist = model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
+        result = model.evaluate(test, return_dict=True)
         plot_metrics(hist)
         
-    result = model.evaluate(test, return_dict=True)
+        
+    
     print(f"Training finished with {result} on test data")
 
     save_results = True
@@ -218,16 +225,19 @@ def main():
 
     to_predict, index = data_loader_instance.get_prediction_set()
     predictions, actuals = model_instance.predict(to_predict)
-    
+    print("shapes:")
+    print(predictions.shape)
+    print(actuals.shape)
     
     # Reshape to correct (pred_len, num_variates) and convert to numpy array
     predictions, actuals = [np.asarray(arr.reshape(-1, arr.shape[-1]).tolist()) for arr in (predictions, actuals)]
 
     #visualize_overall_data_distribution(actuals)
     if args.normalize:
-        target_transformer = data_loader_instance.get_target_transformer()
-        predictions = target_transformer.inverse_transform(predictions)
-        actuals = target_transformer.inverse_transform(actuals)
+        if args.model != "TiDE":
+            target_transformer = data_loader_instance.get_target_transformer()
+            predictions = target_transformer.inverse_transform(predictions)
+            actuals = target_transformer.inverse_transform(actuals)
         #visualize_overall_data_distribution(actuals)
         
     feature_names = col_names[:predictions.shape[-1]]
