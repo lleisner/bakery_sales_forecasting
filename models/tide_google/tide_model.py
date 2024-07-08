@@ -116,12 +116,9 @@ class TiDE(keras.Model):
     """
     super().__init__()
     hidden_dims = [hidden_size] * num_layers
-    print("hidden_dims:", hidden_dims, len(hidden_dims))
     
     self.mask = mask
     self.transform = transform
-    #self.loss_tracker = tf.keras.metrics.Mean(name="loss")
-    #self.mae_metric = tf.keras.metrics.MeanAbsoluteError(name="mae")
 
     self.mse_tracker = tf.keras.metrics.MeanSquaredError(name="mse")
     self.mae_tracker = tf.keras.metrics.MeanAbsoluteError(name="mae")
@@ -239,7 +236,7 @@ class TiDE(keras.Model):
       out = out * batch_std[:, None] + batch_mean[:, None]
 
     
-    cheat = True
+    cheat = False
     if cheat:
       past_data = inputs[0]
       past_ts = past_data[0]
@@ -247,45 +244,6 @@ class TiDE(keras.Model):
       
     print("this is the output of the call function", out.shape)
     return out
-
-
-  
-  
-  def get_mask(self, inputs):
-    past_data, future_features, _ = inputs
-    bsize = past_data[0].shape[0]
-    bfeats_pred, _ = future_features
-    print(f"bfeats_pred shape: {bfeats_pred.shape}")
-    is_open = bfeats_pred[7, :]
-    print(f"is open feature: {is_open}")
-    #tf.print("bfeats looks like this inside:", bfeats_pred[:][0])
-    
-    mask_tensor = tf.not_equal(is_open, 0)
-    print("mask looks like this: ", mask_tensor.shape)
-    mask_tensor = tf.expand_dims(mask_tensor, axis=0)
-    mask_tensor = tf.tile(mask_tensor, [bsize, 1])
-    print("mask looks like this: ", mask_tensor)
-    return mask_tensor
-
-  
-  def apply_mask(self, inputs, y_pred, y_true):
-
-
-    mask_tensor = self.get_mask(inputs)
-    print("y_pred looks like this: ", y_pred.shape)
-    y_pred_masked = tf.boolean_mask(y_pred, mask_tensor)
-    y_true_masked = tf.boolean_mask(y_true, mask_tensor)
-
-
-    return y_pred_masked, y_true_masked
-  
-  def set_masked_values_to_zero(self, inputs, y_pred):
-    
-    mask_tensor = self.get_mask(inputs)
-    
-    y_pred = tf.where(mask_tensor, y_pred, tf.zeros_like(y_pred))
-    
-    return y_pred
 
   def update_metrics(self, loss, batch_y, outputs):
     for metric in self.metrics:
@@ -295,8 +253,43 @@ class TiDE(keras.Model):
         metric.update_state(batch_y, outputs)
     return {m.name: m.result() for m in self.metrics}
   
+  
+  def get_mask(self, inputs):
+    # Get the is_open feature from the inputs
+    past_data, future_features, _ = inputs
+    bsize = past_data[0].shape[0]
+    bfeats_pred, _ = future_features
+    is_open = bfeats_pred[7, :]
+    
+    # Create a mask for the loss calculation
+    mask_tensor = tf.not_equal(is_open, 0)
+    mask_tensor = tf.expand_dims(mask_tensor, axis=0)
+    mask_tensor = tf.tile(mask_tensor, [bsize, 1])
+
+    return mask_tensor
+
+  
+  def apply_mask(self, inputs, y_pred, y_true):
+
+    mask_tensor = self.get_mask(inputs)
+    y_pred_masked = tf.boolean_mask(y_pred, mask_tensor)
+    y_true_masked = tf.boolean_mask(y_true, mask_tensor)
+
+    # Make sure the mask does not result in zero tensors, or loss is NaN and terminates training!
+    if tf.size(y_pred_masked) == 0 or tf.size(y_true_masked) == 0:
+      return y_pred, y_true
+
+    return y_pred_masked, y_true_masked
+  
+  def set_masked_values_to_zero(self, inputs, y_pred):
+    mask_tensor = self.get_mask(inputs)
+    y_pred = tf.where(mask_tensor, y_pred, tf.zeros_like(y_pred))
+    return y_pred
+
+
+  
   @tf.function
-  def train_step2(self, data):
+  def train_step(self, data):
     inputs, y_true = tsd.prepare_batch(*data) 
     
     #inputs, y_true = data
@@ -313,29 +306,20 @@ class TiDE(keras.Model):
     return self.update_metrics(loss, y_true, y_pred)
 
   @tf.function
-  def train_step(self, data):
+  def train_step2(self, data):
+    # This function is used for the Baseline test with cheat=True
     inputs, y_true = tsd.prepare_batch(*data)
 
     y_pred = self(inputs, training=False)
 
-    #if tf.size(y_pred) == 0 or tf.size(y_true) == 0:
-     # raise ValueError("Unmasked tensors are empty. Check the mask and input values.")
-  
     if self.mask:
-      print("mask is being applied")
       y_pred, y_true = self.apply_mask(inputs, y_pred, y_true)
 
     loss = self.compute_loss(y=y_true, y_pred=y_pred)
-    #tf.print("loss:", loss)
-    # Check for NaN loss before updating gradients
-    if tf.math.is_nan(loss):
-      print("shit is being shit shit")
-      tf.print("Loss is NaN, setting it to 0")
-      loss = tf.constant(0.0)
-     # tf.print("Loss is NaN. y_pred:", y_pred, "y_true:", y_true, "mask:", self.get_mask(inputs))
-      #raise ValueError("Loss is NaN. Check y_pred, y_true, and mask values.")
+
     return self.update_metrics(loss, y_true, y_pred)
-  
+
+
   @tf.function
   def test_step(self, data):
     inputs, y_true = tsd.prepare_batch(*data)
