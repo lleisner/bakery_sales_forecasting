@@ -123,6 +123,7 @@ class TiDE(keras.Model):
     self.mse_tracker = tf.keras.metrics.MeanSquaredError(name="mse")
     self.mae_tracker = tf.keras.metrics.MeanAbsoluteError(name="mae")
     self.rmse_tracker = tf.keras.metrics.RootMeanSquaredError(name="rmse")
+    
 
     if self.transform:
       self.affine_weight = self.add_weight(
@@ -177,6 +178,10 @@ class TiDE(keras.Model):
           tf.keras.layers.Embedding(input_dim=cat_size, output_dim=cat_emb_size)
       )
     self.ts_embs = tf.keras.layers.Embedding(input_dim=num_ts, output_dim=16)
+
+  #@property
+  #def metrics(self):
+   # return self.metrics_list
 
   @tf.function
   def _assemble_feats(self, feats, cfeats):
@@ -245,12 +250,12 @@ class TiDE(keras.Model):
     print("this is the output of the call function", out.shape)
     return out
 
-  def update_metrics(self, loss, batch_y, outputs):
+  def update_metrics(self, loss, y_true, y_pred):
     for metric in self.metrics:
       if metric.name == "loss":
         metric.update_state(loss)
-      else:
-        metric.update_state(batch_y, outputs)
+      #else:
+        #metric.update_state(y_true, y_pred)
     return {m.name: m.result() for m in self.metrics}
   
   
@@ -275,17 +280,17 @@ class TiDE(keras.Model):
     y_pred_masked = tf.boolean_mask(y_pred, mask_tensor)
     y_true_masked = tf.boolean_mask(y_true, mask_tensor)
 
+      
     # Make sure the mask does not result in zero tensors, or loss is NaN and terminates training!
     if tf.size(y_pred_masked) == 0 or tf.size(y_true_masked) == 0:
+      #tf.print("Zero size in masked values", (y_pred_masked, y_true_masked, y_pred, y_true))
       return y_pred, y_true
-
     return y_pred_masked, y_true_masked
   
   def set_masked_values_to_zero(self, inputs, y_pred):
     mask_tensor = self.get_mask(inputs)
     y_pred = tf.where(mask_tensor, y_pred, tf.zeros_like(y_pred))
     return y_pred
-
 
   
   @tf.function
@@ -299,6 +304,7 @@ class TiDE(keras.Model):
       if self.mask:
         y_pred, y_true = self.apply_mask(inputs, y_pred, y_true)
 
+
       loss = self.compute_loss(y=y_true, y_pred=y_pred)
     grads = tape.gradient(loss, self.trainable_variables)
     self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
@@ -310,7 +316,7 @@ class TiDE(keras.Model):
     # This function is used for the Baseline test with cheat=True
     inputs, y_true = tsd.prepare_batch(*data)
 
-    y_pred = self(inputs, training=False)
+    y_pred = self(inputs, training=True)
 
     if self.mask:
       y_pred, y_true = self.apply_mask(inputs, y_pred, y_true)
@@ -328,8 +334,6 @@ class TiDE(keras.Model):
     if self.mask:
       y_pred, y_true = self.apply_mask(inputs, y_pred, y_true)
       
-    #loss = tf.keras.losses.mean_squared_error(y_true, y_pred)
-
     self.compute_loss(y=y_true, y_pred=y_pred)
     
     for metric in self.metrics:

@@ -97,8 +97,7 @@ def train_model_on_dataset(args, model, data_loader):
     callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=args.model, dataset_name=args.dataset, mode='training')
 
     model.compile(optimizer=tf.keras.optimizers.Adam(args.learning_rate), 
-                  loss=tf.keras.losses.MeanSquaredError(), 
-                  metrics=['mae'],
+                  loss=tf.keras.losses.MeanSquaredError(reduction=tf.keras.losses.Reduction.SUM_OVER_BATCH_SIZE), 
                   weighted_metrics=[])
 
     if args.model == 'Baseline':
@@ -244,7 +243,7 @@ def main():
     print(feature_names)
         
     calculate_metrics(y_true=predictions, y_pred=actuals)
-    plot_multivariate_time_series_predictions(y_true=actuals, y_preds=[predictions], model_names=["iTransformer"], variate_names=feature_names, max_variates=8, n_values=448)
+    plot_multivariate_time_series_predictions(y_true=actuals, y_preds=[predictions], model_names=["iTransformer"], variate_names=feature_names, max_variates=8, n_values=64)
 
     print("shapes:")
     print(predictions.shape)
