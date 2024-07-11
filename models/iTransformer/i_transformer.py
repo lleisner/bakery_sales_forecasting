@@ -21,7 +21,7 @@ class ITransformer(keras.Model):
                  n_heads=8,
                  d_ff=512,
                  e_layers=3,
-                 dropout=0.1,
+                 dropout=0.15,
                  output_attention=False,
                  activation='relu',
                  clip=None,
