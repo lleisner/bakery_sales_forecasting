@@ -223,6 +223,39 @@ class TiDEData(DataLoader):
         
         return pred_set, index
     
+    def get_dummy(self):
+        """
+        Generates dummy input for the model to create its variables using prepare_batch function.
+        
+        Returns:
+            inputs: Dummy input batch for the model
+            y_true: Dummy output batch for the model
+        """
+        # Assume batch size of 1 for dummy input
+        dummy_batch_size = 1
+        
+        num_ts = len(self.ts_cols)
+        t_feats = self.time_mat.shape[0]
+        n_feats = self.num_feat_mat.shape[0]
+        c_feats = self.cat_feat_mat.shape[0]
+
+        # Create dummy data
+        bts_train = tf.random.normal([num_ts, self.hist_len])
+        bfeats_train = tf.random.normal([t_feats + n_feats, self.hist_len])
+        bcfeats_train = tf.random.normal([c_feats, self.hist_len])
+        bts_pred = tf.random.normal([num_ts, self.pred_len])
+        bfeats_pred = tf.random.normal([t_feats + n_feats, self.pred_len])
+        bcfeats_pred = tf.random.normal([c_feats, self.pred_len])
+        tsidx = tf.range(num_ts)
+
+        # Use prepare_batch to get the desired split
+        inputs, y_true = self.prepare_batch(
+            bts_train, bfeats_train, bcfeats_train, bts_pred, bfeats_pred, bcfeats_pred, tsidx
+        )
+        
+        return inputs
+
+        
     
     @staticmethod
     def prepare_batch(bts_train, bfeats_train, bcfeats_train, bts_pred, bfeats_pred, bcfeats_pred, tsidx):
@@ -232,81 +265,3 @@ class TiDEData(DataLoader):
         inputs = (past_data, future_features, tsidx)
         return inputs, y_true
  
-    """
-    
-
-    def _create_datasets(self, start, end, mode='train'):
-        num_ts = len(self.ts_cols)
-        perm = np.arange(start + self.hist_len, end - self.pred_len)
-        if mode == 'train':
-            perm = np.random.permutation(perm)
-
-        all_data = []
-        
-        def get_tsidx():
-            if self.permute and mode == 'train':
-                return np.random.choice(num_ts, size=self.batch_size, replace=False)
-            else:
-                return np.arange(num_ts)
-
-        def append_data(idx, tsidx):
-            dtimes = np.arange(idx - self.hist_len, idx + self.pred_len)
-            (
-                bts_train,
-                bts_pred,
-                bfeats_train,
-                bfeats_pred,
-                bcf_train,
-                bcf_pred,
-            ) = self._get_features_and_ts(dtimes, tsidx, self.hist_len)
-            all_data.append([
-                bts_train,
-                bfeats_train,
-                bcf_train,
-                bts_pred,
-                bfeats_pred,
-                bcf_pred,
-                tsidx,
-            ])
-
-        if mode == 'train':
-            for idx in perm:
-                for _ in range(num_ts // self.batch_size + 1):
-                    tsidx = get_tsidx()
-                    append_data(idx, tsidx)
-        else:
-            start = self.val_range[0] if mode == 'val' else self.test_range[0]
-            end = (self.val_range[1] if mode == 'val' else self.test_range[1]) - self.pred_len + 1
-            perm = np.arange(start, end)
-            for idx in perm:
-                for batch_idx in range(0, num_ts, self.batch_size):
-                    tsidx = np.arange(batch_idx, min(batch_idx + self.batch_size, num_ts))
-                    append_data(idx, tsidx)
-
-        return all_data
-
-
-    def get_train_test_splits(self):
-        train_data = self._create_datasets(self.train_range[0], self.train_range[1], mode='train')
-        val_data = self._create_datasets(self.val_range[0], self.val_range[1], mode='val')
-        test_data = self._create_datasets(self.test_range[0], self.test_range[1], mode='test')
-        
-        train_dataset = self.tf_dataset(train_data)
-        val_dataset = self.tf_dataset(val_data)
-        test_dataset = self.tf_dataset(test_data)
-        
-        return train_dataset, val_dataset, test_dataset
-
-    def tf_dataset(self, data):
-        def map_fn(bts_train, bfeats_train, bcf_train, bts_pred, bfeats_pred, bcf_pred, tsidx):
-            past_data = (bts_train, bfeats_train, bcf_train)
-            future_features = (bfeats_pred, bcf_pred)
-            return (past_data, future_features, tsidx), bts_pred
-        data = tf.ragged.constant(data)
-
-        dataset = tf.data.Dataset.from_tensor_slices(data)
-        dataset = dataset.map(lambda features: map_fn(*features))
-        dataset = dataset.batch(self.batch_size).prefetch(tf.data.experimental.AUTOTUNE)
-        return dataset
-        
-    """

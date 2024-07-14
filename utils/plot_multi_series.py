@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import os
+from utils.load_item_mapping import load_item_mapping
 
 def plot_multivariate_time_series_predictions(y_true, y_preds, model_names, variate_names=None, max_variates=2, title='Time Series Predictions', save_path="experiment/plots", n_values=448):
     """
@@ -24,6 +25,9 @@ def plot_multivariate_time_series_predictions(y_true, y_preds, model_names, vari
     # Ensure y_preds have the correct shape
     for y_pred in y_preds:
         assert y_pred.shape == y_true.shape, "Each y_pred must have the same shape as y_true."
+        
+    # Load item mapping
+    item_mapping = load_item_mapping()
     
     # Use only the first n_values for plotting
     y_true = y_true[:n_values]
@@ -32,7 +36,11 @@ def plot_multivariate_time_series_predictions(y_true, y_preds, model_names, vari
     timesteps = y_true.shape[0]
     num_variates = min(y_true.shape[1], max_variates)
     
-    fig, axes = plt.subplots(num_variates, 1, figsize=(12, 6 * num_variates), sharex=True)
+    num_columns = 2
+    num_rows = (num_variates + 1) // num_columns
+    
+    fig, axes = plt.subplots(num_rows, num_columns, figsize=(14, 6 * num_variates//3), sharex=True)
+    axes = axes.flatten()
     
     if num_variates == 1:
         axes = [axes]  # Make axes iterable if there's only one subplot
@@ -43,12 +51,21 @@ def plot_multivariate_time_series_predictions(y_true, y_preds, model_names, vari
             axes[i].plot(y_pred[:, i], label=f'Predicted ({model_name})', linestyle='--', marker='x')
         
         variate_title = variate_names[i] if variate_names and i < len(variate_names) else f'Variate {i + 1}'
-        axes[i].set_title(f'{title} - {variate_title}', fontsize=14)
+        item_number = variate_title.split('__')[-1] if '__' in variate_title else None
+ 
+        item_name = item_mapping.get(item_number, "Unkown")
+        axes[i].set_title(f'{variate_title} ({item_name})', fontsize=14)
         axes[i].legend(fontsize=12)
         axes[i].grid(True, linestyle='--', alpha=0.6)
         axes[i].tick_params(axis='both', which='major', labelsize=12)
+        
+    for j in range(num_variates, len(axes)):
+        fig.delaxes(axes[j])
+    
     
     plt.tight_layout()
+    plt.subplots_adjust(top=0.95)
+    fig.suptitle(title, fontsize=16)
 
     # Ensure save_path directory exists
     if not os.path.exists(save_path):
@@ -58,46 +75,3 @@ def plot_multivariate_time_series_predictions(y_true, y_preds, model_names, vari
     plot_file_path = os.path.join(save_path, 'time_series_predictions.png')
     plt.savefig(plot_file_path, dpi=300)
 
-
-
-def plot_multivariate_time_series_predictions2(y_true, y_preds, model_names, max_variates=2, title='Time Series Predictions', xlabel='Time', ylabel='Value', save_path='experiment/plots/time_series'):
-    """
-    Plots the actual vs predicted values for multivariate time series data.
-    
-    Parameters:
-    - y_true (array-like): True values of the time series (shape: [timesteps, variates]).
-    - y_preds (list of array-like): List of predicted values from different models (each with shape: [timesteps, variates]).
-    - model_names (list of str): List of model names corresponding to each set of predictions.
-    - max_variates (int): Number of variate series to plot. Defaults to 2.
-    - title (str): Title of the plot.
-    - xlabel (str): Label for the x-axis.
-    - ylabel (str): Label for the y-axis.
-    - save_path (str, optional): Path to save the plot. If None, the plot will be displayed.
-
-    Returns:
-    - None
-    """
-    num_variates = min(y_true.shape[1], max_variates)
-    
-    fig, axes = plt.subplots(num_variates, 1, figsize=(12, 6 * num_variates), sharex=True)
-    
-    if num_variates == 1:
-        axes = [axes]  # Make axes iterable if there's only one subplot
-    
-    for i in range(num_variates):
-        axes[i].plot(y_true[:, i], label='Actual', linestyle='-', marker='o')
-        for y_pred, model_name in zip(y_preds, model_names):
-            axes[i].plot(y_pred[:, i], label=f'Predicted ({model_name})', linestyle='--', marker='x')
-        
-        axes[i].set_title(f'{title} - Variate {i + 1}')
-        axes[i].set_xlabel(xlabel)
-        axes[i].set_ylabel(ylabel)
-        axes[i].legend()
-        axes[i].grid(True)
-    
-    plt.tight_layout()
-    
-    if save_path:
-        plt.savefig(save_path)
-    else:
-        plt.show()

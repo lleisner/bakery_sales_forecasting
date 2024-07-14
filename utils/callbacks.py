@@ -2,28 +2,60 @@ import os
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard, CSVLogger, TerminateOnNaN
 import time
+import json
+import numpy as np
 
-class HeartbeatCallback(tf.keras.callbacks.Callback):
-    def __init__(self, heartbeat_file, interval):
-        super().__init__()
-        self.heartbeat_file = heartbeat_file
-        self.interval = interval
-        self.last_update = time.time()
+            
+class CustomModelCheckpoint(ModelCheckpoint):
+    """
+    Extends on the ModelCheckpoint class to add functionality for 
+    loading and saving the best metric value across multiple training 
+    runs. Only saves the model if it is better than the current best 
+    model across all training runs.
 
-    def on_train_bach_end(self, batch, logs=None):
-        current_time = time.time()
-        if current_time - self.last_update > self.interval:
-            with open(self.heartbeat_file, 'w') as f:
-                f.write('alive')
-            self.last_update = current_time
+    This class extends `tf.keras.callbacks.ModelCheckpoint` to include:
+    - Loading the initial best value from a JSON file if it exists.
+    - Saving the best metric value to a JSON file at the end of training.
 
-def get_callbacks(num_epochs, model_name, dataset_name, mode='training', heartbeat_file="/tmp/heartbeat", heartbeat_interval=120):
+    Args:
+        keep_best_model: defaults to True, if False, functions exactly like ModelCheckpoint
+        *args: Variable length argument list for passing to the parent class.
+        **kwargs: Arbitrary keyword arguments for passing to the parent class.
+    """
+    
+    def __init__(self, metrics_filepath, keep_best_model=True, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.metrics_filepath = metrics_filepath
+        if keep_best_model:
+            # Set the initial_value_threshold to the best model recorded
+            self.best = self._load_best_value()
+       
+    def _load_best_value(self):
+        metric_path = os.path.join(os.path.dirname(self.metrics_filepath), 'best_metric.json')
+        if os.path.exists(metric_path):
+            with open(metric_path, 'r') as f:
+                best_metric = json.load(f).get(self.monitor, None)
+                if best_metric is not None:
+                    return best_metric
+        return float('inf') if self.monitor_op == np.less else float('-inf')
+        
+    def on_train_end(self, logs=None):
+        super().on_train_end(logs)
+        self._save_best_metric()
+        
+    def _save_best_metric(self):
+        metric_path = os.path.join(os.path.dirname(self.metrics_filepath), 'best_metric.json')
+        with open(metric_path, 'w') as f:
+            json.dump({self.monitor: self.best}, f)
+            
+        
+def get_callbacks(num_epochs, model_name, dataset_name, mode='training'):
     # Set patience to 20% of total number of epochs
     patience = max(1, num_epochs // 5)
 
     # Create necessary directories
     base_dir = f'logs/{dataset_name}/{model_name}'
-    checkpoint_dir = f'{base_dir}/checkpoints'
+    checkpoint_dir = f'{base_dir}/checkpoints/'
     csv_log_dir = f'{base_dir}/csv'
     tensorboard_log_dir = f'{base_dir}/tensorboard'
     
@@ -31,10 +63,6 @@ def get_callbacks(num_epochs, model_name, dataset_name, mode='training', heartbe
     os.makedirs(csv_log_dir, exist_ok=True)
     os.makedirs(tensorboard_log_dir, exist_ok=True)
 
-    heartbeat = HeartbeatCallback(
-        heartbeat_file=heartbeat_file,
-        interval=heartbeat_interval,
-    )
 
     early_stopping = EarlyStopping(
         monitor='val_loss',
@@ -43,12 +71,13 @@ def get_callbacks(num_epochs, model_name, dataset_name, mode='training', heartbe
         restore_best_weights=True
     )
     
-    model_checkpoint = ModelCheckpoint(
-        filepath=f'{checkpoint_dir}/best_model',
+    model_checkpoint = CustomModelCheckpoint(
+        filepath=f'{checkpoint_dir}weigths.h5',
+        metrics_filepath=f'{checkpoint_dir}',
         monitor='val_loss',
         save_best_only=True,
         save_weights_only=True,
-        verbose=0
+        verbose=1
     )
 
     reduce_lr = ReduceLROnPlateau(

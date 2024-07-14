@@ -66,6 +66,24 @@ class ITransformerData(DataLoader):
         test_data = self.make_dataset(self.test_range[0], self.test_range[1])
         return train_data, val_data, test_data
     
+    def get_dummy(self):
+        """
+        Generates dummy input for the model to create its variables.
+        Needed to load a model with saved weights. 
+        
+        Returns:
+            batch_x: Dummy input batch for time series data
+            batch_x_mark: Dummy input batch for additional features
+        """
+        
+        num_features = self.data_df.shape[1]
+        
+        dummy_data = tf.random.normal([1, self.hist_len, num_features])
+        
+        batch_x, batch_y, batch_x_mark = self.split_batch(dummy_data)
+        
+        return batch_x, batch_x_mark
+    
     def get_prediction_set(self):
         """
         work in progress:
@@ -83,3 +101,5 @@ class ITransformerData(DataLoader):
         index = self.data_df.index[self.test_range[0] + buffer_offset : self.test_range[1]]
 
         return pred_set, index
+    
+    

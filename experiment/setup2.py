@@ -48,6 +48,7 @@ def parse_arguments():
     parser.add_argument('--model', type=str, default='Baseline', help='Model to be used for experiment')
     parser.add_argument('--tune_hps', type=bool, default=False, help='Tune hyperparameters for dataset')
     parser.add_argument('--normalize', type=bool, default=False, help='Normalize the data')
+    parser.add_argument('--loss', type=str, default='mse', help='Loss function to use in training')
 
     args = parser.parse_args()
     return args
@@ -57,7 +58,7 @@ def get_model_components(model_name):
     model_components = {
         'iTransformer': (ITransformer, ITransformerData, build_itransformer),
         'TiDE': (TiDE, TiDEData, build_tide),
-        'Baseline': (CustomModel, ITransformerData, None)  # Assuming Baseline uses ITransformerData
+        'Baseline': (CustomModel, ITransformerData, None)  
     }
     return model_components[model_name]
 
@@ -85,10 +86,6 @@ def tune_model_on_dataset(args, hypermodel, data_loader):
     best_hps = tuner.get_best_hyperparameters(3)
     print(f"best hyperparameters for {directory}/{args.model}: {best_hps}")
     
-    #model = tuner.get_best_models(num_models=1)[0]
-    #result = model.evaluate(test, return_dict=True)
-    #print(f"Tuning finished with {result} on test data")
-    #return model 
 
 
 def train_model_on_dataset(args, model, data_loader):
@@ -110,7 +107,7 @@ def train_model_on_dataset(args, model, data_loader):
         steps_per_epoch, validation_steps, test_steps = data_loader.split_sizes
         hist = model.fit(train, epochs=args.num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=callbacks)
         result = model.evaluate(test, steps=test_steps, return_dict=True)
-    else:
+    elif args.model == 'iTransformer':
         hist = model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
         result = model.evaluate(test, return_dict=True)
         plot_metrics(hist)
@@ -205,6 +202,8 @@ def calculate_metrics(y_true, y_pred):
     # Print the results
     for name, result in results.items():
         print(f'{name}: {result}')
+        
+
 
 
 def main():
@@ -221,9 +220,6 @@ def main():
     col_names = data.columns.tolist()
     print(data)
 
-    
-    #data_loader_instance.stride = 1
-    #train, val, test = data_loader_instance.get_train_test_splits()
 
     to_predict, index = data_loader_instance.get_prediction_set()
     predictions, actuals = model_instance.predict(to_predict)
