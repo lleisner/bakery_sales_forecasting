@@ -66,7 +66,7 @@ class ITransformerData(DataLoader):
         test_data = self.make_dataset(self.test_range[0], self.test_range[1])
         return train_data, val_data, test_data
     
-    def get_dummy(self):
+    def get_dummy2(self):
         """
         Generates dummy input for the model to create its variables.
         Needed to load a model with saved weights. 
@@ -81,6 +81,29 @@ class ITransformerData(DataLoader):
         dummy_data = tf.random.normal([1, self.hist_len, num_features])
         
         batch_x, batch_y, batch_x_mark = self.split_batch(dummy_data)
+        
+        return batch_x, batch_x_mark
+    
+    def get_dummy(self):
+        """
+        Generates dummy input for the model to create its variables.
+        
+        Returns:
+            batch_x: Dummy input batch for time series data
+            batch_x_mark: Dummy input batch for additional features
+        """
+        # Assume batch size of 1 for dummy input
+        dummy_batch_size = 1
+        
+        num_targets = len(self.ts_cols)
+        num_additional_features = self.data_df.shape[1] - num_targets
+        
+        # Create dummy data
+        dummy_data = tf.random.normal([dummy_batch_size, self.hist_len, self.data_df.shape[1]])
+        
+        # Split the dummy data into batch_x and batch_x_mark
+        batch_x = dummy_data[:, :, :num_targets]
+        batch_x_mark = dummy_data[:, :, num_additional_features:]
         
         return batch_x, batch_x_mark
     

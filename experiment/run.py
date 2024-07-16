@@ -9,7 +9,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Configure model parameters.')
 
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training the model.')
-    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for the optimizer.')
+    parser.add_argument('--learning_rate', type=float, default=0.00005, help='Learning rate for the optimizer.')
     parser.add_argument('--num_epochs', type=int, default=50, help='Number of epochs for training.')
     parser.add_argument('--config_file', type=str, default="experiment/dataset_analysis.yaml", help='Path to the YAML configuration file.')
     parser.add_argument('--data_directory', type=str, default="data/sales_forecasting/sales_forecasting_8h", help='Path to data directory')

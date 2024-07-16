@@ -99,7 +99,7 @@ class SMAPELoss(tf.keras.losses.Loss):
         return smape
 
 class AsymmetricMSELoss(tf.keras.losses.Loss):
-    def __init__(self, underestimation_penalty=1.5, overestimation_penalty=0.5, name="asymmetric_mse_loss"):
+    def __init__(self, underestimation_penalty=2, overestimation_penalty=1, name="asymmetric_mse_loss"):
         super().__init__(name=name)
         self.underestimation_penalty = underestimation_penalty
         self.overestimation_penalty = overestimation_penalty

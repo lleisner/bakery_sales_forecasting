@@ -107,8 +107,8 @@ def train_model_on_dataset(args, model_name, model, data_loader):
     train, val, test = data_loader.get_train_test_splits()
     callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=model_name, dataset_name=args.dataset, mode='training')
     optimizer = tf.keras.optimizers.Adam(args.learning_rate)
-    loss = tf.keras.losses.MeanSquaredError()
-    #loss = AsymmetricMSELoss()
+    #loss = tf.keras.losses.MeanSquaredError()
+    loss = AsymmetricMSELoss()
 
     model.compile(optimizer=optimizer, 
                   loss=loss, 
@@ -120,7 +120,7 @@ def train_model_on_dataset(args, model_name, model, data_loader):
         result = model.evaluate(test, return_dict=True)
     elif model_name == 'TiDE':
         steps_per_epoch, validation_steps, test_steps = data_loader.split_sizes
-        steps_per_epoch = steps_per_epoch // 8
+        steps_per_epoch = steps_per_epoch // 5
         hist = model.fit(train, epochs=args.num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=callbacks)
         result = model.evaluate(test, steps=test_steps, return_dict=True)
     elif model_name == 'iTransformer':
