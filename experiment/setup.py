@@ -1,5 +1,6 @@
 import os
 import tensorflow as tf
+import numpy as np
 import pandas as pd
 from tensorflow.keras import backend
 import keras_tuner as kt
@@ -14,6 +15,7 @@ from models.training import CustomModel
 from utils.callbacks import get_callbacks
 from scrabble import analyze_data
 from utils.loss import AsymmetricMSELoss
+from utils.plot_metrics import plot_metrics
 
 
 class ClearSessionTuner(kt.Hyperband):
@@ -81,8 +83,12 @@ def update_results(dataset, model, metrics, file_path="model_evaluation_results.
 def load_existing_model(args, model_name, model, data_loader):
     _, _, test = data_loader.get_train_test_splits()
     optimizer = tf.keras.optimizers.Adam(args.learning_rate)
-    loss = tf.keras.losses.MeanSquaredError()
     
+    if args.loss =='amse':
+        loss = AsymmetricMSELoss(underestimation_penalty=1.5, overestimation_penalty=0.5)
+    else:
+        loss = tf.keras.losses.MeanSquaredError()
+        
     model.compile(optimizer=optimizer,
                   loss=loss,
                   weighted_metrics=[],)
@@ -107,26 +113,31 @@ def train_model_on_dataset(args, model_name, model, data_loader):
     train, val, test = data_loader.get_train_test_splits()
     callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=model_name, dataset_name=args.dataset, mode='training')
     optimizer = tf.keras.optimizers.Adam(args.learning_rate)
-    #loss = tf.keras.losses.MeanSquaredError()
-    loss = AsymmetricMSELoss()
 
+    if args.loss =='amse':
+        loss = AsymmetricMSELoss(underestimation_penalty=1.5, overestimation_penalty=0.5)
+    else:
+        loss = tf.keras.losses.MeanSquaredError()
+        
     model.compile(optimizer=optimizer, 
                   loss=loss, 
                   weighted_metrics=[])
     
-
     if model_name == 'Baseline':
         model.fit(train, epochs=1, validation_data=val, callbacks=callbacks)
         result = model.evaluate(test, return_dict=True)
     elif model_name == 'TiDE':
         steps_per_epoch, validation_steps, test_steps = data_loader.split_sizes
-        steps_per_epoch = steps_per_epoch // 5
+        print("data loader split sizes: ", data_loader.split_sizes)
+        
+        steps_per_epoch = steps_per_epoch // 1
         hist = model.fit(train, epochs=args.num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=callbacks)
         result = model.evaluate(test, steps=test_steps, return_dict=True)
+        plot_metrics(hist)
     elif model_name == 'iTransformer':
         hist = model.fit(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks)
         result = model.evaluate(test, return_dict=True)
-        #plot_metrics(hist)
+        plot_metrics(hist)
         
         
     print(f"Training finished with {result} on test data")
@@ -142,7 +153,7 @@ def tune_model_on_dataset(args, model_name, hypermodel, data_loader):
     directory = f"experiment/hyperparameters/{args.dataset}"
 
     train, val, test = data_loader.get_train_test_splits()
-    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=args.model, dataset_name=args.dataset, mode='tuning')
+    callbacks = get_callbacks(num_epochs=args.num_epochs, model_name=model_name, dataset_name=args.dataset, mode='tuning')
 
     tuner = ClearSessionTuner(hypermodel=hypermodel, 
                               objective='val_loss', 
@@ -150,12 +161,16 @@ def tune_model_on_dataset(args, model_name, hypermodel, data_loader):
                               factor=3, 
                               hyperband_iterations=1, 
                               directory=directory, 
-                              project_name=args.model, 
+                              project_name=model_name, 
                               executions_per_trial=2, 
                               max_retries_per_trial=1)
 
     tuner.search_space_summary()
-    tuner.search(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks, verbose=2)
+    if model_name == 'TiDE':
+        steps_per_epoch, validation_steps, test_steps = data_loader.split_sizes
+        tuner.search(train, epochs=args.num_epochs, steps_per_epoch=steps_per_epoch, validation_data=val, validation_steps=validation_steps, callbacks=callbacks)
+    else:
+        tuner.search(train, epochs=args.num_epochs, validation_data=val, callbacks=callbacks, verbose=2)
     summary = tuner.results_summary(3)
     best_hps = tuner.get_best_hyperparameters(3)
     print(f"best hyperparameters for {directory}/{model_name}: {best_hps}")
@@ -168,7 +183,6 @@ def get_model_components(model_name):
         'Baseline': (CustomModel, ITransformerData, None)  
     }
     return model_components[model_name]
-
 
     
 def calculate_metrics(y_true, y_pred):

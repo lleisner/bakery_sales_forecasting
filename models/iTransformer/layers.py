@@ -33,8 +33,8 @@ class EncoderLayer(layers.Layer):
     @tf.function
     def call(self, x, training, attn_mask=None, tau=None, delta=None):
         # x (B, N, E) batch, number of variates, d_model
-        #print("x pre attention:", x)
-        new_x, attn = self.attention(query=x, value=x, key=x, return_attention_scores=True)#, attn_mask=attn_mask, tau=tau, delta=delta)
+    
+        new_x, attn = self.attention(query=x, value=x, key=x, return_attention_scores=True)
         #new_x, attn = self.attention(x, x, x, attn_mask=attn_mask, tau=tau, delta=delta)
 
         x = x + self.dropout(new_x)
@@ -42,8 +42,8 @@ class EncoderLayer(layers.Layer):
         y = x = self.norm1(x)
         y = self.dropout(self.activation(self.conv1(y)), training=training)
         y = self.dropout(self.conv2(y), training=training)
-        #print(training)
-        #print('encoder layer is being used')
+ 
+
         return self.norm2(x + y), attn
 
 

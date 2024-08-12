@@ -122,7 +122,7 @@ def plot_time_series(time_series, title, save_path, n_values=96, max_variates=8)
     plot_file_path = os.path.join(save_path, f'{title.replace(" ", "_").lower()}.png')
     plt.savefig(plot_file_path, dpi=300)
 
-def plot_multivariate_time_series_predictions(time_series, max_variates=8, title='Time Series Predictions', save_path="experiment/plots", n_values=96, smoothing_window=14):
+def plot_multivariate_time_series_predictions(time_series, max_variates=8, title='Time Series Predictions', save_path="experiment/plots", n_values=48, smoothing_window=3):
     """
     Plots the actual vs predicted values for multivariate time series data and its aggregated and smoothed versions.
 

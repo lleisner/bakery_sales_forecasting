@@ -4,6 +4,7 @@ import pandas as pd
 
 from experiment.setup import init_comps, tune_model_on_dataset, train_model_on_dataset, load_existing_model
 from utils.plot_time_series import plot_multivariate_time_series_predictions
+from utils.prediction_analysis import calculate_waste_and_lost_sales_for_models, generate_summary
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Configure model parameters.')
@@ -18,7 +19,7 @@ def parse_arguments():
     parser.add_argument('--mode', choices=['tune', 'train', 'load'], default='train', help='Operation mode: tune, train, or load a saved model.')
 
     parser.add_argument('--normalize', type=bool, default=False, help='Normalize the data')
-    parser.add_argument('--loss', type=str, default='mse', help='Loss function to use in training')
+    parser.add_argument('--loss', choices=['mse', 'amse'], default='mse', help='Loss function to use in training: mse or amse.')
 
     args = parser.parse_args()
     return args
@@ -59,7 +60,9 @@ def main():
         
     print(time_series)
     plot_multivariate_time_series_predictions(time_series)
-    
+    daily_loss_and_waste = calculate_waste_and_lost_sales_for_models(time_series)
+    loss_and_waste = generate_summary(daily_loss_and_waste)
+    print(loss_and_waste)
     
 if __name__ == "__main__":
     main()

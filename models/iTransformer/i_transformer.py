@@ -21,7 +21,7 @@ class ITransformer(keras.Model):
                  n_heads=8,
                  d_ff=512,
                  e_layers=3,
-                 dropout=0.15,
+                 dropout=0.1,
                  output_attention=False,
                  activation='relu',
                  clip=None,
@@ -41,7 +41,7 @@ class ITransformer(keras.Model):
         self.mse_tracker = tf.keras.metrics.MeanSquaredError(name="mse")
         self.mae_tracker = tf.keras.metrics.MeanAbsoluteError(name="mae")
         self.rmse_tracker = tf.keras.metrics.RootMeanSquaredError(name="rmse")
-        
+        self.mape_tracker = tf.keras.metrics.MeanAbsolutePercentageError(name="mape")
         
         # Embedding
         self.enc_embedding = DataEmbeddingInverted(seq_len, d_model, dropout)

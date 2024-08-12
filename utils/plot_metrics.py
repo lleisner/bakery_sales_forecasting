@@ -26,6 +26,3 @@ def plot_metrics(history, save_dir='experiment/plots/metrics'):
             plt.grid(True)
             plt.savefig(f'{save_dir}/{metric}.png')
             plt.close()
-        else:
-            print(f'Skipping metric "{metric}" as it does not have a validation counterpart.')
-

@@ -91,16 +91,16 @@ class TiDE(keras.Model):
       pred_len,
       num_ts,
       cat_sizes=[],
-      hidden_size=128,
-      decoder_output_dim=4,
+      hidden_size=256,
+      decoder_output_dim=8,
       final_decoder_hidden=64,
       time_encoder_dims=[64, 4],
-      num_layers=2,
-      dropout=0.1,
+      num_layers=3,
+      dropout=0.2,
       activation='relu',
-      transform=False,
+      transform=True,
       cat_emb_size=4,
-      layer_norm=False,
+      layer_norm=True,
       mask=True,
   ):
     """Tide model.
@@ -123,7 +123,8 @@ class TiDE(keras.Model):
     self.mse_tracker = tf.keras.metrics.MeanSquaredError(name="mse")
     self.mae_tracker = tf.keras.metrics.MeanAbsoluteError(name="mae")
     self.rmse_tracker = tf.keras.metrics.RootMeanSquaredError(name="rmse")
-    
+    self.mape_tracker = tf.keras.metrics.MeanAbsolutePercentageError(name="mape")
+
 
     if self.transform:
       self.affine_weight = self.add_weight(
@@ -243,6 +244,7 @@ class TiDE(keras.Model):
     
     cheat = False
     if cheat:
+      # this was used to ensure the TiDE model procudes the same Baseline results as the iTransformer
       past_data = inputs[0]
       past_ts = past_data[0]
       out = past_ts[:, -self.pred_len:]
