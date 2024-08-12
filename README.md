@@ -1,80 +1,78 @@
-# Application of Machine Learning Models for Sales Forecasting in a Local Bakery
+# Bakery Sales Forecasting
 
-This repository contains the codebase the bachelor thesis.
-## Overview
+This repository contains the code and data used for demand forecasting in a bakery, leveraging advanced machine learning models like iTransformer and TiDE. The project aims to improve the accuracy of sales predictions to optimize production processes and reduce food waste.
 
-The project is dedicated to solving a timeseries prediction problem, namely the prediction of future sales for specific items at a bakery. It focuses on providing a working model that can make accurate predictions for the production planning of the bakery.
+## Table of Contents
 
-### Key Features
+- [Project Overview](#project-overview)
+- [Directory Structure](#directory-structure)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Experiments](#experiments)
+- [Contributing](#contributing)
+- [License](#license)
 
-- **Feature 1:** Provide a working model
-- **Feature 2:** Find a (close to) optimal model architecture for the problem (iTransformer??)
-- **Feature 3:** (Maybe) Create a deployable solution that can actively be used in the bakery
+## Project Overview
 
-## Project Structure
+This project applies machine learning models to forecast daily sales for a bakery located on a North Sea island. The focus is on using models like iTransformer and TiDE to predict sales based on various factors such as weather conditions, holidays, and tourist activity.
 
-The repository is organized as follows:
+## Directory Structure
 
-- `data/`: Stores relevant datasets
-- `data_fetcher/`: Updates existing datasets with real time information
-- `data_provider/`: Transforms the raw data into usable datasets
-- `models/`: Stores the different model architectures
-- `experiment/`: Methods to train, tune or load existing models
-- `utils/`: Contains utility functions used for plotting or other helper functions
+- **data/**: Contains the datasets used for training and testing the models. Includes raw data and processed data files.
+  
+- **data_fetcher/**: Scripts for downloading and updating the datasets from relevant sources for future deployment. This includes functionality to pull in new sales data, weather forecasts, holiday schedules, and tourist info.
+  
+- **data_provider/**: Responsible for data preprocessing and preparing the data for model training.
+  
+- **experiment/**: Contains the scripts for setting up and running the experiments. This includes model training, hyperparameter tuning, and evaluation of model performance.
+  
+- **models/**: Implements the machine learning models used in the project. This includes the iTransformer and TiDE models, along with their respective architectures.
+  
+- **utils/**: Utility functions used throughout the project. This includes helper functions for data processing and visualizations.
 
-## Datasets
+## Installation
 
-The dataset ranges from 01.01.2019 to 31.12.2023 in hourly intervals. 
-Each timestep cosists of the following features: 
+To run this project, you need to have Python 3.10 installed. It is recommended to use a virtual environment to manage dependencies.
 
-- weather: (temperature, precipitation, cloud_cover, wind_speed, wind_direction)    (4)
-- tourism: (time of arrival/departue of a ferry, tourist count)                     (3)
-- holidays: (holidays of all Bundesländer)                                          (1)
-- sales: (sales for a selected range / each item)                                   (2-64)
-- operational_feature: (is_open)                                                    (1)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/lleisner/bakery_sales_forecasting.git
+   cd bakery_sales_forecasting
 
+## Usage
 
-## Models
+To run the project, use the `experiment.run` script. This script allows you to configure various parameters for the machine learning models through command-line arguments.
 
-The model driving this project is the iTransformer architecture, initially introduced in the paper accessible at this link: https://arxiv.org/pdf/2310.06625.pdf. This architecture, rooted in the encoder segment of a transformer, introduces a pivotal concept:
+### Basic Usage
 
-Rather than adhering to the conventional method of modeling global dependencies across temporal tokens in time series data (where a token represents multiple variables at a specific timestamp), the iTransformer architecture restructures this approach. It embeds the time series data into variate tokens, where a token signifies multiple timestamps of a single variable.
+Run the project with default settings:
 
-This innovative restructuring, as per the paper's insights, yields performance enhancements by:
+    #```bash
+    python -m experiment.run --dataset <dataset_name> --models iTransformer TiDE
 
-- Maximizing the utilization of increased lookback windows more effectively, surpassing the limitations of the base transformer's attention mechanism, especially when handling growing inputs.
-- Generating more comprehensive attention maps that encapsulate multivariate correlations, thereby enhancing generalization capabilities across diverse variables.
-- Optimizing the use of the feed-forward network to acquire nonlinear representations for each variate token.
+### Command-Line Arguments
+You can customize the run by specifying the following arguments:
 
-The reported results showcase a notable performance boost of over 30% compared to the base transformer architecture. Furthermore, the iTransformer architecture outperforms other competitive (transformer-based) architectures by a significant margin.
+--batch_size: Batch size for training the model. (default: 32)
+--learning_rate: Learning rate for the optimizer. (default: 0.00005)
+--num_epochs: Number of epochs for training. (default: 50)
+--config_file: Path to the YAML configuration file. (default: experiment/dataset_analysis.yaml)
+--data_directory: Path to the data directory. (default: data/sales_forecasting/sales_forecasting_8h)
+--dataset: Dataset to be used for the experiment. (required)
+--models: List of models to be used. (default: ['Baseline'])
+--mode: Operation mode: tune, train, or load. (default: train)
+--normalize: Whether to normalize the data. (default: False)
+--loss: Loss function to use in training: mse or amse. (default: mse)
 
-## Getting Started
+### Example Commands
+Train models with custom batch size and learning rate:
 
-To run the project locally or replicate the environment, follow these steps:
+python -m experiment.run --batch_size 64 --learning_rate 0.0001 --dataset <dataset_name> --models iTransformer TiDE
 
-1. **Clone the repository:**
-    ```
-    git clone <repository_url>
-    cd clean_bachelor
-    ```
+Tune the models using a specific configuration file:
 
-2. **Setup Environment:**
-    ```
-    conda create -f conda_config.yml
-    conda activate lleisner
-    ```
+python -m experiment.run --mode tune --config_file path/to/your_config.yaml --dataset <dataset_name>
 
-3. **Run the Project:**‚
-    ```
-    python -m experiment.run 
-    ```
+Load a pre-trained model and evaluate:
 
-
-
-## License
-
-...
-
-## Acknowledgements
-
-...
+python -m experiment.run --mode load --dataset <dataset_name> --models iTransformer
