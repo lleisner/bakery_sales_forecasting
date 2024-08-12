@@ -5,15 +5,15 @@ import pandas as pd
 from tensorflow.keras import backend
 import keras_tuner as kt
 
-from models.iTransformer.new_data_loader import ITransformerData
+from models.iTransformer.itransformer_data_loader import ITransformerData
 from models.iTransformer.i_transformer import ITransformer
 from models.iTransformer.model_tuner import build_itransformer
-from models.tide_google.tide_model import TiDE
-from models.tide_google.new_data_loader import TiDEData
-from models.tide_google.model_tuner import build_tide
-from models.training import CustomModel
+from models.tide.tide_model import TiDE
+from models.tide.tide_data_loader import TiDEData
+from models.tide.model_tuner import build_tide
+from models.baseline.baseline_model import BaselineModel
 from utils.callbacks import get_callbacks
-from scrabble import analyze_data
+from utils.analyze_data import analyze_data
 from utils.loss import AsymmetricMSELoss
 from utils.plot_metrics import plot_metrics
 
@@ -180,7 +180,7 @@ def get_model_components(model_name):
     model_components = {
         'iTransformer': (ITransformer, ITransformerData, build_itransformer),
         'TiDE': (TiDE, TiDEData, build_tide),
-        'Baseline': (CustomModel, ITransformerData, None)  
+        'Baseline': (BaselineModel, ITransformerData, None)  
     }
     return model_components[model_name]
 

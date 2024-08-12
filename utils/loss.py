@@ -1,5 +1,23 @@
 import tensorflow as tf
 
+
+class AsymmetricMSELoss(tf.keras.losses.Loss):
+    def __init__(self, underestimation_penalty=1.333, overestimation_penalty=0.667, name="asymmetric_mse_loss"):
+        super().__init__(name=name)
+        self.underestimation_penalty = underestimation_penalty
+        self.overestimation_penalty = overestimation_penalty
+        
+    def call(self, y_true, y_pred):
+        error = y_true - y_pred
+        loss = tf.reduce_mean(tf.where(error >= 0, 
+                                       self.underestimation_penalty * tf.square(error),
+                                       self.overestimation_penalty * tf.square(error)),
+                              axis=-1)
+        return loss
+    
+
+
+
 class CustomLoss(tf.keras.losses.Loss):
     def __init__(self, interval):
         super().__init__()
@@ -98,27 +116,3 @@ class SMAPELoss(tf.keras.losses.Loss):
         smape = 2.0 * tf.reduce_mean(numerator / denominator)
         return smape
 
-class AsymmetricMSELoss(tf.keras.losses.Loss):
-    def __init__(self, underestimation_penalty=1.333, overestimation_penalty=0.667, name="asymmetric_mse_loss"):
-        super().__init__(name=name)
-        self.underestimation_penalty = underestimation_penalty
-        self.overestimation_penalty = overestimation_penalty
-        
-    def call(self, y_true, y_pred):
-        error = y_true - y_pred
-        loss = tf.reduce_mean(tf.where(error >= 0, 
-                                       self.underestimation_penalty * tf.square(error),
-                                       self.overestimation_penalty * tf.square(error)),
-                              axis=-1)
-        return loss
-    
-class MSEReplacement(tf.keras.losses.Loss):
-    def __init__(self, name="mse_rep"):
-        super().__init__(name=name)
-        
-        
-    def call(self, y_true, y_pred):
-        error = y_true - y_pred
-        loss = tf.reduce_mean(tf.square(error), axis=-1)
-        return loss
-            

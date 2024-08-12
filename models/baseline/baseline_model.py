@@ -1,8 +1,8 @@
 import tensorflow as tf
 
-class CustomModel(tf.keras.Model):
+class BaselineModel(tf.keras.Model):
     def __init__(self, seq_len, pred_len, num_ts, mask=True):
-        super(CustomModel, self).__init__()
+        super(BaselineModel, self).__init__()
         self.pred_len = pred_len
         self.seq_len = seq_len
         self.mask = mask

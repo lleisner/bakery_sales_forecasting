@@ -1,8 +1,6 @@
 import pandas as pd
 import os
 
-from utils.configs import ProviderConfigs
-from utils.analyze_data import analyze_all_datasets
 from utils.plot_dataframe import plot_multiple_dataframes
 from data_provider.sub_providers import (
     SalesDataProvider,
@@ -104,7 +102,5 @@ if __name__ == "__main__":
                 provider = DataProvider(period=period, top_k=k)
                 provider.save_combined_data(f"data/sales_forecasting/sales_forecasting_{period}")
                 
-        
-    analyze_all_datasets("data/sales_forecasting", infer_ts_cols=True)
-    
+            
     plot_multiple_dataframes("data/sales_forecasting")

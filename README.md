@@ -1,6 +1,6 @@
-# Bachelorarbeit Project
+# Application of Machine Learning Models for Sales Forecasting in a Local Bakery
 
-This repository contains the codebase for my Bachelorarbeit (Bachelor's thesis).
+This repository contains the codebase the bachelor thesis.
 ## Overview
 
 The project is dedicated to solving a timeseries prediction problem, namely the prediction of future sales for specific items at a bakery. It focuses on providing a working model that can make accurate predictions for the production planning of the bakery.
@@ -15,29 +15,28 @@ The project is dedicated to solving a timeseries prediction problem, namely the 
 
 The repository is organized as follows:
 
-
-- `data/`: Stores relevant data or datasets
+- `data/`: Stores relevant datasets
+- `data_fetcher/`: Updates existing datasets with real time information
 - `data_provider/`: Transforms the raw data into usable datasets
-- `model_ops/`: Methods for training, testing and validation (depreceated)
 - `models/`: Stores the different model architectures
-- `utils/`: Some utility functions
+- `experiment/`: Methods to train, tune or load existing models
+- `utils/`: Contains utility functions used for plotting or other helper functions
 
-## Dataset
+## Datasets
 
-The dataset ranges from 01.01.2017 to 31.08.2023 in hourly intervals. Considering relevant times for sales in the bakery and closing periods, this results in roughly 30.000 timesteps. Each timestep cosists of the following features: 
+The dataset ranges from 01.01.2019 to 31.12.2023 in hourly intervals. 
+Each timestep cosists of the following features: 
 
-- weather: (temperature, precipitation, wind_speed, wind_direction) (4)
-- tourism: (time of arrivals, departues of each ferry)              (6)
-- holidays: (holidays of all Bundesländer)                          (16)
-- sales: (sales for a selected range / each item)                   (selection from 1-50)
-
-
-
+- weather: (temperature, precipitation, cloud_cover, wind_speed, wind_direction)    (4)
+- tourism: (time of arrival/departue of a ferry, tourist count)                     (3)
+- holidays: (holidays of all Bundesländer)                                          (1)
+- sales: (sales for a selected range / each item)                                   (2-64)
+- operational_feature: (is_open)                                                    (1)
 
 
 ## Models
 
-The foundational model driving this project is the iTransformer architecture, initially introduced in the paper accessible at this link: https://arxiv.org/pdf/2310.06625.pdf. This architecture, rooted in the encoder segment of a transformer, introduces a pivotal concept:
+The model driving this project is the iTransformer architecture, initially introduced in the paper accessible at this link: https://arxiv.org/pdf/2310.06625.pdf. This architecture, rooted in the encoder segment of a transformer, introduces a pivotal concept:
 
 Rather than adhering to the conventional method of modeling global dependencies across temporal tokens in time series data (where a token represents multiple variables at a specific timestamp), the iTransformer architecture restructures this approach. It embeds the time series data into variate tokens, where a token signifies multiple timestamps of a single variable.
 
@@ -65,32 +64,12 @@ To run the project locally or replicate the environment, follow these steps:
     conda activate lleisner
     ```
 
-3. **Run the Project:**
+3. **Run the Project:**‚
     ```
-    python main.py
-    ```
-
-4. **Have a look at the Data:**
-    ```
-    # full dataset:
-    python -m data_provider.data_merger
-
-    # partial datasets:
-    python -m data_provider.sub_providers.fahrten_provider
-    python -m data_provider.sub_providers.ferien_provider
-    python -m data_provider.sub_providers.weather_provider
-    python -m data_provider.sub_providers.sales_provider
+    python -m experiment.run 
     ```
 
-## ToDo
 
-    - Build streamlined data pipeline for all models:
-        * unified data loader (parent class?)
-        * DONE clear up csv data structure (seperate sub datasets in different folders + 8h_full_ds, 16h_full_ds 24h_full_ds)
-    - streamline experiment setup for different ds and models
-    - set up sensible experiments
-    - visualize experimentsk
-    - Clean up Code
 
 ## License
 

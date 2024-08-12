@@ -1,4 +1,4 @@
-from models.tide_google.tide_model import TiDE
+from models.tide.tide_model import TiDE
 from tensorflow import keras
 
 def build_tide(hp, learning_rate, seq_len, pred_len, num_ts, cat_sizes=[]):

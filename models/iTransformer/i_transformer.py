@@ -7,7 +7,6 @@ from models.iTransformer.attention import AttentionLayer, FullAttention
 from models.iTransformer.layers import EncoderLayer, Encoder
 from models.iTransformer.embedding import DataEmbeddingInverted
 
-from models.training import CustomModel
 
 class ITransformer(keras.Model):
     """

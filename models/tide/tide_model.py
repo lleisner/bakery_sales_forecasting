@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2024 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This file contains the TiDE model  code."""
+#
+# Modifications made by Lorenz Leisner, 2024
 
-from absl import logging
-import numpy as np
+
 import tensorflow as tf
 from tensorflow import keras
-from tqdm import tqdm
 
-from models.tide_google.data_loader import TimeSeriesdata as tsd
 
 class MLPResidual(keras.layers.Layer):
   """Simple one hidden state residual network."""
@@ -180,9 +177,6 @@ class TiDE(keras.Model):
       )
     self.ts_embs = tf.keras.layers.Embedding(input_dim=num_ts, output_dim=16)
 
-  #@property
-  #def metrics(self):
-   # return self.metrics_list
 
   @tf.function
   def _assemble_feats(self, feats, cfeats):
@@ -244,12 +238,11 @@ class TiDE(keras.Model):
     
     cheat = False
     if cheat:
-      # this was used to ensure the TiDE model procudes the same Baseline results as the iTransformer
+      # this is used to ensure the TiDE model procudes the same Baseline results as the iTransformer
       past_data = inputs[0]
       past_ts = past_data[0]
       out = past_ts[:, -self.pred_len:]
       
-    print("this is the output of the call function", out.shape)
     return out
 
   def update_metrics(self, loss, y_true, y_pred):
