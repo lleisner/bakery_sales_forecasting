@@ -2,16 +2,6 @@
 
 This repository contains the code and data used for demand forecasting in a bakery, leveraging advanced machine learning models like iTransformer and TiDE. The project aims to improve the accuracy of sales predictions to optimize production processes and reduce food waste.
 
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Directory Structure](#directory-structure)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Experiments](#experiments)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## Project Overview
 
 This project applies machine learning models to forecast daily sales for a bakery located on a North Sea island. The focus is on using models like iTransformer and TiDE to predict sales based on various factors such as weather conditions, holidays, and tourist activity.
@@ -47,32 +37,28 @@ To run the project, use the `experiment.run` script. This script allows you to c
 
 Run the project with default settings:
 
-    #```bash
-    python -m experiment.run --dataset <dataset_name> --models iTransformer TiDE
+    python -m experiment.run --dataset sales_forecasting_8h_top16 --models iTransformer TiDE Baseline
 
 ### Command-Line Arguments
 You can customize the run by specifying the following arguments:
 
---batch_size: Batch size for training the model. (default: 32)
---learning_rate: Learning rate for the optimizer. (default: 0.00005)
---num_epochs: Number of epochs for training. (default: 50)
---config_file: Path to the YAML configuration file. (default: experiment/dataset_analysis.yaml)
---data_directory: Path to the data directory. (default: data/sales_forecasting/sales_forecasting_8h)
---dataset: Dataset to be used for the experiment. (required)
---models: List of models to be used. (default: ['Baseline'])
---mode: Operation mode: tune, train, or load. (default: train)
---normalize: Whether to normalize the data. (default: False)
---loss: Loss function to use in training: mse or amse. (default: mse)
+- `--batch_size`: Batch size for training the model. (default: 32)
+- `--learning_rate`: Learning rate for the optimizer. (default: 0.00005)
+- `--num_epochs`: Number of epochs for training. (default: 50)
+- `--data_directory`: Path to the data directory. (default: data/sales_forecasting/sales_forecasting_8h)
+- `--dataset`: Dataset to be used for the experiment. (required)
+- `--models`: List of models to be used. (default: ['Baseline'])
+- `--mode`: Operation mode: `tune`, `train`, or `load`. (default: train)
+- `--normalize`: Whether to normalize the data. (default: False)
+- `--loss`: Loss function to use in training: `mse` or `amse`. (default: mse)
 
 ### Example Commands
-Train models with custom batch size and learning rate:
+Tune models with custom batch size and learning rate:
 
-python -m experiment.run --batch_size 64 --learning_rate 0.0001 --dataset <dataset_name> --models iTransformer TiDE
+    python -m experiment.run --batch_size 64 --learning_rate 0.0001 --dataset sales_forecasting_8h_top16 --models iTransformer TiDE --mode tune --loss amse
 
-Tune the models using a specific configuration file:
+Load existing models for a specific dataset and evaluate:
 
-python -m experiment.run --mode tune --config_file path/to/your_config.yaml --dataset <dataset_name>
+    python -m experiment.run --mode load --dataset sales_forecasting_8h_top16 --models TiDE
 
-Load a pre-trained model and evaluate:
 
-python -m experiment.run --mode load --dataset <dataset_name> --models iTransformer
